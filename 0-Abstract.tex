@@ -1,0 +1,9 @@
+\documentclass[sigplan,screen]{acmart}
+
+\begin{document}
+
+\section{abstract}
+As a high-performance network technology, RDMA is adopted in many data-intensive applications, such as deep learning training and data processing. Recently, the unified management of virtual machines and containers has become a trend in cloud computing. In hybrid virtual environments, existing RDMA virtualization solutions lack centralized virtualization layer and general interfaces. To solve this problem, we present uniRDMA, a generic RDMA software virtualization framework that consists of single virtual layer and general uniVerbs interfaces. The centralized user space virtual layer constructs multiple isolated vRNICs(virtual RDMA NICs) with the help of hardware virtualization technology and realizes a unified virtual RDMA network. To realize both generality and high-performance, uniVerbs interfaces use shared memory as I/O approach for RDMA applications and map RDMA resources to vRNIC. In our evaluation based on uniRDMA prototype, the performance and scalability of uniRDMA is close to bare-metal RDMA in virtual machines, containers and hybrid cloud environments.
+
+\end{document}
+\endinput
