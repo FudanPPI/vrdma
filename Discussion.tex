@@ -1,0 +1,8 @@
+
+\section{Discussion}
+In this section, there are some concerns about uniRDMA in cloud environments:
+\begin{itemize}
+\item {\verb|Security|}: uniRDMA's virtual layer is in the user space. Unlike HyV and MasQ, RDMA resources, including data, do not need to be mapped to the kernel space. Therefore, it avoids buffer overflow and other attacks against the kernel. Through the isolated vRNIC and interface, there are no potential threats between different virtual instances.
+\item {\verb|Other network extensions|}: The high performance of RDMA can integrate other network protocol stacks, such as TCP/IP networks, to optimize the performance of network applications. Existing work includes vSocket and so on. However, there is currently no unified RDMA-based optimized socket for container and virtual machine applications, and uniRDMA can be easily extended to meet it.
+\item {\verb|Virtual Instances Migration|}: For virtual instances containing RDMA applications, uniRDMA can directly migrate statically without reconfiguring the RDMA address, etc., only for dynamic migration in the virtual, because RDMA bypasses the transmission mechanism of the kernel and remote read and write, its memory capacity It is difficult to perceive management and monitoring, and uniRDMA needs to cooperate with other research work to achieve this goal.
+\end{itemize}

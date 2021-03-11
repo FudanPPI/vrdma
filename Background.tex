@@ -1,0 +1,22 @@
+\section{Background}
+This section introduces the background about RDMA virtualization, including tranditional network virtualization and the principles and working mechanisms of RDMA networks.
+	
+\subsection{Traditional Network Virtualization}
+
+vNIC(Virtual network cards) and virtual network bridges is important to traditional network virtualization. When two virtual instances communicate across servers, the traffic of vNIC will be forwarded to the physical network card through the virtual network bridge, and then through the remote physical network card and virtual network bridge to reach the destination virtual instance.
+
+vNICs are commonly implemented by software emulation. The solutions about that can be divided into full virtualization, paravirtualization and container virtual network card. They can all be configured with virtual IP addresses and send/receive data packets as physical network cards. Virtual network bridges connect virtual network cards and physical network cards by routing forwarding, tunnel networking, and other methods. In a word, virtual network is constructed through the unified management of vNICs and virtual network bridges.
+
+\subsection{RDMA network}
+RDMA is currently widely used in artificial intelligence, large-scale data processing, and high-performance computing.For examples, TensorFlow, Spark, and Hadoop all have supported RDMA. With the help of hardware protocol stack and zero copy technology, RDMA network card can bypass the kernel to read and write remote memory data, without the participation of remote CPU. Therefore, RDMA has high throughput, low latency and low CPU load.
+
+Applications need to use Verbs interface when using RDMA. The RDMA  communication is based on Queue Pair (QP). The application writes the RDMA work request to the QP, and then ``press''  the doorbell register in RNIC, and the RNIC's hardware processor will execute the work request in the QP to forwared data. For application, the entire operator is in the user space without the kernel.
+
+The QP queue consists of a pair of Send Queue (SQ) and Receive Queue (RQ), which are respectively responsible for the sending and receiving work requests during RDMA communication. After the RDMA connection is established, RDMA support two communication modes:
+
+\begin{itemize}
+\item {\verb|Bilateral operation|}: Two endpoints of RDMA connection execute send or recv respectively. For details, each writes the sending or receiving work request into the corresponding SQ or RQ queue. Similar to the traditional TCP network, the sender's RNIC will transmit data to the receiver.
+
+\item {\verb|Unilateral operation|}: Only one endpoints of the RDMA connection needs to perform ``send''. The RDMA application writes the sending work requests to the SQ queue of QP, and RNIC read or write the remote memory according to the request without the participation of the remote CPU.
+
+\end{itemize}

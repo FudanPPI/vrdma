@@ -1,9 +1,0 @@
-\documentclass[sigplan,screen]{acmart}
-
-\begin{document}
-
-\section{Conclusion}
-In this paper, we design a universal RDMA virtualization framework uniRDMA based on user-space vRNIC, which consists of user-space virtual layer and universal uniVerbs interface. In the user space virtual layer: the isolated and efficient vRNIC device is built based on the VF interface of hardware virtualization SR-IOV; through. In the uniVerbs interface part: uniRDMA uses the I/O channel based on shared files to realize the unified use of VMs and containers, and at the same time, it is easy for the virtual layer to manage vRNICs; the isolation of the interface is ensured by putting the shared files in independent proprietary directories and mounting them to each container or VM environment; by solving the resource mapping of RDMA applications such as QP and doorbell register mapping issues, zero-copy and bypassing the kernel (including the virtual layer) when transferring data are achieved. The experimental results show that uniRDMA still has high performance close to that of native RDMA while satisfying functions such as generality and network management.
-
-\end{document}
-\endinput
