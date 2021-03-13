@@ -2,7 +2,7 @@
 %%% Do NOT edit. File created by BibTeX with style
 %%% ACM-Reference-Format-Journals [18-Jan-2012].
 
-\begin{thebibliography}{0}
+\begin{thebibliography}{21}
 
 %%% ====================================================================
 %%% NOTE TO THE USER: you can override these defaults by providing
@@ -36,5 +36,265 @@
 \providecommand\bibinfo[2]{#2}
 \providecommand\natexlab[1]{#1}
 \providecommand\showeprint[2][]{arXiv:#2}
+
+\bibitem[\protect\citeauthoryear{??}{ofe}{2018}]%
+        {ofed-manual}
+ \bibinfo{year}{2018}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{Mellanox OFED for Linux User Manual}}.
+\newblock
+\urldef\tempurl%
+\url{https://www.mellanox.com/related-docs/prod_software/Mellanox_OFED_Linux_User_Manual_v4_3.pdf}
+\showURL{%
+Retrieved March 13, 2021 from \tempurl}
+
+
+\bibitem[\protect\citeauthoryear{??}{mou}{2020}]%
+        {mount-ns}
+ \bibinfo{year}{2020}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{Linux Mount Namespace}}.
+\newblock
+\urldef\tempurl%
+\url{https://man7.org/linux/man-pages/man7/mount_namespaces.7.html}
+\showURL{%
+Retrieved March 13, 2021 from \tempurl}
+
+
+\bibitem[\protect\citeauthoryear{??}{doc}{2021}]%
+        {docker}
+ \bibinfo{year}{2021}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{Docker}}.
+\newblock
+\urldef\tempurl%
+\url{https://www.docker.com/}
+\showURL{%
+Retrieved March 13, 2021 from \tempurl}
+
+
+\bibitem[\protect\citeauthoryear{??}{kub}{2021}]%
+        {kubervirt}
+ \bibinfo{year}{2021}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{KubeVirt}}.
+\newblock
+\urldef\tempurl%
+\url{https://kubevirt.io/}
+\showURL{%
+Retrieved March 13, 2021 from \tempurl}
+
+
+\bibitem[\protect\citeauthoryear{??}{kvm}{2021}]%
+        {kvm}
+ \bibinfo{year}{2021}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{Linux KVM}}.
+\newblock
+\urldef\tempurl%
+\url{https://www.linux-kvm.org/page/Main_Page}
+\showURL{%
+Retrieved March 13, 2021 from \tempurl}
+
+
+\bibitem[\protect\citeauthoryear{??}{mln}{2021}]%
+        {mlnx-ofed}
+ \bibinfo{year}{2021}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{Mellanox OpenFabrics Enterprise
+  Distribution for Linux}}.
+\newblock
+\urldef\tempurl%
+\url{https://www.mellanox.com/products/infiniband-drivers/linux/mlnx_ofed}
+\showURL{%
+Retrieved March 13, 2021 from \tempurl}
+
+
+\bibitem[\protect\citeauthoryear{??}{sr-}{2021}]%
+        {sr-iov}
+ \bibinfo{year}{2021}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{PCI-SIG SR-IOV}}.
+\newblock
+\urldef\tempurl%
+\url{https://pcisig.com/specifications/iov/}
+\showURL{%
+Retrieved March 13, 2021 from \tempurl}
+
+
+\bibitem[\protect\citeauthoryear{??}{qem}{2021}]%
+        {qemu}
+ \bibinfo{year}{2021}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{QEMU}}.
+\newblock
+\urldef\tempurl%
+\url{https://www.qemu.org/}
+\showURL{%
+Retrieved March 13, 2021 from \tempurl}
+
+
+\bibitem[\protect\citeauthoryear{??}{had}{2021}]%
+        {hadoop-rdma}
+ \bibinfo{year}{2021}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{RDMA-based Apache Hadoop}}.
+\newblock
+\urldef\tempurl%
+\url{http://hibd.cse.ohio-state.edu/#hadoop}
+\showURL{%
+Retrieved March 13, 2021 from \tempurl}
+
+
+\bibitem[\protect\citeauthoryear{??}{spa}{2021}]%
+        {spark-rdma}
+ \bibinfo{year}{2021}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{RDMA-based Apache Spark}}.
+\newblock
+\urldef\tempurl%
+\url{http://hibd.cse.ohio-state.edu/#spark}
+\showURL{%
+Retrieved March 13, 2021 from \tempurl}
+
+
+\bibitem[\protect\citeauthoryear{??}{ope}{2021}]%
+        {openshift}
+ \bibinfo{year}{2021}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{RedHat OpenShift}}.
+\newblock
+\urldef\tempurl%
+\url{https://www.openshift.com/}
+\showURL{%
+Retrieved March 13, 2021 from \tempurl}
+
+
+\bibitem[\protect\citeauthoryear{??}{vsp}{2021}]%
+        {vsphere}
+ \bibinfo{year}{2021}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{VMWare vSphere}}.
+\newblock
+\urldef\tempurl%
+\url{https://www.vmware.com/products/vsphere.html}
+\showURL{%
+Retrieved March 13, 2021 from \tempurl}
+
+
+\bibitem[\protect\citeauthoryear{Abadi, Barham, Chen, Chen, Davis, Dean, Devin,
+  Ghemawat, Irving, Isard, et~al\mbox{.}}{Abadi et~al\mbox{.}}{2016}]%
+        {abadi2016tensorflow}
+\bibfield{author}{\bibinfo{person}{Mart{\'\i}n Abadi}, \bibinfo{person}{Paul
+  Barham}, \bibinfo{person}{Jianmin Chen}, \bibinfo{person}{Zhifeng Chen},
+  \bibinfo{person}{Andy Davis}, \bibinfo{person}{Jeffrey Dean},
+  \bibinfo{person}{Matthieu Devin}, \bibinfo{person}{Sanjay Ghemawat},
+  \bibinfo{person}{Geoffrey Irving}, \bibinfo{person}{Michael Isard},
+  {et~al\mbox{.}}} \bibinfo{year}{2016}\natexlab{}.
+\newblock \showarticletitle{Tensorflow: A system for large-scale machine
+  learning}. In \bibinfo{booktitle}{\emph{12th $\{$USENIX$\}$ symposium on
+  operating systems design and implementation ($\{$OSDI$\}$ 16)}}.
+  \bibinfo{pages}{265--283}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Firestone, Putnam, Mundkur, Chiou, Dabagh,
+  Andrewartha, Angepat, Bhanu, Caulfield, Chung, et~al\mbox{.}}{Firestone
+  et~al\mbox{.}}{2018}]%
+        {firestone2018accelnsdi}
+\bibfield{author}{\bibinfo{person}{Daniel Firestone}, \bibinfo{person}{Andrew
+  Putnam}, \bibinfo{person}{Sambhrama Mundkur}, \bibinfo{person}{Derek Chiou},
+  \bibinfo{person}{Alireza Dabagh}, \bibinfo{person}{Mike Andrewartha},
+  \bibinfo{person}{Hari Angepat}, \bibinfo{person}{Vivek Bhanu},
+  \bibinfo{person}{Adrian Caulfield}, \bibinfo{person}{Eric Chung},
+  {et~al\mbox{.}}} \bibinfo{year}{2018}\natexlab{}.
+\newblock \showarticletitle{Azure accelerated networking: Smartnics in the
+  public cloud}. In \bibinfo{booktitle}{\emph{15th $\{$USENIX$\}$ Symposium on
+  Networked Systems Design and Implementation ($\{$NSDI$\}$ 18)}}.
+  \bibinfo{pages}{51--66}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{He, Wang, Fu, Tan, Hua, Zhang, and Zheng}{He
+  et~al\mbox{.}}{2020}]%
+        {he2020masq}
+\bibfield{author}{\bibinfo{person}{Zhiqiang He}, \bibinfo{person}{Dongyang
+  Wang}, \bibinfo{person}{Binzhang Fu}, \bibinfo{person}{Kun Tan},
+  \bibinfo{person}{Bei Hua}, \bibinfo{person}{Zhi-Li Zhang}, {and}
+  \bibinfo{person}{Kai Zheng}.} \bibinfo{year}{2020}\natexlab{}.
+\newblock \showarticletitle{MasQ: RDMA for Virtual Private Cloud}. In
+  \bibinfo{booktitle}{\emph{Proceedings of the Annual conference of the ACM
+  Special Interest Group on Data Communication on the applications,
+  technologies, architectures, and protocols for computer communication}}.
+  \bibinfo{pages}{1--14}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Kim, Yu, Liu, Zhu, Padhye, Raindel, Guo,
+  Sekar, and Seshan}{Kim et~al\mbox{.}}{2019}]%
+        {kim2019freeflow}
+\bibfield{author}{\bibinfo{person}{Daehyeok Kim}, \bibinfo{person}{Tianlong
+  Yu}, \bibinfo{person}{Hongqiang~Harry Liu}, \bibinfo{person}{Yibo Zhu},
+  \bibinfo{person}{Jitu Padhye}, \bibinfo{person}{Shachar Raindel},
+  \bibinfo{person}{Chuanxiong Guo}, \bibinfo{person}{Vyas Sekar}, {and}
+  \bibinfo{person}{Srinivasan Seshan}.} \bibinfo{year}{2019}\natexlab{}.
+\newblock \showarticletitle{FreeFlow: Software-based Virtual $\{$RDMA$\}$
+  Networking for Containerized Clouds}. In \bibinfo{booktitle}{\emph{16th
+  $\{$USENIX$\}$ Symposium on Networked Systems Design and Implementation
+  ($\{$NSDI$\}$ 19)}}. \bibinfo{pages}{113--126}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Li, Cui, Wang, Bai, and Zhang}{Li
+  et~al\mbox{.}}{2019}]%
+        {li2019socksdirect}
+\bibfield{author}{\bibinfo{person}{Bojie Li}, \bibinfo{person}{Tianyi Cui},
+  \bibinfo{person}{Zibo Wang}, \bibinfo{person}{Wei Bai}, {and}
+  \bibinfo{person}{Lintao Zhang}.} \bibinfo{year}{2019}\natexlab{}.
+\newblock \showarticletitle{SocksDirect: Datacenter sockets can be fast and
+  compatible}.
+\newblock In \bibinfo{booktitle}{\emph{Proceedings of the ACM Special Interest
+  Group on Data Communication}}. \bibinfo{pages}{90--103}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Liu, Wu, and Panda}{Liu et~al\mbox{.}}{2004}]%
+        {mpi2004}
+\bibfield{author}{\bibinfo{person}{Jiuxing Liu}, \bibinfo{person}{Jiesheng Wu},
+  {and} \bibinfo{person}{Dhabaleswar~K Panda}.}
+  \bibinfo{year}{2004}\natexlab{}.
+\newblock \showarticletitle{High performance RDMA-based MPI implementation over
+  InfiniBand}.
+\newblock \bibinfo{journal}{\emph{International Journal of Parallel
+  Programming}} \bibinfo{volume}{32}, \bibinfo{number}{3}
+  (\bibinfo{year}{2004}), \bibinfo{pages}{167--198}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Pfefferle}{Pfefferle}{2014}]%
+        {pfefferle2014vverbs}
+\bibfield{author}{\bibinfo{person}{Jonas Pfefferle}.}
+  \bibinfo{year}{2014}\natexlab{}.
+\newblock \emph{\bibinfo{title}{vVerbs: a paravirtual subsystem for
+  RDMA-capable network interfaces}}.
+\newblock \bibinfo{thesistype}{Master's\ thesis}.
+  \bibinfo{school}{ETH-Z{\"u}rich}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Pfefferle, Stuedi, Trivedi, Metzler,
+  Koltsidas, and Gross}{Pfefferle et~al\mbox{.}}{2015}]%
+        {pfefferle2015hybrid}
+\bibfield{author}{\bibinfo{person}{Jonas Pfefferle}, \bibinfo{person}{Patrick
+  Stuedi}, \bibinfo{person}{Animesh Trivedi}, \bibinfo{person}{Bernard
+  Metzler}, \bibinfo{person}{Ionnis Koltsidas}, {and} \bibinfo{person}{Thomas~R
+  Gross}.} \bibinfo{year}{2015}\natexlab{}.
+\newblock \showarticletitle{A hybrid I/O virtualization framework for
+  RDMA-capable network interfaces}.
+\newblock \bibinfo{journal}{\emph{ACM SIGPLAN Notices}} \bibinfo{volume}{50},
+  \bibinfo{number}{7} (\bibinfo{year}{2015}), \bibinfo{pages}{17--30}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Wang, Fu, Lu, Tan, and Hua}{Wang
+  et~al\mbox{.}}{2019}]%
+        {wang2019vsocket}
+\bibfield{author}{\bibinfo{person}{Dongyang Wang}, \bibinfo{person}{Binzhang
+  Fu}, \bibinfo{person}{Gang Lu}, \bibinfo{person}{Kun Tan}, {and}
+  \bibinfo{person}{Bei Hua}.} \bibinfo{year}{2019}\natexlab{}.
+\newblock \showarticletitle{vSocket: virtual socket interface for RDMA in
+  public clouds}. In \bibinfo{booktitle}{\emph{Proceedings of the 15th ACM
+  SIGPLAN/SIGOPS International Conference on Virtual Execution Environments}}.
+  \bibinfo{pages}{179--192}.
+\newblock
+
 
 \end{thebibliography}

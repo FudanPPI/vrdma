@@ -27,7 +27,7 @@ The goal of the device driver is to support I/O process inside each guest. As sh
 
  For generality, As shown in in Figure~\ref{fig:interface-general}, the same design as virtual machines is adopted for containers: in I/O channel, the file-based shared queue is also used; in the synchronization mechanism, the same event notification mechanism is used. But remind the container does not fall into the monitor or inject interrupts during the synchronization.
 
-When there are multiple virtual machines or containers, if the files of each vRNIC are not isolated, they can be discovered by every container through scanning files. In order to solve this problem, we runs the virtual machine in a isolated container environment. Based on the container's mount namespace, we respectively place the shared files of each vRNIC in the dedicated directories and mounts each directory to the corresponding container(including containers running virtual machines). As a result, due to the isolation of the mount namespace, the shared files of each vRNIC in the virtualization layer are only visible to the used container or virtual machine.  
+For multiple containers and virtual machines, if the file in each vRNIC interface are not isolated, they can be discovered by every container through scanning files. In order to solve this problem, we runs the virtual machine in a isolated container environment. As shown in in Figure~\ref{fig:interface-isolate}, based on the container's mount namespace~\cite{mount-ns}, we respectively place the shared files of each vRNIC in the dedicated directories and mounts each directory to the corresponding container(including containers running virtual machines). As a result, due to the isolation of the mount namespace, the shared files of each vRNIC in the virtualization layer are only visible to the used container or virtual machine.  
 
 \begin{figure}[!ht]
 	\centering
@@ -51,7 +51,7 @@ The fact of zero-copy is that both processes have common availiable physical mem
 	\label{fig:zero-copy}
 \end{figure}
 
-However, in the virtual machine, due to the memory management mechanism of guest operating system, the virtual machine's physical memory of the RDMA resource may be not continuous, and the mapped memory area in vRNIC is not continuous. So, vRNIC can not map the virtual memory area as a virtual RDMA resource to RNIC. To solve this problem, the virtual memory remapping mechanism in user space is used. It remaps the discontinuous RDMA resource virtual memory area in vRNIC to the a block of continuous virtual memory, and the  sequence of mapped physical memory page must be unchanged.
+However, in the virtual machine, due to the memory management mechanism of guest operating system, the virtual machine's physical memory of the RDMA resource may be not continuous, and the mapped memory area in vRNIC is not continuous like Figure~\ref{fig:zero-copy}. So, vRNIC can not map the virtual memory area as a virtual RDMA resource to RNIC. To solve this problem, the virtual memory remapping mechanism in user space is used. It remaps the discontinuous RDMA resource virtual memory area in vRNIC to the a block of continuous virtual memory, and the  sequence of mapped physical memory page must be unchanged.
 
 (2) Bypassing virtual layer optimization
 Pressing the doorbell is necessary in RDMA data path to drive RNIC. In vRNIC, the doorbell that is mapped to VF, still need to be mapped to RDMA application tp meet bypassing. Otherwise, the pressing command needs be forward to vRNIC and thats imports apperant latency in data path.
@@ -65,5 +65,5 @@ However, the RDMA application and the vRNIC belong to two different processes on
 	\label{fig:by-pass}
 \end{figure}
 
-Therefore, when an RDMA application creates a RDMA context, it sends a request to the vRNIC at first. Under the supervision of virtual layer, vRNIC forwared to application with the corresponding physical address of the doorbell, commonly the physical page number. After that, the application maps its doorbell virtual address to the physical page in its own process, that needs the host kernel and hypervisor if the application in virtual machines.
+Therefore, when an RDMA application creates a RDMA context, as shown in Figure~\ref{fig:by-pass}, it sends a request to the vRNIC at first. Under the supervision of virtual layer, vRNIC forwared to application with the corresponding physical address of the doorbell, commonly the physical page number. After that, the application maps its doorbell virtual address to the physical page in its own process, that needs the host kernel and hypervisor if the application in virtual machines.
 
