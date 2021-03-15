@@ -1,0 +1,18 @@
+\section{Related Work}
+This section introduces related works about network virtualizations, including traditional network and RDMA.
+
+\subsection{Traditional Network Virtualization}
+NIC(Virtual network cards) and virtual network bridges is important to traditional network virtualization. When two virtual instances communicate across servers, the traffic of vNIC will be forwarded to the physical network card through the virtual network bridge, and then through the remote physical network card and virtual network bridge to reach the destination virtual instance.
+
+vNICs are commonly implemented by software emulation. The solutions about that can be divided into full virtualization, paravirtualization and container virtual network card. They can all be configured with virtual IP addresses and send/receive data packets as physical network cards. Virtual network bridges connect virtual network cards and physical network cards by routing forwarding, tunnel networking, and other methods. In a word, virtual network is constructed through the unified management of vNICs and virtual network bridges.
+
+\subsection{RDMA Virtualization}
+The solutions of RDMA virtualization including hardware-based  and software-based:
+
+The basic solution is SR-IOV in hardware-based virtualization of RDMA. Its virtual layer is located in the hardware, so it is high-performance close to native RDMA. However, SR-IOV utilzie the limited hardware resouces to virtualize multiple VFs for different VMs or containers and that makes SR-IOV unscabale. Finnally, SR-IOV' virtual interfaces are located in hardware, so it lacks portability and other manageability without software virtual layer. 
+
+In software virtualization, existing solutions treat virtual machines and containers differently. For containers, FreeFlowl~\cite{kim2019freeflow} forwards all RDMA commands to the virtual layer, and that is ineffective because of losing RDMA's kernel by-pass. For virtual machines, HyV~\cite{pfefferle2015hybrid} ~\cite{pfefferle2014vverbs} avoids forwarding overhead by mapping RDMA resources, but lacks the management of virtual RDMA networks; although MasQ~\cite{he2020masq} makes up for this problem, its virtual layer is located in kernel space. Extending MasQ to the container environment will lose lightweight  management in user space for containers.
+
+
+
+
