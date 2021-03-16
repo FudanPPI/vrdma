@@ -2,7 +2,7 @@
 %%% Do NOT edit. File created by BibTeX with style
 %%% ACM-Reference-Format-Journals [18-Jan-2012].
 
-\begin{thebibliography}{21}
+\begin{thebibliography}{15}
 
 %%% ====================================================================
 %%% NOTE TO THE USER: you can override these defaults by providing
@@ -59,6 +59,17 @@ Retrieved March 13, 2021 from \tempurl}
 Retrieved March 13, 2021 from \tempurl}
 
 
+\bibitem[\protect\citeauthoryear{??}{aws}{2021}]%
+        {aws-hpc}
+ \bibinfo{year}{2021}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{AWS HPC Cloud}}.
+\newblock
+\urldef\tempurl%
+\url{https://aws.amazon.com/cn/hpc/}
+\showURL{%
+Retrieved March 13, 2021 from \tempurl}
+
+
 \bibitem[\protect\citeauthoryear{??}{doc}{2021}]%
         {docker}
  \bibinfo{year}{2021}\natexlab{}.
@@ -66,17 +77,6 @@ Retrieved March 13, 2021 from \tempurl}
 \newblock
 \urldef\tempurl%
 \url{https://www.docker.com/}
-\showURL{%
-Retrieved March 13, 2021 from \tempurl}
-
-
-\bibitem[\protect\citeauthoryear{??}{kub}{2021}]%
-        {kubervirt}
- \bibinfo{year}{2021}\natexlab{}.
-\newblock \bibinfo{booktitle}{\emph{KubeVirt}}.
-\newblock
-\urldef\tempurl%
-\url{https://kubevirt.io/}
 \showURL{%
 Retrieved March 13, 2021 from \tempurl}
 
@@ -124,66 +124,6 @@ Retrieved March 13, 2021 from \tempurl}
 \url{https://www.qemu.org/}
 \showURL{%
 Retrieved March 13, 2021 from \tempurl}
-
-
-\bibitem[\protect\citeauthoryear{??}{had}{2021}]%
-        {hadoop-rdma}
- \bibinfo{year}{2021}\natexlab{}.
-\newblock \bibinfo{booktitle}{\emph{RDMA-based Apache Hadoop}}.
-\newblock
-\urldef\tempurl%
-\url{http://hibd.cse.ohio-state.edu/#hadoop}
-\showURL{%
-Retrieved March 13, 2021 from \tempurl}
-
-
-\bibitem[\protect\citeauthoryear{??}{spa}{2021}]%
-        {spark-rdma}
- \bibinfo{year}{2021}\natexlab{}.
-\newblock \bibinfo{booktitle}{\emph{RDMA-based Apache Spark}}.
-\newblock
-\urldef\tempurl%
-\url{http://hibd.cse.ohio-state.edu/#spark}
-\showURL{%
-Retrieved March 13, 2021 from \tempurl}
-
-
-\bibitem[\protect\citeauthoryear{??}{ope}{2021}]%
-        {openshift}
- \bibinfo{year}{2021}\natexlab{}.
-\newblock \bibinfo{booktitle}{\emph{RedHat OpenShift}}.
-\newblock
-\urldef\tempurl%
-\url{https://www.openshift.com/}
-\showURL{%
-Retrieved March 13, 2021 from \tempurl}
-
-
-\bibitem[\protect\citeauthoryear{??}{vsp}{2021}]%
-        {vsphere}
- \bibinfo{year}{2021}\natexlab{}.
-\newblock \bibinfo{booktitle}{\emph{VMWare vSphere}}.
-\newblock
-\urldef\tempurl%
-\url{https://www.vmware.com/products/vsphere.html}
-\showURL{%
-Retrieved March 13, 2021 from \tempurl}
-
-
-\bibitem[\protect\citeauthoryear{Abadi, Barham, Chen, Chen, Davis, Dean, Devin,
-  Ghemawat, Irving, Isard, et~al\mbox{.}}{Abadi et~al\mbox{.}}{2016}]%
-        {abadi2016tensorflow}
-\bibfield{author}{\bibinfo{person}{Mart{\'\i}n Abadi}, \bibinfo{person}{Paul
-  Barham}, \bibinfo{person}{Jianmin Chen}, \bibinfo{person}{Zhifeng Chen},
-  \bibinfo{person}{Andy Davis}, \bibinfo{person}{Jeffrey Dean},
-  \bibinfo{person}{Matthieu Devin}, \bibinfo{person}{Sanjay Ghemawat},
-  \bibinfo{person}{Geoffrey Irving}, \bibinfo{person}{Michael Isard},
-  {et~al\mbox{.}}} \bibinfo{year}{2016}\natexlab{}.
-\newblock \showarticletitle{Tensorflow: A system for large-scale machine
-  learning}. In \bibinfo{booktitle}{\emph{12th $\{$USENIX$\}$ symposium on
-  operating systems design and implementation ($\{$OSDI$\}$ 16)}}.
-  \bibinfo{pages}{265--283}.
-\newblock
 
 
 \bibitem[\protect\citeauthoryear{Firestone, Putnam, Mundkur, Chiou, Dabagh,
@@ -243,19 +183,6 @@ Retrieved March 13, 2021 from \tempurl}
   compatible}.
 \newblock In \bibinfo{booktitle}{\emph{Proceedings of the ACM Special Interest
   Group on Data Communication}}. \bibinfo{pages}{90--103}.
-\newblock
-
-
-\bibitem[\protect\citeauthoryear{Liu, Wu, and Panda}{Liu et~al\mbox{.}}{2004}]%
-        {mpi2004}
-\bibfield{author}{\bibinfo{person}{Jiuxing Liu}, \bibinfo{person}{Jiesheng Wu},
-  {and} \bibinfo{person}{Dhabaleswar~K Panda}.}
-  \bibinfo{year}{2004}\natexlab{}.
-\newblock \showarticletitle{High performance RDMA-based MPI implementation over
-  InfiniBand}.
-\newblock \bibinfo{journal}{\emph{International Journal of Parallel
-  Programming}} \bibinfo{volume}{32}, \bibinfo{number}{3}
-  (\bibinfo{year}{2004}), \bibinfo{pages}{167--198}.
 \newblock
 
 

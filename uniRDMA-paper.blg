@@ -7,24 +7,12 @@ Reallocated singl_function (elt_size=4) to 100 items from 50.
 Reallocated wiz_functions (elt_size=4) to 6000 items from 3000.
 Database file #1: reference.bib
 Reallocated singl_function (elt_size=4) to 100 items from 50.
-Warning--no key, author in spark-rdma
-Warning--no author, editor, organization, or key in spark-rdma
-Warning--to sort, need author or key in spark-rdma
-Warning--no key, author in hadoop-rdma
-Warning--no author, editor, organization, or key in hadoop-rdma
-Warning--to sort, need author or key in hadoop-rdma
+Warning--no key, author in aws-hpc
+Warning--no author, editor, organization, or key in aws-hpc
+Warning--to sort, need author or key in aws-hpc
 Warning--no key, author in sr-iov
 Warning--no author, editor, organization, or key in sr-iov
 Warning--to sort, need author or key in sr-iov
-Warning--no key, author in kubervirt
-Warning--no author, editor, organization, or key in kubervirt
-Warning--to sort, need author or key in kubervirt
-Warning--no key, author in vsphere
-Warning--no author, editor, organization, or key in vsphere
-Warning--to sort, need author or key in vsphere
-Warning--no key, author in openshift
-Warning--no author, editor, organization, or key in openshift
-Warning--to sort, need author or key in openshift
 Warning--no key, author in ofed-manual
 Warning--no author, editor, organization, or key in ofed-manual
 Warning--to sort, need author or key in ofed-manual
@@ -46,12 +34,10 @@ Warning--to sort, need author or key in docker
 Reallocated glb_str_ptr (elt_size=4) to 20 items from 10.
 Reallocated global_strs (elt_size=200001) to 20 items from 10.
 Reallocated glb_str_end (elt_size=4) to 20 items from 10.
+Warning--no key, author in aws-hpc
+Warning--no key, author in aws-hpc
 Warning--no key, author in docker
 Warning--no key, author in docker
-Warning--no key, author in hadoop-rdma
-Warning--no key, author in hadoop-rdma
-Warning--no key, author in kubervirt
-Warning--no key, author in kubervirt
 Warning--no key, author in kvm
 Warning--no key, author in kvm
 Warning--no key, author in mlnx-ofed
@@ -60,16 +46,10 @@ Warning--no key, author in mount-ns
 Warning--no key, author in mount-ns
 Warning--no key, author in ofed-manual
 Warning--no key, author in ofed-manual
-Warning--no key, author in openshift
-Warning--no key, author in openshift
 Warning--no key, author in qemu
 Warning--no key, author in qemu
-Warning--no key, author in spark-rdma
-Warning--no key, author in spark-rdma
 Warning--no key, author in sr-iov
 Warning--no key, author in sr-iov
-Warning--no key, author in vsphere
-Warning--no key, author in vsphere
 Reallocated singl_function (elt_size=4) to 100 items from 50.
 Warning--no key, author in ofed-manual
 Warning--no author, editor, organization, or key in ofed-manual
@@ -79,14 +59,14 @@ Warning--no key, author in mount-ns
 Warning--no author, editor, organization, or key in mount-ns
 Warning--empty organization in mount-ns
 Warning--empty organization in mount-ns
+Warning--no key, author in aws-hpc
+Warning--no author, editor, organization, or key in aws-hpc
+Warning--empty organization in aws-hpc
+Warning--empty organization in aws-hpc
 Warning--no key, author in docker
 Warning--no author, editor, organization, or key in docker
 Warning--empty organization in docker
 Warning--empty organization in docker
-Warning--no key, author in kubervirt
-Warning--no author, editor, organization, or key in kubervirt
-Warning--empty organization in kubervirt
-Warning--empty organization in kubervirt
 Warning--no key, author in kvm
 Warning--no author, editor, organization, or key in kvm
 Warning--empty organization in kvm
@@ -103,24 +83,6 @@ Warning--no key, author in qemu
 Warning--no author, editor, organization, or key in qemu
 Warning--empty organization in qemu
 Warning--empty organization in qemu
-Warning--no key, author in hadoop-rdma
-Warning--no author, editor, organization, or key in hadoop-rdma
-Warning--empty organization in hadoop-rdma
-Warning--empty organization in hadoop-rdma
-Warning--no key, author in spark-rdma
-Warning--no author, editor, organization, or key in spark-rdma
-Warning--empty organization in spark-rdma
-Warning--empty organization in spark-rdma
-Warning--no key, author in openshift
-Warning--no author, editor, organization, or key in openshift
-Warning--empty organization in openshift
-Warning--empty organization in openshift
-Warning--no key, author in vsphere
-Warning--no author, editor, organization, or key in vsphere
-Warning--empty organization in vsphere
-Warning--empty organization in vsphere
-Warning--empty publisher in abadi2016tensorflow
-Warning--empty address in abadi2016tensorflow
 Warning--empty publisher in firestone2018accelnsdi
 Warning--empty address in firestone2018accelnsdi
 Warning--empty publisher in he2020masq
@@ -131,45 +93,45 @@ Warning--empty publisher in li2019socksdirect
 Warning--empty address in li2019socksdirect
 Warning--empty publisher in wang2019vsocket
 Warning--empty address in wang2019vsocket
-You've used 21 entries,
+You've used 15 entries,
             5959 wiz_defined-function locations,
-            1421 strings with 18033 characters,
-and the built_in function-call counts, 21239 in all, are:
-= -- 2140
-> -- 711
+            1395 strings with 17222 characters,
+and the built_in function-call counts, 15372 in all, are:
+= -- 1520
+> -- 541
 < -- 0
-+ -- 255
-- -- 236
-* -- 1689
-:= -- 1911
-add.period$ -- 83
-call.type$ -- 21
-change.case$ -- 140
-chr.to.int$ -- 21
-cite$ -- 189
-duplicate$ -- 2037
-empty$ -- 1451
-format.name$ -- 268
-if$ -- 4914
++ -- 193
+- -- 180
+* -- 1226
+:= -- 1423
+add.period$ -- 61
+call.type$ -- 15
+change.case$ -- 103
+chr.to.int$ -- 15
+cite$ -- 129
+duplicate$ -- 1462
+empty$ -- 1039
+format.name$ -- 204
+if$ -- 3522
 int.to.chr$ -- 2
 int.to.str$ -- 1
-missing$ -- 34
-newline$ -- 239
-num.names$ -- 72
-pop$ -- 957
+missing$ -- 25
+newline$ -- 180
+num.names$ -- 56
+pop$ -- 685
 preamble$ -- 1
-purify$ -- 329
+purify$ -- 238
 quote$ -- 0
-skip$ -- 743
+skip$ -- 535
 stack$ -- 0
-substring$ -- 1428
-swap$ -- 190
+substring$ -- 1023
+swap$ -- 135
 text.length$ -- 0
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 602
-warning$ -- 120
-while$ -- 64
+type$ -- 436
+warning$ -- 82
+while$ -- 50
 width$ -- 0
-write$ -- 391
-(There were 120 warnings)
+write$ -- 290
+(There were 82 warnings)

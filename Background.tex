@@ -2,20 +2,14 @@
 This section introduces the background about RDMA virtualization, including hybrid virtual environment and the principles and working mechanisms of RDMA networks.
 
 \subsection{Hybrid Virtual Environment}	
-Both containers and virtual machines have been a widley used in datacenters. Virtual machines have strong isolation and containers are lightweight and less-performance-loss. Before containers, virtual machines are the base of cloud computing. Todays, applications or microservices is both complicated and dynamic, not all applications are suit to deployed in containers instead of virtual machines. Therefore, hybrid virtual machine and container are common in datacenters. As a result, unified platforms for hybrid virtual environments is requirement for easier management. Nowadays, there are lots of platform catering to this trend. For exmaples, KubeVirt~\cite{kubervirt}, VMWare vSphere~\cite{vsphere} and RedHat OpenShift~\cite{openshift}.
+Both containers and virtual machines have been a widley used in supercomputing. Virtual machines are hardware-level virtualization which need emulate whole virtual hardware environments for guest operation system with hypervisor. So, applications in VMs is securate due to guest OS isolation, but needs more transform overhead. Hypervisor is the virtual layer which is in host kernel space.Containers are OS-level virtualization which isolate anc control the kernel resources, such as network and file system. So, containers have less loss in performance. Containers are managemented by container engeins which are located in user-space for lightweight and portability.
 
 \subsection{RDMA network}
-As a high-performance network, RDMA is currently widely used in supercomputing, artificial intelligence, and large-scale data processing. For examples, TensorFlow, Spark, and Hadoop all have supported RDMA. With the help of hardware protocol stack and zero copy technology, RDMA network card can bypass the kernel to read and write remote memory data, without the participation of remote CPU. Therefore, RDMA has high throughput, low latency and low CPU load.
+RDMA(Remote Direct Memory Access) has hardware protocol stack and zero copy technology, so applications can bypass the kernel to read and write remote memory data, without the participation of remote CPU. As a result, RDMA has high throughput, low latency and low CPU load.
 
-Applications need to use Verbs interface when using RDMA. The RDMA  communication is based on Queue Pair (QP). The application writes the RDMA work request to the QP, and then ``press''  the doorbell register in RNIC, and the RNIC's hardware processor will execute the work request in the QP to forwared data. For application, the entire operator is in the user space without the kernel.
+Applications need to use Verbs interface when using RDMA. RDMA is seperate control path and data path. The former is the managemet about RDMA context, mainly including lots of RDMA resources, such as Queue Pair (QP), and mr, Memory Reigions). the operations like ibv\_create\_qp, reg\_mr; The latter is the usage of RDMA context,  which is the data commands like ibv\_post\_send.and RDMA support two communication modes.
 
-The QP queue consists of a pair of Send Queue (SQ) and Receive Queue (RQ), which are respectively responsible for the sending and receiving work requests during RDMA communication. After the RDMA connection is established, RDMA support two communication modes:
-
-\begin{itemize}
-\item {\verb|Bilateral operation|}: Two endpoints of RDMA connection execute send or recv respectively. For details, each writes the sending or receiving work request into the corresponding SQ or RQ queue. Similar to the traditional TCP network, the sender's RNIC will transmit data to the receiver.
-
-\item {\verb|Unilateral operation|}: Only one endpoints of the RDMA connection needs to perform ``send''. The RDMA application writes the sending work requests to the SQ queue of QP, and RNIC read or write the remote memory according to the request without the participation of the remote CPU.
-\end{itemize}
+In a RDMA workflow, the communication is based on Queue Pair (QP). The application writes the RDMA work request to the QP, and then ``press''  the doorbell register in RNIC, and the RNIC's hardware processor will execute the work request in the QP to forwared data. For application, the entire operator is in the user space without the kernel.
 
 However, RDMA virtualization in hybrid virtual environments is still a problem. Beacuause uncenterlized RDMA virtual layer and respective interfaces for containers and virtual machines in exsiting solutions. 
 
