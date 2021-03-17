@@ -1,11 +1,11 @@
 \section{Background}
-This section introduces the background about RDMA virtualization, including hybrid virtual environment and the principles and working mechanisms of RDMA networks.
+This section introduces the background about RDMA virtualization in hybrid virtual environmentf for supercomputing.
 
-\subsection{Hybrid Virtual Environment}	
-Both containers and virtual machines have been a widley used in supercomputing. Virtual machines are hardware-level virtualization which need emulate whole virtual hardware environments for guest operation system with hypervisor. So, applications in VMs is securate due to guest OS isolation, but needs more transform overhead. Hypervisor is the virtual layer which is in host kernel space.Containers are OS-level virtualization which isolate anc control the kernel resources, such as network and file system. So, containers have less loss in performance. Containers are managemented by container engeins which are located in user-space for lightweight and portability.
+\textbf{Supercomputing}: Supercomputing is high-performance for data-intensive or compute-intensive tasks, e.g. deep learning training and big data processing. To meet the performance demands, supercomputing are generally constructed in a cluster which includes multiple machine instances. So, there are urge demands for network between instances in supercomputing.RDMA is a popular high-performance network in supercomputing. Meanwhile, to utilize the server resources, supercomputing are going cloud, especially hybrid virtual environments. So, RDMA also needs to be virtualized in supercomputing cloud.
 
-\subsection{RDMA network}
-RDMA(Remote Direct Memory Access) has hardware protocol stack and zero copy technology, so applications can bypass the kernel to read and write remote memory data, without the participation of remote CPU. As a result, RDMA has high throughput, low latency and low CPU load.
+\textbf{Hybrid Virtual Environment}: Both containers and virtual machines have been a widley used in supercomputing. Virtual machines are hardware-level virtualization which need emulate whole virtual hardware environments for guest operation system with hypervisor. So, applications in VMs is securate due to guest OS isolation, but needs more transform overhead. Hypervisor is the virtual layer which is in host kernel space.Containers are OS-level virtualization which isolate anc control the kernel resources, such as network and file system. So, containers have less loss in performance. Containers are managemented by container engeins which are located in user-space for lightweight and portability.
+
+\textbf{RDMA}: RDMA(Remote Direct Memory Access) has hardware protocol stack and zero copy technology, so applications can bypass the kernel to read and write remote memory data, without the participation of remote CPU. As a result, RDMA has high throughput, low latency and low CPU load.
 
 Applications need to use Verbs interface when using RDMA. RDMA is seperate control path and data path. The former is the managemet about RDMA context, mainly including lots of RDMA resources, such as Queue Pair (QP), and mr, Memory Reigions). the operations like ibv\_create\_qp, reg\_mr; The latter is the usage of RDMA context,  which is the data commands like ibv\_post\_send.and RDMA support two communication modes.
 
