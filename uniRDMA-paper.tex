@@ -22,7 +22,7 @@
 %% in the same archive or directory.)
 %%
 %% The first command in your LaTeX source must be the \documentclass command.
-\documentclass[sigconf, anonymous, review]{acmart}
+\documentclass[sigconf,  review]{acmart}
 \usepackage{multirow}
 
 %%
@@ -211,6 +211,7 @@
 %% Of note is the shared affiliation of the first two authors, and the
 %% "authornote" and "authornotemark" commands
 %% used to denote shared contribution to the research.
+\iffalse 
 \author{Ben Trovato}
 \authornote{Both authors contributed equally to this research.}
 \email{trovato@corporation.com}
@@ -226,6 +227,7 @@
   \country{USA}
   \postcode{43017-6221}
 }
+\fi
 
 
 %%
