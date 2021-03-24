@@ -1,10 +1,9 @@
 \section{Related Work}
-% 体现创新性，对比已有的工作
-This section introduces related works about network virtualizations, including traditional network and RDMA.
-
-% 传统网络虚拟化，简单介绍
-\textbf{Traditional Network Virtualization}: Network virtualization is necessary in cloud for both containers and VMs. The network virtualization technologies affects the performance and manageablility. For traditional TCP/IP network, there are vNICs(virtual network interface cards) and virtual switchs are virtualized.  When two virtual instances communicate across servers, the traffic of vNIC will be forwarded to the physical network card through the virtual network bridge, and then through the remote physical network card and virtual network bridge to reach the destination virtual instance.
 
 % 对比已有工作与uniRDMA
-\textbf{RDMA Virtualization}: The solutions of RDMA virtualization including hardware-based and software-based. The basic solution is SR-IOV in hardware-based virtualization of RDMA. Its virtual layer is located in the hardware and are limited by hardware resources. In uniRDMA, the ioslation of SR-IOV are utilized and the unscable problems are soleved by dynamaic vRNIC mapping. In software virtualization, existing solutions donnot suit for hybrid virtual environments. FreeFlow's forward mechanism is different with uniRDMA. Its data path needs extra CPU to reduce the forward latency. Hyv and MasQ are not used in containers, but are similar with us because all have achieved zero-copy and by-pass by mapping all resources. Even though, the implemention of mapping are different at enssentional for two reasons: First, HyV and MasQ's mapping is in the same process and uniRDMA is inter-process; Second, HyV and MasQ's mapping management in kernel-space and our in user-space for more managablity and lightweight.
+\textbf{RDMA Virtualization}: The solutions of RDMA virtualization including hardware-based and software-based.
+
+The basic solution is SR-IOV in hardware-based virtualization of RDMA. Its virtual layer is located in the hardware and are limited by hardware resources. In uniRDMA, the ioslation of SR-IOV are utilized and the unscable problems are soleved by dynamaic vRNIC mapping. 
+
+In software virtualization, existing solutions donnot suit for hybrid virtual environments. FreeFlow's forward mechanism is different with uniRDMA. Its data path needs extra CPU to reduce the forward latency. Hyv and MasQ are not used in containers, but are similar with us because all have achieved zero-copy and by-pass by mapping all resources. Even though, the implemention of mapping are different at enssentional for two reasons: First, HyV and MasQ's mapping is in the same process and uniRDMA is inter-process; Second, HyV and MasQ's mapping management in kernel-space and our in user-space for more managablity and lightweight.
 

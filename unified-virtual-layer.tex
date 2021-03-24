@@ -1,6 +1,6 @@
 
 \section{Unified Virtual Layer}
- The main work of uniRDMA virtual layer is including vRNIC virtualization, vRNIC mapping  and virtual RDMA network management.The primary challenges are to make both isoaleted and high-performance for different vRNICs in the same virtual layer. 
+The main work of uniRDMA virtual layer is including vRNIC virtualization, vRNIC mapping  and virtual RDMA network management.The primary challenges are to make both isoaleted and high-performance for different vRNICs in the same virtual layer. 
 	
 \subsection{vRNIC Virtualization}
 The first problem is which space the virtual layer(including vRNICs) is located: kernel space or user space. Because container applications and virtual machines are both host processes, they can interact with the host kernel or other host processes. In addition, there are both user-level and kernel-level RNIC interface. Therefore, both kernel space and user space can realize the unified RDMA virtual layer. However, user space layer is friendly to containers because of lightweight and in favour of secure and flexible management. Moreover, software development in user space is less difficult, more portable and compatible. Therefore, uniRDMA chooses a user space virtual layer.

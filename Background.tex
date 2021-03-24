@@ -5,8 +5,8 @@
 Supercomputing is high-performance for data-intensive or compute-intensive tasks, e.g. deep learning training and big data processing. To meet the performance demands, supercomputing are generally constructed in a cluster which includes multiple machine instances. So, there are urge demands for network between instances in supercomputing. RDMA is a popular high-performance network in supercomputing. Meanwhile, to utilize the server resources, supercomputing are going cloud, especially hybrid virtual environments.
 
 % Container and VM
-% 虚拟机和容器的差异导致虚拟化时的虚拟层的位置通常不同
-Virtualization for VMs and containers are in different spaces because of their characteristics. Virtual machines are hardware-level virtualization which need emulate whole virtual hardware environments for guest operation system with hypervisor(Kernel-space) So, applications in VMs is securate due to guest OS isolation, but needs more transform overhead. Containers are OS-level virtualization which isolate anc control the kernel resources, such as network and file system. So, containers have less loss in performance. Containers are managemented by container engeins which are located in user-space for lightweight and portability. So, when virtualization for VMs, the virtual layer is commonly in OS(hypervisor) and is in user-space for containers.
+% 虚拟机和容器的差异导致虚拟化时虚拟层的位置通常不同
+Virtualization for VMs and containers are in different spaces because of their characteristics. VMs need emulate whole virtual hardware environments for guest operation system with hypervisor(Kernel-space). So, applications in VMs is isolated by guest OS with more security but higher overhead. Containers are shared with the host OS but with runtime isolation. So, containers have low overhead and fast boot-up time. For applications, the abstracion of VMs includs own kernel space and containers only includes own user space with shared host kernel space.
 
 % RDMA： 
 % RDMA网卡是控制和数据路径分离， RDMA网卡内部构造
