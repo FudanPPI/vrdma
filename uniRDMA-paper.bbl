@@ -2,7 +2,7 @@
 %%% Do NOT edit. File created by BibTeX with style
 %%% ACM-Reference-Format-Journals [18-Jan-2012].
 
-\begin{thebibliography}{21}
+\begin{thebibliography}{22}
 
 %%% ====================================================================
 %%% NOTE TO THE USER: you can override these defaults by providing
@@ -55,6 +55,17 @@ Retrieved March 13, 2021 from \tempurl}
 \newblock
 \urldef\tempurl%
 \url{https://man7.org/linux/man-pages/man7/mount_namespaces.7.html}
+\showURL{%
+Retrieved March 13, 2021 from \tempurl}
+
+
+\bibitem[\protect\citeauthoryear{??}{aws}{2021}]%
+        {aws-hpc}
+ \bibinfo{year}{2021}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{AWS HPC Cloud}}.
+\newblock
+\urldef\tempurl%
+\url{https://aws.amazon.com/cn/hpc/}
 \showURL{%
 Retrieved March 13, 2021 from \tempurl}
 
