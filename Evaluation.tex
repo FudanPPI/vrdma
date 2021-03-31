@@ -17,10 +17,10 @@ All experiments are carried out on two servers. The settings mainly include thre
 		% \multicolumn{2}{c|}{Flag}
 		\multicolumn{2}{c|}{Parameters} & Settings\\ \hline
 		\multirow{7}{*}{Server} 
-		& CPU &  \tabincell{l}{Four Intel Xeon E7-4850 \\  v4 16-core CPUs } \\ \cline{2-3}
+		& CPU &  \tabincell{l}{Four Intel Xeon \\E7-4850 v4 \\16-core CPUs } \\ \cline{2-3}
 		& Memory & 1 TiB DDR4/DDR3 \\  \cline{2-3}
 		& Kernel & CentOS 7.4.1708 \\  \cline{2-3}
-		& Physical RNIC & \tabincell{l}{Mellanox ConnectX-3 \\ 56 Gb/s}\\  \cline{2-3}
+		& Physical RNIC & \tabincell{l}{Mellanox \\ ConnectX-3 56 Gb/s}\\  \cline{2-3}
 		& RDMA Driver &	\tabincell{l}{Mellanox OFED \\4.4-2.0.7.0} \\  \cline{2-3}
 		& Hypervisor & QEMU 5.1.50 \\ \cline{2-3}
 		& Container Engine & Docker 18.06.1-ce \\ \hline
@@ -101,7 +101,7 @@ The worth of RDMA is mainly about its optimized performance in real-world applic
 
 In this paper, the node scale of the computational graph in Graph-500 is set to 26, and the ratio of edges to points is set to the default parameter of 16. The constructed graph has a total of 2\^25 vertices, with 2\^29 edges, the entire graph occupies approximately around 16GB. When testing BFS and SSP, 16 MPI processes are scattered and executed on two nodes in turn, and the average value is taken according to the results of 12 tests. The data obtained is shown in Table Figure~\ref{fig:graph-500} (because there are core dump problems when using FreeFlow for Graph-500, the corresponding data is lacking).
 
-As shown in Figure~\ref{fig:graph-500},  the performance of uniRDMA is close to native RDMA. Beacause uniRDMA bypasses the kernel and virtualization layer in the data path, and there is no  forwarding latency.
+As shown in Figure~\ref{fig:graph-500},  the performance of uniRDMA is close to native RDMA. Beacause uniRDMA bypasses the kernel and virtualization layer in the data path, and there is no forwarding latency.
 
 \begin{figure}[!ht]
 	\centering
@@ -109,3 +109,5 @@ As shown in Figure~\ref{fig:graph-500},  the performance of uniRDMA is close to 
 	\caption{The Performance of Graph-500}
 	\label{fig:graph-500}
 \end{figure}
+
+(2)Spark-RDMA: It is a classical big data processing framework for distributed computing. Based on Spark-RDMA (v0.9.5), we run two tasks: GroupBy and SortBy. For each task, two Spark processes are run on two servers. At the same time, the number of cores used is limited to 8 and the memory is 32GB. There are 8 mappers and 8 reducers for 262144 key-value pairs of 2KB. At last, we run 12 times for each task to get the avarage execution time.
