@@ -3,7 +3,6 @@
 % 对比已有工作与uniRDMA
 \textbf{RDMA Virtualization}: The solutions of RDMA virtualization including hardware-based and software-based.
 
-The basic solution is SR-IOV in hardware-based virtualization of RDMA. Its virtual layer is located in the hardware and are limited by hardware resources. In uniRDMA, the ioslation of SR-IOV are utilized and the unscable problems are soleved by dynamaic vRNIC mapping. 
+The basic solution is SR-IOV in hardware-based virtualization of RDMA. Its virtual layer is in the hardware and are limited by hardware resources. In uniRDMA, the isolation of SR-IOV are utilized and the unscalable problems are solved by dynamic vRNIC mapping. 
 
-In software virtualization, existing solutions donnot suit for hybrid virtual environments. FreeFlow's forward mechanism is different with uniRDMA. Its data path needs extra CPU to reduce the forward latency. Hyv and MasQ are not used in containers, but are similar with us because all have achieved zero-copy and by-pass by mapping all resources. Even though, the implemention of mapping are different at enssentional for two reasons: First, HyV and MasQ's mapping is in the same process and uniRDMA is inter-process; Second, HyV and MasQ's mapping management in kernel-space and our in user-space for more managablity and lightweight.
-
+In software virtualization, existing solutions don’t suit for hybrid virtual environments. FreeFlow's forward mechanism is different with uniRDMA. Its data path needs extra CPU to reduce the forward latency. HyV and MasQ are not used in containers, but are similar with us because all have achieved zero-copy and by-pass by mapping all resources. Even though, the implementation of mapping are different at essential for two reasons: First, HyV and MasQ's mapping is in the same process and uniRDMA is inter-process; Second, HyV and MasQ's mapping management in kernel-space and our in user-space for more manageability and lightweight.
