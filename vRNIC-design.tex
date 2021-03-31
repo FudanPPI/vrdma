@@ -1,0 +1,103 @@
+\section{vRNIC Design}
+In this section, we introduce the detail design for uniRDMA, including vRNIC virtualization and mapping, vRNIC driver and some optimizations for performance.
+
+\subsection{vRNIC Virtualization and Mapping}
+% vRNIC　设计空间探讨
+The first problem is which space vRNICs are located: host's kernel-space or host's user-space. We found that both kernel-space and user-space are feasible to construct vRNICs, because container applications and VMs are both host processes and can interact with each space of host. However, compared to kernel-space, there are multiple advantages for vRNICs in user-space, such as minimal attack surface, flexible management and independent on RDMA kernel drivers. Thus, we choose the user-space for vRNIC virtualization.
+
+We find that RDMA resources (e.g. QP, MR or DoorBells) are the key roles in whole RDMA communication. In control path, the application creates queue instances such as QP, and registers memory regions (MRs) in host memory; In data path, the application writes DoorBell to notify RNIC to deal with WQE in QP and transform data in MRs. Thus, vRNIC virtualization is mainly about how to construct the virtual RDMA resources to provide complete RDMA communication. 
+
+Based on above analysis, we summarize that RNIC has two kinds of hardware properties about theses RDMA resources, namely static property and dynamic property:
+
+For static properties, since RDMA sends and receives messages based on QPs, MRs and other RDMA resources, it can be abstracted that the RDMA NIC has the following buffers inside:
+
+\begin{itemize}
+	\item {\verb|Queue Buffer|}: storing information of queue instances, such as QP number, QP state and CQ number. The network card uses the information to read and write work requests, establish connections with remote QPs, etc.  
+	\item {\verb|Data Buffer|}: storing the information of registered memory regions, such as page table, memory key, etc. The network card uses the information to access local or remote memory for data transform.  
+	\item {\verb|Doorbell Buffer|}: including multiple doorbell registers. The network card uses it to accept user commands and notify the internal hardware processor to perform DMA, processing and forwarding. 
+\end{itemize}
+
+For dynamic attributes, Therefore, the state of RDMA resources are dynamic in control path and data path. Control path includes the creation and destruction of RDMA resources. RDMA resources or information in buffer are always changed. For example, RNIC records the QP number when QP is created, changes QP state for RDMA connection and clear QP information in the destroy. Notify that this process has less latency due to the kernel, Data path is mainly about the usage of RDMA resources. RDMA resources or information in buffer are always maintained in RNIC. When RDMA applications post a send or receive operation, only write the DoorBell and the hardware processor performs DMA, encapsulates and forwards data.
+
+To emulate the static attributes, virtual queue, data and doorbell buffers are respectively set up in vRNIC. For example, the QP buffer stores virtual QP information and the virtual doorbell buffer is including virtual doorbells. Virtual buffer is flexible and unlimited for the numbs of RDMA resources instances. 
+
+To emulate the dynamic attributes, apparently, if only using pure software, it may cause low performance because of the software overhead in whole RDMA communication. Fortunately, we found all RDMA resources information in RNIC are only changed in control path and maintained in data path. So, we can map the virtual RDMA resources to RNIC only in control path, such as QP and Doorbell,  and do not need introduce any operations in data path. Mapped RDMA resources are directly used and RNIC is notified by mapped virtual DoorBell in vRNIC. As a result, vRNIC are still with DMA zero-copy, hardware protocol stack processing and other high-performance capability in data path. Therefore, we put each vRNIC with a map unit. As Figure~\ref{fig:map-unit} shows, it maps or unmaps virtual RDMA resources from vRNIC to RNIC in control path:
+
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[width=0.9\linewidth]{images/map-unit}
+	\caption{Map Unit in vRNIC}
+	\label{fig:map-unit}
+\end{figure}
+
+For RDMA resources (e.g. QPs, CQs): Taking QP as an example, regularly, vRNIC record virtual RDMA resources information when the virtual QP instance are created. However, virtual QP are still not generated-associated with the RNIC. To make the mapping, the map unit will create corresponding real QP instance in RNIC based on the information of virtual QP instances, such as the same memory address information and the same device id. Equivalently, the virtual QP information are recognized in RNIC, such as QP number and QP state, and can be one-to-one synchronous with RNIC’s physical instance by lots of similar map operations in control path. All operations can be completed by calling the Verbs interface of RNIC in user space. After the mapping is completed, the work requests in the vRNIC virtual QP can be zero-copied into the RNIC. Also, data in registered memory of vRNIC can also be zero-copied to RNIC in the same way. 
+
+For DoorBells: It needs to be mapped to the hardware doorbell in the physical NIC device space, so that vRNIC can notify the RNIC hardware processors. In vRNIC, the mapping unit will map the virtual address of the virtual doorbell to the hardware doorbell address of the corresponding physical NIC device space through a system call. As shown in Figure 4-2, after the mapping is completed, the write operation to the vRNIC virtual doorbell is equivalent to performing the doorbell notification to the RNIC.
+
+Map unit is the key for vRNICs' performance. Note that all mapping relationships are all one-to-one, therefore, the correctness and isolation of resources in different RDMA context are guaranteed. Meanwhile, because the mapping operation is only executed in control path, the overhead is one-off compared to data commands. For the data path, vRNICs can directly utilize the hardware processing capability of RNIC, such as DMA zero-copy and hardware protocol stack processing.
+
+\subsection{Unified vRNIC Driver}
+The RDMA applications in containers and virtual machines are both the processes of host. Therefore, the unified driver are available for both containers and virtual machines. 
+
+For containers, vRNIC can be directly provided to RDMA applications in containers by IPC (inter-process communication). However, for virtual machines, the vRNIC in the host user space and the RDMA application in the virtual machine user space are separated from the emulated hardware environment and the guest operating system. Therefore, it is necessary to use I/O virtualization technology to extend each vRNIC as an I/O device of the virtual machine. Then, driver for this device must be installed in virtual machine to support the I/O process. Therefore, the unified driver for the virtual machine includes two following works:
+
+\begin{itemize}
+	\item {\verb|Extend vRNIC as I/O device|}: 
+	The existing I/O virtualization technologies are mainly divided into full virtualization and paravirtualization. The full virtualization completely simulates all the functions of the device, there are frequent context switching and data copy overhead. 
+	In contrast, paravirtualization does not emulate the hardware complementally to reduce the times of data copy and switch. Therefore, we exploit paravirtualization to expand vRNIC as an I/O device. In our design, the I/O channel between vRNIC and the virtual machine is a shared memory queue, which is created by file; the signal and interrupt mechanism can be realized through the event descriptor between virtual layer process and each virtual machine process, then the event notification is converted into an internal interrupt signal by virtual machine monitor.
+	
+	\begin{figure}[!ht]
+		\centering
+		\includegraphics[width=1.0\linewidth]{images/interface-general}
+		\caption{Unified vRNIC Driver}
+		\label{fig:vrnic-driver}
+	\end{figure}
+	
+	\item {\verb|Design the I/O device driver|}:
+	The goal of the device driver is to support I/O process inside each guest. As shown in in Figure~\ref{fig:vrnic-driver},  the commands of RDMA application be forwarded into the memory-shared queue, and trigger events to notify the vRNIC to process them; similarly, the device driver receives interrupt notifications and reads the result from vRNIC. In short, the device driver can be implemented by a lightweight kernel module.
+	
+\end{itemize}
+
+For generality, As shown in in Figure~\ref{fig:vrnic-driver}, the same design as virtual machines is adopted for containers: in I/O channel, the file-based shared queue is also used; in the synchronization mechanism, the same event notification mechanism is used. But remind the container does not fall into the monitor or inject interrupts during the synchronization.
+
+For multiple containers and virtual machines, if the files for vRNIC driver are not isolated, they can be discovered by every container through scanning files. In order to solve this problem, we run the virtual machine in a isolated container environment. As shown in in Figure~\ref{fig:interface-isolate}, based on the container's mount namespace~\cite{mount-ns}, we respectively place the shared files of each vRNIC in the dedicated directories and mounts each directory to the corresponding container(including containers running virtual machines). As a result, due to the isolation of the mount namespace, the shared files of each vRNIC in the virtualization layer are only visible to the used container or virtual machine.  
+
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[width=1.0\linewidth]{images/interface-isolate}
+	\caption{Isolation for vRNIC driver}
+	\label{fig:interface-isolate}
+\end{figure}
+
+
+\subsection{Performance Optimization}
+Trough vRNIC driver, commands of RDMA applications can be transported to vRNICs, and the results can also be returned to the applications. In vRNIC driver, zero copy of data and bypassing the virtual layer are realized by mapping the RDMA resources to vRNIC. As a result, data commands do not need to be forward to the virtual layer and this mode is consistent with native RDMA.
+
+(1) zero copy optimization
+The zero copy contents are including the RDMA work request in the QP queue and the transfer data in the registered memory, and the process is from RDMA application to physical RNIC. Remind that vRNIC RDMA resources are mapped to VFs, so we only need to make sure the zero-copy from RDMA application to vRNIC.
+
+The fact of zero-copy is that both processes have common available physical memory pages. Similar as the above I/O channels, file-based shared memory are also used when mapping QP and other RDMA resources and this is general for both virtual machines and containers.
+
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[width=1.0\linewidth]{images/zero-copy}
+	\caption{Mapping QP to vRNIC}
+	\label{fig:zero-copy}
+\end{figure}
+
+However, in the virtual machine, due to the memory management mechanism of guest operating system, the virtual machine's physical memory of the RDMA resource may be not continuous, and the mapped memory area in vRNIC is not continuous like Figure~\ref{fig:zero-copy}. So, vRNIC cannot map the virtual memory area as a virtual RDMA resource to RNIC. To solve this problem, the virtual memory remapping mechanism in user space is used. It remaps the discontinuous RDMA resource virtual memory area in vRNIC to the a block of continuous virtual memory, and the sequence of mapped physical memory page must be unchanged.
+
+(2) Bypassing virtual layer optimization
+Pressing the doorbell is necessary in RDMA data path to drive RNIC. In vRNIC, the doorbell that is mapped to VF, still need to be mapped to RDMA application to meet bypassing. Otherwise, the pressing command needs be forward to vRNIC and that’s imports apparent latency in data path.
+
+However, the RDMA application and the vRNIC belong to two different processes on the host, and they have isolated virtual address spaces. At the same time, the doorbell register is in the device address space and cannot be mapped by shared memory. The key to solving this problem is that the process of RDMA application needs to know the physical address of the doorbell register.
+
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[width=1.0\linewidth]{images/by-pass}
+	\caption{Mapping DB from vRNIC}
+	\label{fig:by-pass}
+\end{figure}
+
+Therefore, when an RDMA application creates a RDMA context, as shown in Figure~\ref{fig:by-pass}, it sends a request to the vRNIC at first. Under the supervision of virtual layer, vRNIC forwarded to application with the corresponding physical address of the doorbell, commonly the physical page number. After that, the application maps its doorbell virtual address to the physical page in its own process, that needs the host kernel and hypervisor if the application in virtual machines.
+
