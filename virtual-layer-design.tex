@@ -1,12 +1,14 @@
 \section{Virtual Layer Design}
-In this section, we introduce specific managements in the virtual layer for unified virtual RDMA.
+Each vRNIC is still independent unit in host server. Thus, we design a virtual layer to manages vRNICs centrally, including vRNIC instantiation, vRNIC mapping to RNIC. Besides, virtual layer manages the virtual network for VMs or containers, such as configuring virtual vRNIC address, routing rules or more management in clouds.
 
-\subsection{vRNIC Mapping Management}
-The same virtual layer needs to create multiple vRNICs and provide them to different containers or virtual machines respectively. If each vRNIC is directly mapped to the same RNIC, it will compete for the same PCIe bus and share the configuration space of RNIC. The vRNICs are still not isolated or limited.
+\subsection{vRNIC Device Management}
 
-SR-IOV is a popular hardware-based virtualization technology. RNIC can virtualize multiple different hardware interface, called VFs. Each VF has a unique PCIe bus and configuration space. At the same time, when configuring VFs, users can limit network rate and other hardware resources, and implement management policies such as QoS. The uniRDMA virtual layer maps each vRNIC to the VF interface of RNIC separately, so hardware-level isolation is guaranteed for vRNICs.
 
-However, the VF resources of SR-IOV are limited, for example, only 126 VFs are supported in Mellanox ConnectX-3 at most~\cite{ofed-manual}. Therefore, the existing VFs need to be managed and coordinated in a unified to meet many vRNICs.
+Each vRNIC is instantiated in the virtual layer. We found that another differences for VMs and containers: VM is a unstopped process for host onece it boosts, even though RDMA applications in VM is not running; container's RDMA application is a regular process for host. Thus, we make static instantiation for VM's vRNIC before VM boosts, and make dynamic instantiation when the verbs library are loaded in container's application. In contrast, we destroy the vRNIC instance when VM stoping or container's application exiting. Besides saving system resources, another advantage of this is to avoid contend and assure corrects for multipe applications in one container. Note the contend for mutiple applications in one VM are solved with guest OS and our kernel vRNIC driver.
+
+In this paper, we use the physical RDMA as the overlay network of vRNIC. Thus, the virtual layer should manage the mapping from vRNIC to RNIC. To achive performance isolation, we utilize the SR-IOV, which virtualize multiple isolated VFs (different hardware interfaces) in one physical RNIC. The virtual layer maps vRNICs to VFs respectively. 
+
+However, we note that VF resources of SR-IOV are limited, for example, only 126 VFs are supported in Mellanox ConnectX-3 at most~\cite{ofed-manual}. Therefore, the existing VFs need to be managed and coordinated in a unified to meet many vRNICs.
 
 \begin{figure}[!ht]
 	\centering
@@ -31,3 +33,13 @@ RNICs are usually managed by the subnet manager in the cluster. For the same pur
 \end{figure}
 
 Consistent with native RDMA, vRNICs in each virtual layer need to exchange each other's virtual RDMA addresses, virtual QP queue information, registered memory keys and other information to establish virtual RDMA connections. However, the vRNIC RDMA address is virtual, and does not recognized in RNIC. Therefore, the mapping relations between the virtual addresses of vRNICs and the physical addresses of VF needs to be exchanged between virtual layers. When establishing the virtual RDMA connection, the virtual RDMA address is converted to the physical address of the mapped VFs. Note that RDMA resources information, such as virtual QP number and memory keys, have been mapped to the VF interface by the map unit in vRNIC, they can all be recognized VF and directly used to create RDMA connection.
+
+\subsection{Discussion}
+In virtual layer, besides above managements, there are more ongoing features for clouds:
+
+Control police for clouds: To manage the resources precisely, there are lots of important polices in clouds, e.g. QoS, metering and so on. In uniRDMA, even though all RDMA commands in data path are executed in applications' user space, we can still meet the control features in virtual layer for these resons:  First,  the virtual layer can monitoring the QPs or CQs for RDMA traffic information, such as,  size and status of one RDMA work request, because all RDMA resources (including QPs and CQs) are mapped at host's virtual layer; Second, the virtual layer can  control the virtual RDMA traffic by controling the RDMA resources,  with the help of host RDMA libraries. For an example,  we can destroy the QP in the virtual layer when a RDMA connections' traffic is excessive.  These will cause more CPU overhead in the host virtual layer, but would not impact the performance of RDMA applications in clouds.
+	
+Virtual Instances Migration: Migration is important  for both containers and VMs in clouds with many benifits, e.g. resource utilization and fail-over. With the virtual RDMA network , uniRDMA can support offline migration without reconfiguring the physical RDMA network for applications. In specific,after rebooting the migrated virtual instance, the application can rebuild the RDMA connection  only by modifing the address mapping in software virtual layer. Currently, for live migrations, it is still hard because memory regions in RDMA application may be uncertain under bypassing or one-side communication. Thus, uniRDMA does not support live migrations for both VMs and containers.
+	
+Other network extensions: RDMA can also be exploited to optimize the performance of other network applications,  such as TCP/IP.  Existing works include vSocket ~\cite{wang2019vsocket}, SockDirect~\cite{li2019socksdirect} so on. In uniRDMA, we can extend the simiar design for socket applications in containers and VMs: unified vNICs and the driver of vNICs in containers or VMs.  The difference in the virtual layer is mainly how to emulate the vNICs based on host RDMA's libraries. 
+	

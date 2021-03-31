@@ -14,7 +14,7 @@ To achieve above goals, we propose a software RDMA virtualization framework, nam
 
 vRNICs is a simple software emulation of physical RNIC. Each vRNIC is instanced in the virtual layer when VM or container's RDMA applications start. The RDMA commands of applications can be transported to vRNIC through guest driver or container libraries. Besides, RDMA resources (e.g. QPs and DoorBells) in vRNICs are mapped to physical RNIC and upper applications. Thus, the data commands in application can be executed locally for high-performance.
 
-The virtual layer is also in host user space. We design it for centralized management of vRNICs. It controls all RDMA devices through RDMA verbs library in host user space. Meanwhile, vRNICs are configured in the virtual layer to construct virtual RDMA network, e.g. vRNIC addresses and routing rules.
+The virtual layer is also in host user-space. We design it for centralized management of vRNICs. It controls all RDMA devices through RDMA verbs library in host user space. Meanwhile, vRNICs are configured in the virtual layer to construct virtual RDMA network, e.g. vRNIC addresses and routing rules.
 
 \begin{figure}[!ht]
 	\centering

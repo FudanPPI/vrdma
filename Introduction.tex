@@ -9,21 +9,20 @@ For software-based solutions, they are designed for specific virtual environment
 
 For hardware-based solutions (e.g. SR-IOV), RDMA device resources are directly allocated to virtual machines or containers. Thus, the device utilization is static and inefficient. Moreover, RDMA networks in clouds are still managed by physical switches or routers. Thus, virtual network management is not scalable and portable in large-scale clouds.
 
-To address these problems, we propose a unified RDMA virtualization framework for hybrid virtual environment in clouds, namely uniRDMA, also with the design goals of flexible management and high-performance. Based on uniRDMA, applications in VMs or containers can diretly use the vRNICs (virtual RDMA network interface cards) for RDMA. vRNICs are unified device encapsulation in host user-space and under the charge of a virtual layer in each host server.
+To address these problems, we propose a unified RDMA virtualization framework for hybrid virtual environment in clouds, namely uniRDMA, also with the design goals of flexible management and high-performance. 
 
-As the basic abstract unit of uniRDMA, vRNIC is virtualized and provided to RDMA applications. Each vRNIC is virtualized with basic attributes same as a physical RNIC, such as QP (Queue Pair). Note that vRNIC is not pure software. To utilize the high-performance of physical RNIC, vRNICs are mapped to physical RNIC respectively. Moreover, we utilize the RDMA libraries (e.g. libibverbs) to achieve that in host user-spoace. Thus, vRNICs are flexible and independent on hardware-specific kernel drivers. 
+As the basic abstract unit of uniRDMA, each vRNIC (virtual RDMA network interface card) is virtualized in user-space with basic RDMA attributes, such as QPs (Queue Pairs). Thus, vRNICs are flexible and hardware-awareness. To support VMs or containers unifiedly, vRNICs are the device of VMs and containers and a specific kernel driver is in guest OS. VMs and containers use the same communication protocal to vRNICs. Moreover, to optimize the performance, RDMA resources in vRNICs are mapped to applications in VMs or containers. 
 
-To make vRNIC available for applications in clouds, specific driver (or library) needs to installed in VMs or containers. In uniRDMA, the driver is transparent for RDMA applications because it only intercepts the native RDMA commands to vRNIC. Note that communication from VMs or containers to another host process (vRNICs) are obviously different. To address it, the same communication protocols are proposed from applications to containers or VMs' hypervisor. Moreover, for high-performance, we map RDMA resources between vRNICs and applications to achieve zero-copy and by-passing the virtual layer.
-
-Virtual layer is responsible for virtual RDMA management. The virtual layer is software virtual switch for vRNICs. Its works include configuring vRNIC address and routing rules. Besides, it meets performance isolation in large-scale clouds by dynamic mapping from vRINCs to VFs (hardware interfaces in SR-IOV enabled RNIC).  
+Virtual layer tacks charge of vRNICs in each host server, including vRNICs instantiation and vRNICs mapping to physical RNIC. Besides, the virtual layer is also a software virtual switch with configuring vRNIC address and routing rules. 
 
 Finally, we implement the prototype and evaluate it in different aspectsbenchmarks, such as throughput, latency, scalability, with and real-word applications. From the result, uniRDMA's performance is close to native RDMA in hybrid virtual environment and the overhead is less than 5\% to hardware-based virtualization. uniRDMA also has high scalability and adapts to real-world RDMA applications in hybrid cloud environments. The main contributions in this paper are as follows:
 
 \begin{itemize}
-\item Unified RDMA virtualization in hybrid virtual environments is firstly proposed in this paper, and it is stable for different kernels or RDMA devices. Besides, high performance and high manageability are maintained.  
+\item We proposed vRNIC, which is a complete virtual RDMA device in host user-space for high flexibility and hardware independency. vRNIC is unified for both VMs and containers with specific driver. Meanwhile, the performance is optimized by mapping vRNIC to physical RNIC same as native RDMA.
 
-\item By utilizing vhost-user and existing system calls, we realize the mapping of RDMA resources in userspace to achieve high-performance.  
+\item We proposed a virtual layer for vRNICs, which is responsible for vRNICs' instantition and mapping to physical RNIC. Also, virtual RDMA network are configured in the virtual layer.
 
-\item Unified framework is evaluated and the results proved that uniRDMA maintains high performance close to native RDMA.
+\item The whole unified framework, namely uniRDMA, is evaluated and the results proved that uniRDMA maintains high performance close to native RDMA.
 \end{itemize}
 
+The paper is organized as follows. Section 2 describes the backgroud of uniRDMA designs. Section 4 describes the vRNIC design in uniRDMA, and Section 5 introduces the design of virtual layer. Then, Section 6 reports the experimental results. Section 7 introduces related work. Finally, Section 8 concludes our work.
