@@ -1,10 +1,8 @@
 \section{vRNIC Design}
-To achieve unified RDMA virtualization, we design vRNICs, which is software virtualization with complete RDMA attributes. Both conatiners and VMs can use vRNICs through unified drivers. 
+To achieve unified RDMA virtualization, we design vRNICs, which is software virtualization with complete RDMA attributes (e.g. QPs). Both conatiners and VMs can use vRNICs through unified drivers. 
 
 \subsection{vRNIC Virtualization}
-% vRNIC　设计空间探讨
-
-To make vRNIC flexible and hardware-independent, we construt each vRNIC by software methods. Moreover, both kernel-space and user-space are feasible to construct vRNICs in host. Compared to kernel-space, there are multiple advantages for vRNICs in user-space, such as minimal attack surface, flexible management and independent on RDMA kernel drivers. Thus, we choose the user-space for vRNIC virtualization.
+To make vRNIC flexible and hardware-independent, we construt each vRNIC in host by software methods. Moreover, both kernel-space and user-space are feasible to construct vRNICs in host. Compared to kernel-space, there are multiple advantages for vRNICs in user-space, such as minimal attack surface, flexible management and independent on RDMA kernel drivers. Thus, we choose the user-space for vRNIC virtualization.
 
 We find that RDMA resources (e.g. QP, MR or DoorBells) are the key roles in whole RDMA communication. In control path, the application creates QPs, registers MRs in host memory, map RNIC's doorbell resgisters to host memory and so on; In data path, the application directly use above RDMA resources. For example, application writes DoorBell to notify RNIC to deal with WQE in QP and transport the specific data in MR. Thus, vRNIC virtualization is mainly about how to construct the virtual RDMA resources to provide complete RDMA communication. 
 
