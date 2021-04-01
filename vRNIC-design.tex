@@ -4,15 +4,15 @@ To achieve unified RDMA virtualization, we design vRNICs, which is software virt
 \subsection{vRNIC Virtualization}
 % vRNIC　设计空间探讨
 
-To make vRNIC flexible and hardware-independent, we construt each vRNIC by software methods. Morver, both kernel-space and user-space are feasible to construct vRNICs in host. Compared to kernel-space, there are multiple advantages for vRNICs in user-space, such as minimal attack surface, flexible management and independent on RDMA kernel drivers. Thus, we choose the user-space for vRNIC virtualization.
+To make vRNIC flexible and hardware-independent, we construt each vRNIC by software methods. Moreover, both kernel-space and user-space are feasible to construct vRNICs in host. Compared to kernel-space, there are multiple advantages for vRNICs in user-space, such as minimal attack surface, flexible management and independent on RDMA kernel drivers. Thus, we choose the user-space for vRNIC virtualization.
 
 We find that RDMA resources (e.g. QP, MR or DoorBells) are the key roles in whole RDMA communication. In control path, the application creates QPs, registers MRs in host memory, map RNIC's doorbell resgisters to host memory and so on; In data path, the application directly use above RDMA resources. For example, application writes DoorBell to notify RNIC to deal with WQE in QP and transport the specific data in MR. Thus, vRNIC virtualization is mainly about how to construct the virtual RDMA resources to provide complete RDMA communication. 
 
-Based on above analysis, we summarize that RNIC has two kinds of hardware properties about theses RDMA resources, namely static property and dynamic property:
+Based on above analysis, we summarize that RNIC has two kinds of hardware properties about these RDMA resources, namely static property and dynamic property:
 
 Static properties are mainly about what RDMA resources are equiped in RNIC. For each RDMA resource, it can be abstracted that RNIC has the corresponding buffers to fillwith dynamic resource instances. For example, each QP is in QP buffer of the vRNIC.
 
-For dynamic attributes, the state of RDMA resources are dynamic in control path and data path. Control path includes the creation and destruction of RDMA resources. RDMA resources or information in buffer are always changed. For example, RNIC records the QP number when QP is created, changes QP state for RDMA connection and clear QP information in the destroy. Note that this process has less latency due to the kernel, Data path is mainly about the usage of RDMA resources. RDMA resources or information in buffer are always maintained in RNIC. When RDMA applications post a send or receive operation, only write the DoorBell and the hardware processor performs DMA, encapsulates and forwards data.
+For dynamic attributes, the state of RDMA resources are dynamic in control path and data path. Control path includes the creation and destroy of RDMA resources. RDMA resources instance are changed in RNIC buffer. For example, RNIC records the QP number when QP is created, changes QP state for RDMA connection and clear QP information in the destroy. Note that this process has less latency due to the kernel. Data path is mainly about the usage of RDMA resources. RDMA resources or information in buffer are always maintained in RNIC. When RDMA applications post a send or receive operation, only write the DoorBell and the hardware processor performs DMA, encapsulates and forwards data.
 
 To emulate the static attributes, virtual queue, data and doorbell and unlimited for the numbs of RDMA resources instances. 
 
@@ -68,7 +68,7 @@ For multiple containers and virtual machines, if shared memory files for vRNIC d
 
 \subsection{Performance Optimization}
 
-Trough vRNIC driver, all commands of RDMA applications can be excuted in vRNICs. However, in data path of vRNIC, there is still data-copy. Also, the data commands are forwarded to vRNIC to execute. These brings the latency for RDMA applications. 
+Trough vRNIC driver, all commands of RDMA applications can be excuted in vRNICs. However, in data path of vRNIC, there is still data-copy. Also, the data commands are forwarded to vRNIC for execution. These brings the data-copy or context-switch latency for RDMA applications. 
 
 To address above performance problems, we map RDMA resources between vRNICs and appications. However, there are two different RDMA resources for vRNICs: resources in host physical memory (such as QPs, MRs), resources in physhical RNIC (e.g. DoorBell registers). 
 
