@@ -14,10 +14,9 @@ For software virtualization of I/O devices, there are two main choices for where
 RDMA (Remote Direct Memory Access) has hardware protocol stack and zero copy technology, so applications can bypass the kernel to read and write remote memory data, without the participation of remote CPU. As a result, RDMA has high throughput, low latency and low CPU load. Applications need to use Verbs interface when using RDMA. In Verbs, as shown in Figure~\ref{fig:rdma-feat}, RDMA is separate control path and data path. The former is the management about RDMA context, mainly including lots of RDMA resources, such as Queue Pairs (QPs), and Memory Regions (MRs). the operations like ibv\_create\_qp, reg\_mr; The latter is the usage of RDMA context and resources, which is the data commands like ibv\_post\_send and ibv\_post\_recv. In a RDMA workflow, the communication is based on Queue Pair (QP). The application writes the RDMA work request to the QP, and then ``press''  the RNIC's doorbell register, which is mapped to application when context init, and the RNIC's hardware processor will execute the work request in the QP to forward data. For applications, the entire operator is in the user space.
 
 
-
 \begin{figure}[!ht]
 	\centering
-	\includegraphics[width=0.6\linewidth]{images/rdma-feat}
+	\includegraphics[width=0.6\linewidth]{images/rdma-feat.png}
 	\caption{Native RDMA Feature}
 	\label{fig:rdma-feat}
 \end{figure}
