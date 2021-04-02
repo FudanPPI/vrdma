@@ -1,23 +1,24 @@
 \section{Background and Motivation}
 In this section, we first introduce the brief background, including virtualization and RDMA. Then, we explain the motivation of this paper: unified RDMA virtualization for hybrid virtual environments in clouds.
 
-\subsection{Virtualization}
-Virtualization of VMs and containers are in different spaces because of their characteristics. VMs need emulate whole virtual hardware environments for guest operation system with hypervisor (kernel-space). So, applications in VMs is isolated by guest OS with more security but higher overhead. Containers are shared with the host OS but with runtime isolation. So, containers have low overhead and fast boot-up time.
+\subsection{Cloud and Virtualization}
+Cloud is popular for its efficiency and elasticity, and virtualization is the basic for clouds. Nowadays, VMs and containers are both common virtual instances in clouds. VMs need emulate whole virtual hardware environments for guest operation system with hypervisor (kernel-space). So, applications in VMs is isolated by guest OS with more security but higher overhead. Containers are shared with the host OS but with runtime isolation. So, containers have low overhead and fast boot-up time.
 
 For software virtualization of I/O devices, there are two main choices for where to emulate the device: kernel-space and user-space. In kernel-space, the codes of device emulation are inserted into hypervisor or host kernel. Compared to kernel-space, there are three advantages for user-space: first, the attack surface is limited for user-space with minimal inserted code into kernel/hypervisor; second, managment development is flexible in user-space; third, the inserted codes are often depenedent on hardware-specific APIs (e.g. OS architecture, device driver). For example, vhost-net~\cite{vhost-net} is the kernel-space network device and vhost-user-net~\cite{vhost-user-net} has user-mode virtual device. 
 
-% RDMA： 
-% RDMA网卡是控制和数据路径分离， RDMA网卡内部构造
-% RDMA网卡数据传输机制，按门铃操作
-\subsection{RDMA}
-RDMA (Remote Direct Memory Access) has hardware protocol stack and zero copy technology, so applications can bypass the kernel to read and write remote memory data, without the participation of remote CPU. As a result, RDMA has high throughput, low latency and low CPU load. Applications need to use Verbs interface when using RDMA. In Verbs, as shown in Figure~\ref{fig:rdma-feat}, RDMA is separate control path and data path. The former is the management about RDMA context, mainly including lots of RDMA resources, such as Queue Pairs (QPs), and Memory Regions (MRs). the operations like ibv\_create\_qp, reg\_mr; The latter is the usage of RDMA context and resources, which is the data commands like ibv\_post\_send and ibv\_post\_recv. In a RDMA workflow, the communication is based on Queue Pair (QP). The application writes the RDMA work request to the QP, and then ``press''  the RNIC's doorbell register, which is mapped to application when context init, and the RNIC's hardware processor will execute the work request in the QP to forward data. For applications, the entire operator is in the user space.
-
 \begin{figure}[!ht]
-	\centering
-	\includegraphics[width=0.6\linewidth]{images/rdma-feat.png}
-	\caption{Native RDMA Feature}
-	\label{fig:rdma-feat}
+\centering
+\includegraphics[width=0.6\linewidth]{images/rdma-feat.png}
+\caption{Native RDMA Feature}
+\label{fig:rdma-feat}
 \end{figure}
+
+\subsection{RDMA}
+As popular high-performance network in supercomputing, RDMA has hardware protocol stack and zero copy technology. With RDMA, applications can bypass the kernel to read and write remote memory data, without the participation of remote CPU. 
+
+In practice, Verbs~\cite{verbs} is the basic interface for applications to utilize RDMA. Verbs is similar as socket for traditional network applications. As shown in Figure~\ref{fig:rdma-feat}, RDMA Verbs is separate to control path and data path to achive high-performance. In control path: applications open device and manage RDMA resources. The main RDMA resources include Queue Pairs (QPs), Complete Queues(CQs), Memory Regions (MRs). The control verbs include ibv\_create\_qp, reg\_mr;  In data path: applications use RDMA resources to transport data. The data verbs include ibv\_post\_send and ibv\_post\_recv. Compared control path, data path bypasses the kernel to avoid context switch.
+
+In a RDMA workflow, the communication is based on Queue Pair (QP). The application writes the RDMA work request to the QP, and then ``press''  the RNIC's doorbell register, which is mapped to application when context init, and the RNIC's hardware processor will execute the work request in the QP to forward data. There are two modes for RDMA connect-based communication: one-sided and two-sided. One-sided is that remote server is awareness when client reads or writes its registered memory; Two-sided is that one sends messages after the peer is ready to receive.
 
 \subsection{Motivation}
 In practice, hybrid virtual environments is common in clouds. RDMA applications is supported in most supercomputing tasks. For hybrid virtual environments in clouds, RDMA virtualization not only needs to be unified, but also maintains high performance and manageability. Therefore, our design goals are as follows:

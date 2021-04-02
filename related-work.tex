@@ -1,12 +1,7 @@
 \section{Related Work}
 
+Traditional TCP/IP is the basic network for each user in clouds. There are lots of software solutions for traditional network virtualization. For VMs and containers, there are lots of vNICs (virtual network interface cards), e.g. virtio-net~\cite{virtio-russell2008}, vhost-net~\cite{vhost-net},  vhost-user-net~\cite{vhost-user-net} for VMs and veth~\cite{veth} for containers. The vNICs are in different space in host. Then, software virtual switch can be used to bride the vNIC to physical network cards. And the virtual switch can also be in kernel-sapce (e.g. Linux bridge~\cite{linux-bridge}), user-space (e.g. Snabb Switch~\cite{snabb}) and even both (e.g. Open vSwitch~\cite{ovs-2015}).  
 
-% 传统网络虚拟化
-Traditional Network virtualization: Traditional TCP/IP is the basic network for each user in clouds. There are lots of software solutions for traditional network virtualization. For VMs and containers, there are lots of vNICs (virtual network interface cards), e.g. virtio-net~\cite{virtio-russell2008}, vhost-net~\cite{vhost-net},  vhost-user-net~\cite{vhost-user-net} for VMs and veth~\cite{veth} for containers. The vNICs are in different space in host. Then, software virtual switch can be used to bride the vNIC to physical network cards. And the virtual switch can also be in kernel-sapce (e.g. Linux bridge~\cite{linux-bridge}), user-space (e.g. Snabb Switch~\cite{snabb}) and even both (e.g. Open vSwitch~\cite{ovs-2015}).  
-
-% 对比已有工作与uniRDMA
-\textbf{RDMA Virtualization}: The solutions of RDMA virtualization including hardware-based and software-based.
-
-The basic solution is SR-IOV~\cite{sr-iov} in hardware-based virtualization of RDMA. Its virtual layer is in the hardware and are limited by hardware resources. In uniRDMA, the isolation of SR-IOV are utilized and the unscalable problems are solved by dynamic vRNIC mapping. 
+The solutions of RDMA virtualization is including hardware-based and software-based. The basic solution is SR-IOV~\cite{sr-iov} in hardware-based virtualization of RDMA. Its virtual layer is in the hardware and are limited by hardware resources. In uniRDMA, the isolation of SR-IOV are utilized and the unscalable problems are solved by dynamic vRNIC mapping. 
 
 In software virtualization, existing solutions don’t suit for hybrid virtual environments. FreeFlow~\cite{kim2019freeflow}'s forward mechanism is different with uniRDMA. Its data path needs extra CPU to reduce the forward latency. HyV~\cite{pfefferle2015hybrid} and MasQ~\cite{he2020masq} are not used in containers, but are similar with us because all have achieved zero-copy and by-pass by mapping all resources. Even though, the implementation of mapping are different at essential for two reasons: First, HyV and MasQ's mapping is in the same process and uniRDMA is inter-process; Second, HyV and MasQ's mapping management in kernel-space and our in user-space for more manageability and lightweight.
