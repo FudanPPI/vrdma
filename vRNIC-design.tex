@@ -6,12 +6,11 @@ To make vRNIC flexible and hardware-independent, we construt each vRNIC in host 
 
 Moreover, both kernel-space and user-space are feasible to construct vRNICs in host. Compared to kernel-space, there are multiple advantages for vRNICs in user-space, such as minimal attack surface, flexible management and independent on RDMA kernel drivers. Thus, we choose the user-space for vRNIC virtualization.
 
-\subsubsection{Virtualize Static Attributes}
+\subsubsection{Static Attributes} ~\\
 In summary, RNIC has two kinds of hardware properties, namely static property and dynamic property: Static attributes mean unchanged and unrecorded attributes in physical RNIC. For example, the device name and resource handle are both static for RNIC. Compared, dynamic attributes means they should be recorded into or generated from hardware exiplictly. For example, QP is dynamic beacause it should to be reflected in RNIC.
 
 For static attributes, we directly use virtual names for them. For example, the device name of vRNIC is virtual. Besides, the address of vRNIC is also virtual. There are two main advantages for these: first, virtual information hids the real hardware informations for clouds' user; second, virtual information, especially virtual address is basic to construct a virtual network. 
-
-\subsubsection{Map Dynamic Attributes}
+\subsubsection{Dynamic Attributes} ~\\
 However, for dynamic attributes, the hardware cannot regconize virtual informations. Thus, we need map the so-called virtual dynamic attributes to physical RNIC to make them effective. For example, when application calls post\_send, the vRNICs can drive physical RNIC to transport the corresponding data. Thus, in our design, the vRNIC is flexible for management. 
 
 Fortunately, all RDMA resources information in RNIC are only changed in control path and maintained in data path. So, we can map the virtual RDMA resources to RNIC only in control path, such as QP and Doorbell,  and do not need introduce any operations in data path. Mapped RDMA resources are directly used and RNIC is notified by mapped virtual DoorBell in vRNIC. As a result, vRNIC are still with DMA zero-copy, hardware protocol stack processing and other high-performance capability in data path. Therefore, we put each vRNIC with a map unit. As Figure~\ref{fig:map-unit} shows, it maps or unmaps virtual RDMA resources from vRNIC to RNIC in control path:-

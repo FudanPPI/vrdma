@@ -1,14 +1,5 @@
-\section{Virtual Layer Design}
+\section{Management Design}
 Managiability of virtualization is important for clouds. To manage vRNICs centrally, we design a virtual layer. The works of virtual layer are including vRNIC instantiation, vRNIC mapping to RNIC. Besides, virtual layer manages the virtual network for VMs or containers, such as configuring virtual vRNIC address, routing rules or more management in clouds.
-
-As Figure~\ref{fig:framework-overview} shows, the virtual layer is also in host user-space. We design it for centralized management of vRNICs. It controls all RDMA devices through RDMA verbs library in host user-space. Meanwhile, vRNICs are configured in the virtual layer to construct virtual RDMA network, e.g. vRNIC addresses and routing rules.
-
-\begin{figure}[!ht]
-	\centering
-	\includegraphics[width=0.9\linewidth]{images/framework-overview.png}
-	\caption{uniRDMA Framework Overview}
-	\label{fig:framework-overview}
-\end{figure}
 
 \subsection{vRNIC Device Management}
 Each vRNIC is instantiated in the virtual layer. We found that another difference for VMs and containers: VM is a unstopped process for host onece it boosts, even though RDMA applications in VM is not running; container's RDMA application is a regular process for host. Thus, we make static instantiation for VM's vRNIC before VM boosts, and make dynamic instantiation when the verbs library are loaded in container's application. In contrast, we destroy the vRNIC instance when VM stoping or container's application exiting. Besides saving system resources, another advantage of this is to avoid contend and assure corrects for multipe applications in one container. Note the contend for mutiple applications in one VM are solved with guest OS and our kernel vRNIC driver. The overhead of instantiation is one-time for VMs or containers' applications.
