@@ -1,17 +1,19 @@
 \section{vRNIC Design}
-To achieve unified RDMA virtualization, we design vRNICs, which is software virtualization with complete RDMA attributes (e.g. QPs). Both conatiners and VMs can use vRNICs through unified drivers. In this section, we firstlly introduce vRNIC virtualization and its driver. Then, optimizations for performance are introduced.
+vRNIC 设计：
+1， vRNIC设计要点: 
+To achieve unified RDMA virtualization, we designed vRNICs, which is a software virtualization copy of RNIC with complete RDMA attributes (e.g. QPs). Both containers and VMs can use vRNICs through unified drivers. In this section, we firstly introduce the design of vRNIC and its driver. Then, performance optimization considerations are discussed.
 
-\subsection{vRNIC Virtualization}
-To make vRNIC flexible and hardware-independent, we construt each vRNIC in host by software methods. Besides, software methods are more scalable and isolated for VMs or containers.
+\subsection{vRNIC Design}
+To make vRNIC flexible and hardware-independent, we constructed each vRNIC in host virtualization environment by software methods. Besides, software methods are more scalable and isolated for VMs or containers.
 
-Moreover, both kernel-space and user-space are feasible to construct vRNICs in host. Compared to kernel-space, there are multiple advantages for vRNICs in user-space, such as minimal attack surface, flexible management and independent on RDMA kernel drivers. Thus, we choose the user-space for vRNIC virtualization.
+Moreover, both kernel-space and user-space are feasible to construct vRNICs in host. Compared to kernel-space, there are multiple advantages for vRNICs to be implemented in user-space, such as reduced attack surface, flexible management and independent of RDMA kernel drivers. Thus, we choose the user-space for vRNIC virtualization.
 
 \subsubsection{Static Attributes} ~\\
-In summary, RNIC has two kinds of hardware properties, namely static property and dynamic property: Static attributes mean unchanged and unrecorded attributes in physical RNIC. For example, the device name and resource handle are both static for RNIC. Compared, dynamic attributes means they should be recorded into or generated from hardware exiplictly. For example, QP is dynamic beacause it should to be reflected in RNIC.
+In summary, RNIC has two kinds of hardware properties, namely static property and dynamic property: Static attributes mean unchanged and unrecorded attributes in physical RNIC. For example, the device name and resource handle are both static for RNIC. In contrast, dynamic attributes means they should be recorded into or generated from hardware explicitly. For example, QP is a dynamic attribute because it should to be reflected in RNIC.
 
-For static attributes, we directly use virtual names for them. For example, the device name of vRNIC is virtual. Besides, the address of vRNIC is also virtual. There are two main advantages for these: first, virtual information hids the real hardware informations for clouds' user; second, virtual information, especially virtual address is basic to construct a virtual network. 
+For static attributes, we directly use virtual names for them. For example, the device name of vRNIC is virtual. Besides, the address of vRNIC is also virtual. There are two main advantages for these: first, virtual information hides the real hardware information for cloud users; second, virtual information, especially virtual address is basic to construct a virtual network. 
 \subsubsection{Dynamic Attributes} ~\\
-However, for dynamic attributes, the hardware cannot regconize virtual informations. Thus, we need map the so-called virtual dynamic attributes to physical RNIC to make them effective. For example, when application calls post\_send, the vRNICs can drive physical RNIC to transport the corresponding data. Thus, in our design, the vRNIC is flexible for management. 
+For dynamic attributes, the hardware cannot recognize virtual information. Thus, we need map the so-called virtual dynamic attributes to physical RNIC to make them effective. For example, when application calls post\_send, the vRNICs can drive physical RNIC to transport the corresponding data. Thus, in our design, the vRNIC is flexible for management. 
 
 Fortunately, all RDMA resources information in RNIC are only changed in control path and maintained in data path. So, we can map the virtual RDMA resources to RNIC only in control path, such as QP and Doorbell,  and do not need introduce any operations in data path. Mapped RDMA resources are directly used and RNIC is notified by mapped virtual DoorBell in vRNIC. As a result, vRNIC are still with DMA zero-copy, hardware protocol stack processing and other high-performance capability in data path. Therefore, we put each vRNIC with a map unit. As Figure~\ref{fig:map-unit} shows, it maps or unmaps virtual RDMA resources from vRNIC to RNIC in control path:-
 
@@ -30,11 +32,11 @@ For DoorBells: It needs to be mapped to the hardware doorbell in the physical NI
 Map unit is the key for vRNICs' performance. Note that all mapping relationships are all one-to-one, therefore, the correctness and isolation of resources in different RDMA context are guaranteed. Meanwhile, because the mapping operation is only executed in control path, the overhead is one-off compared to data commands. For the data path, vRNICs can directly utilize the hardware processing capability of RNIC, such as DMA zero-copy and hardware protocol stack processing.
 
 \subsection{Unified vRNIC Driver}
-vRNIC is virtual device with complete RDMA attributes. However, vRNICs are still independent software in host user space. Thus, for VMs and containers, the driver (or library in containers) for vRNICs should be designed. Unification is necessrary for vRNIC driver, beacause it hides the difference of applications' environments and makes the centralized management (e.g. the virtual layer in later section) easier.
+vRNIC is virtual device with complete RDMA attributes. However, vRNICs are still independent software in host user space. Thus, for VMs and containers, the driver (or library in containers) for vRNICs should be designed. Unification is necessary for vRNIC driver, because it hides the difference of applications' environments and makes the centralized management (e.g. the virtual layer in later section) easier.
 
-For containers, vRNICs can be directly provided to RDMA applications in containers with some modification in containers' verbs library. However, vRNICs  and VMs' application are isolated with the hypervisor and guest OS. vRNICs needs to be recongnized by VMs' hypervisor and then provided by guest OS. Thus, the I/O virtualization shoulde be used to extend each vRNIC for VMs. Then, specific driver for vRNICs installed in guest OS. 
+For containers, vRNICs can be directly provided to RDMA applications in containers with some modification in containers' verbs library. However, vRNICs  and VMs' application are isolated with the hypervisor and guest OS. vRNICs needs to be recognized by VMs' hypervisor and then provided by guest OS. Thus, the I/O virtualization should be used to extend each vRNIC for VMs. Then, specific driver for vRNICs installed in guest OS. 
 
-However, the main challenge of above is how to make vRNICs unified to all RDMA applications. Thus, the comminucation between vRNIC to VMs or containers must be consistent. To make vRNICs communication consistent, we design a unified protocal from vRNIC to VMs' hypervisor or containers' applications. Note that both containers' applications and VMs are processes for host. Thus, I/O channel between vRNIC and VM is shared memory with specific protocal, e.g. vhost-user. And that is nature to containers' applications. Besides, the notification is used in event descriptor.
+However, the main challenge of above is how to make vRNICs unified to all RDMA applications. Thus, the communication between vRNIC to VMs or containers must be consistent. To make vRNICs communication consistent, we design a unified protocol from vRNIC to VMs' hypervisor or containers' applications. Note that both containers' applications and VMs are processes for host. Thus, I/O channel between vRNIC and VM is shared memory with specific protocol, e.g. vhost-user. And that is nature to containers' applications. Besides, the notification is used in event descriptor.
 
 The goal of the device driver is to support I/O process inside each guest. As shown in in Figure~\ref{fig:vrnic-driver},  the commands of RDMA application be forwarded into the memory-shared queue, and trigger events to notify the vRNIC to process them; similarly, the device driver receives interrupt notifications and reads the result from vRNIC. In short, the device driver can be implemented by a lightweight kernel module.
 
@@ -47,7 +49,7 @@ The goal of the device driver is to support I/O process inside each guest. As sh
 
 	
 \subsection{Performance Optimization}
-Trough vRNIC driver, all commands of RDMA applications can be excuted in vRNICs. However, in data path of vRNIC, there is still data-copy. Also, the data commands are forwarded to vRNIC for execution. These brings the data-copy or context-switch latency for RDMA applications. 
+Trough vRNIC driver, all commands of RDMA applications can be executed in vRNICs. However, in data path of vRNIC, there is still data-copy. Also, the data commands are forwarded to vRNIC for execution. These brings the data-copy or context-switch latency for RDMA applications. 
 
 To address above performance problems, we map RDMA resources between vRNICs and appications. However, there are two different RDMA resources for vRNICs: resources in host physical memory (such as QPs, MRs), resources in physhical RNIC (e.g. DoorBell registers). 
 

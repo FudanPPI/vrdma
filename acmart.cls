@@ -2794,7 +2794,7 @@
  \def\@secfont{\sffamily\large\section@raggedright\MakeTextUppercase}
  \def\@subsecfont{\sffamily\large\section@raggedright}
 \or % sigconf
- \def\@secfont{\bfseries\Large\section@raggedright\MakeTextUppercase}
+ \def\@secfont{\bfseries\Large\section@raggedright}
  \def\@subsecfont{\bfseries\Large\section@raggedright}
 \or % siggraph
  \def\@secfont{\sffamily\bfseries\Large\section@raggedright\MakeTextUppercase}

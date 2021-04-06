@@ -1,7 +1,7 @@
 \section{Implementation}
  We implement uniRDMA in Linux environments, the hypervisor of VM is KVM and the container engine is Docker. In this section, we introduce some representative implementation details:
  
- Resource Mapping: For RDMA memory resources (e.g. QPs, MRs), we map all resources in host user space by shared memory. In specific, we use vhost-user backend for VMs to make guests' memory resources shared. Then, we use the exisiting system call mremap in host user space to solve the discontinous memory problem. For container, the vhost-user protoal are migrated. 
+ Resource Mapping: For RDMA memory resources (e.g. QPs, MRs), we map all resources in host user space by shared memory. In specific, we use vhost-user backend for VMs to make guests' memory resources shared. Then, we use the existing system call mremap in host user space to solve the discontinuous memory problem. For container, the vhost-user protocol are migrated. 
  
- For RDMA device resources (e.g. DoorBells), we cannot use the shared memory for mapping device address. Thus, we utilize another para-virtualization vhost to solve it. The frontend of vhost forwards mapping commands to backend, which in host kernel space. For containers, a simple deivce interface are organazited to interact with vhost backend.
+ For RDMA device resources (e.g. DoorBells), we cannot use the shared memory for mapping device address. Thus, we utilize another para-virtualization vhost to solve it. The frontend of vhost forwards mapping commands to backend, which in host kernel space. For containers, a simple device interface are organized to interact with vhost backend.
  
