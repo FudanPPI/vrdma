@@ -7,33 +7,18 @@ Reallocated singl_function (elt_size=4) to 100 items from 50.
 Reallocated wiz_functions (elt_size=4) to 6000 items from 3000.
 Database file #1: reference.bib
 Reallocated singl_function (elt_size=4) to 100 items from 50.
-Warning--no key, author in aws-hpc
-Warning--no author, editor, organization, or key in aws-hpc
-Warning--to sort, need author or key in aws-hpc
-Warning--no key, author in spark-rdma
-Warning--no author, editor, organization, or key in spark-rdma
-Warning--to sort, need author or key in spark-rdma
-Warning--no key, author in hadoop-rdma
-Warning--no author, editor, organization, or key in hadoop-rdma
-Warning--to sort, need author or key in hadoop-rdma
+Warning--no key, author in hpc-cloud
+Warning--no author, editor, organization, or key in hpc-cloud
+Warning--to sort, need author or key in hpc-cloud
 Warning--no key, author in sr-iov
 Warning--no author, editor, organization, or key in sr-iov
 Warning--to sort, need author or key in sr-iov
-Warning--no key, author in kubervirt
-Warning--no author, editor, organization, or key in kubervirt
-Warning--to sort, need author or key in kubervirt
-Warning--no key, author in vsphere
-Warning--no author, editor, organization, or key in vsphere
-Warning--to sort, need author or key in vsphere
-Warning--no key, author in openshift
-Warning--no author, editor, organization, or key in openshift
-Warning--to sort, need author or key in openshift
-Warning--no key, author in ofed-manual
-Warning--no author, editor, organization, or key in ofed-manual
-Warning--to sort, need author or key in ofed-manual
 Warning--no key, author in mount-ns
 Warning--no author, editor, organization, or key in mount-ns
 Warning--to sort, need author or key in mount-ns
+Warning--no key, author in ofed-manual
+Warning--no author, editor, organization, or key in ofed-manual
+Warning--to sort, need author or key in ofed-manual
 Warning--no key, author in mlnx-ofed
 Warning--no author, editor, organization, or key in mlnx-ofed
 Warning--to sort, need author or key in mlnx-ofed
@@ -49,14 +34,10 @@ Warning--to sort, need author or key in docker
 Reallocated glb_str_ptr (elt_size=4) to 20 items from 10.
 Reallocated global_strs (elt_size=20001) to 20 items from 10.
 Reallocated glb_str_end (elt_size=4) to 20 items from 10.
-Warning--no key, author in aws-hpc
-Warning--no key, author in aws-hpc
 Warning--no key, author in docker
 Warning--no key, author in docker
-Warning--no key, author in hadoop-rdma
-Warning--no key, author in hadoop-rdma
-Warning--no key, author in kubervirt
-Warning--no key, author in kubervirt
+Warning--no key, author in hpc-cloud
+Warning--no key, author in hpc-cloud
 Warning--no key, author in kvm
 Warning--no key, author in kvm
 Warning--no key, author in mlnx-ofed
@@ -65,16 +46,10 @@ Warning--no key, author in mount-ns
 Warning--no key, author in mount-ns
 Warning--no key, author in ofed-manual
 Warning--no key, author in ofed-manual
-Warning--no key, author in openshift
-Warning--no key, author in openshift
 Warning--no key, author in qemu
 Warning--no key, author in qemu
-Warning--no key, author in spark-rdma
-Warning--no key, author in spark-rdma
 Warning--no key, author in sr-iov
 Warning--no key, author in sr-iov
-Warning--no key, author in vsphere
-Warning--no key, author in vsphere
 Reallocated singl_function (elt_size=4) to 100 items from 50.
 Warning--no key, author in ofed-manual
 Warning--no author, editor, organization, or key in ofed-manual
@@ -84,18 +59,14 @@ Warning--no key, author in mount-ns
 Warning--no author, editor, organization, or key in mount-ns
 Warning--empty organization in mount-ns
 Warning--empty organization in mount-ns
-Warning--no key, author in aws-hpc
-Warning--no author, editor, organization, or key in aws-hpc
-Warning--empty organization in aws-hpc
-Warning--empty organization in aws-hpc
 Warning--no key, author in docker
 Warning--no author, editor, organization, or key in docker
 Warning--empty organization in docker
 Warning--empty organization in docker
-Warning--no key, author in kubervirt
-Warning--no author, editor, organization, or key in kubervirt
-Warning--empty organization in kubervirt
-Warning--empty organization in kubervirt
+Warning--no key, author in hpc-cloud
+Warning--no author, editor, organization, or key in hpc-cloud
+Warning--empty organization in hpc-cloud
+Warning--empty organization in hpc-cloud
 Warning--no key, author in kvm
 Warning--no author, editor, organization, or key in kvm
 Warning--empty organization in kvm
@@ -112,26 +83,6 @@ Warning--no key, author in qemu
 Warning--no author, editor, organization, or key in qemu
 Warning--empty organization in qemu
 Warning--empty organization in qemu
-Warning--no key, author in hadoop-rdma
-Warning--no author, editor, organization, or key in hadoop-rdma
-Warning--empty organization in hadoop-rdma
-Warning--empty organization in hadoop-rdma
-Warning--no key, author in spark-rdma
-Warning--no author, editor, organization, or key in spark-rdma
-Warning--empty organization in spark-rdma
-Warning--empty organization in spark-rdma
-Warning--no key, author in openshift
-Warning--no author, editor, organization, or key in openshift
-Warning--empty organization in openshift
-Warning--empty organization in openshift
-Warning--no key, author in vsphere
-Warning--no author, editor, organization, or key in vsphere
-Warning--empty organization in vsphere
-Warning--empty organization in vsphere
-Warning--empty publisher in abadi2016tensorflow
-Warning--empty address in abadi2016tensorflow
-Warning--empty publisher in firestone2018accelnsdi
-Warning--empty address in firestone2018accelnsdi
 Warning--empty publisher in he2020masq
 Warning--empty address in he2020masq
 Warning--empty publisher in kim2019freeflow
@@ -140,45 +91,45 @@ Warning--empty publisher in li2019socksdirect
 Warning--empty address in li2019socksdirect
 Warning--empty publisher in wang2019vsocket
 Warning--empty address in wang2019vsocket
-You've used 22 entries,
+You've used 13 entries,
             5959 wiz_defined-function locations,
-            1424 strings with 18083 characters,
-and the built_in function-call counts, 21941 in all, are:
-= -- 2204
-> -- 711
+            1385 strings with 16792 characters,
+and the built_in function-call counts, 12900 in all, are:
+= -- 1280
+> -- 392
 < -- 0
-+ -- 256
-- -- 236
-* -- 1741
-:= -- 1949
-add.period$ -- 86
-call.type$ -- 22
-change.case$ -- 144
-chr.to.int$ -- 22
-cite$ -- 203
-duplicate$ -- 2122
-empty$ -- 1513
-format.name$ -- 268
-if$ -- 5080
++ -- 143
+- -- 128
+* -- 1020
+:= -- 1118
+add.period$ -- 50
+call.type$ -- 13
+change.case$ -- 84
+chr.to.int$ -- 13
+cite$ -- 125
+duplicate$ -- 1265
+empty$ -- 903
+format.name$ -- 148
+if$ -- 2985
 int.to.chr$ -- 2
 int.to.str$ -- 1
-missing$ -- 34
-newline$ -- 250
-num.names$ -- 72
-pop$ -- 1001
+missing$ -- 20
+newline$ -- 165
+num.names$ -- 40
+pop$ -- 604
 preamble$ -- 1
-purify$ -- 342
+purify$ -- 201
 quote$ -- 0
-skip$ -- 774
+skip$ -- 459
 stack$ -- 0
-substring$ -- 1477
-swap$ -- 197
+substring$ -- 875
+swap$ -- 117
 text.length$ -- 0
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 632
-warning$ -- 129
-while$ -- 64
+type$ -- 376
+warning$ -- 80
+while$ -- 35
 width$ -- 0
-write$ -- 408
-(There were 129 warnings)
+write$ -- 257
+(There were 80 warnings)

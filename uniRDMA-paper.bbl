@@ -2,7 +2,7 @@
 %%% Do NOT edit. File created by BibTeX with style
 %%% ACM-Reference-Format-Journals [18-Jan-2012].
 
-\begin{thebibliography}{22}
+\begin{thebibliography}{13}
 
 %%% ====================================================================
 %%% NOTE TO THE USER: you can override these defaults by providing
@@ -59,17 +59,6 @@ Retrieved March 13, 2021 from \tempurl}
 Retrieved March 13, 2021 from \tempurl}
 
 
-\bibitem[\protect\citeauthoryear{??}{aws}{2021}]%
-        {aws-hpc}
- \bibinfo{year}{2021}\natexlab{}.
-\newblock \bibinfo{booktitle}{\emph{AWS HPC Cloud}}.
-\newblock
-\urldef\tempurl%
-\url{https://aws.amazon.com/cn/hpc/}
-\showURL{%
-Retrieved March 13, 2021 from \tempurl}
-
-
 \bibitem[\protect\citeauthoryear{??}{doc}{2021}]%
         {docker}
  \bibinfo{year}{2021}\natexlab{}.
@@ -81,13 +70,13 @@ Retrieved March 13, 2021 from \tempurl}
 Retrieved March 13, 2021 from \tempurl}
 
 
-\bibitem[\protect\citeauthoryear{??}{kub}{2021}]%
-        {kubervirt}
+\bibitem[\protect\citeauthoryear{??}{hpc}{2021}]%
+        {hpc-cloud}
  \bibinfo{year}{2021}\natexlab{}.
-\newblock \bibinfo{booktitle}{\emph{KubeVirt}}.
+\newblock \bibinfo{booktitle}{\emph{HPC in the Cloud? Yes, No and In Between}}.
 \newblock
 \urldef\tempurl%
-\url{https://kubevirt.io/}
+\url{https://www.hpcwire.com/2020/12/14/hpc-in-the-cloud-yes-no-and-in-between/}
 \showURL{%
 Retrieved March 13, 2021 from \tempurl}
 
@@ -137,83 +126,6 @@ Retrieved March 13, 2021 from \tempurl}
 Retrieved March 13, 2021 from \tempurl}
 
 
-\bibitem[\protect\citeauthoryear{??}{had}{2021}]%
-        {hadoop-rdma}
- \bibinfo{year}{2021}\natexlab{}.
-\newblock \bibinfo{booktitle}{\emph{RDMA-based Apache Hadoop}}.
-\newblock
-\urldef\tempurl%
-\url{http://hibd.cse.ohio-state.edu/#hadoop}
-\showURL{%
-Retrieved March 13, 2021 from \tempurl}
-
-
-\bibitem[\protect\citeauthoryear{??}{spa}{2021}]%
-        {spark-rdma}
- \bibinfo{year}{2021}\natexlab{}.
-\newblock \bibinfo{booktitle}{\emph{RDMA-based Apache Spark}}.
-\newblock
-\urldef\tempurl%
-\url{http://hibd.cse.ohio-state.edu/#spark}
-\showURL{%
-Retrieved March 13, 2021 from \tempurl}
-
-
-\bibitem[\protect\citeauthoryear{??}{ope}{2021}]%
-        {openshift}
- \bibinfo{year}{2021}\natexlab{}.
-\newblock \bibinfo{booktitle}{\emph{RedHat OpenShift}}.
-\newblock
-\urldef\tempurl%
-\url{https://www.openshift.com/}
-\showURL{%
-Retrieved March 13, 2021 from \tempurl}
-
-
-\bibitem[\protect\citeauthoryear{??}{vsp}{2021}]%
-        {vsphere}
- \bibinfo{year}{2021}\natexlab{}.
-\newblock \bibinfo{booktitle}{\emph{VMWare vSphere}}.
-\newblock
-\urldef\tempurl%
-\url{https://www.vmware.com/products/vsphere.html}
-\showURL{%
-Retrieved March 13, 2021 from \tempurl}
-
-
-\bibitem[\protect\citeauthoryear{Abadi, Barham, Chen, Chen, Davis, Dean, Devin,
-  Ghemawat, Irving, Isard, et~al\mbox{.}}{Abadi et~al\mbox{.}}{2016}]%
-        {abadi2016tensorflow}
-\bibfield{author}{\bibinfo{person}{Mart{\'\i}n Abadi}, \bibinfo{person}{Paul
-  Barham}, \bibinfo{person}{Jianmin Chen}, \bibinfo{person}{Zhifeng Chen},
-  \bibinfo{person}{Andy Davis}, \bibinfo{person}{Jeffrey Dean},
-  \bibinfo{person}{Matthieu Devin}, \bibinfo{person}{Sanjay Ghemawat},
-  \bibinfo{person}{Geoffrey Irving}, \bibinfo{person}{Michael Isard},
-  {et~al\mbox{.}}} \bibinfo{year}{2016}\natexlab{}.
-\newblock \showarticletitle{Tensorflow: A system for large-scale machine
-  learning}. In \bibinfo{booktitle}{\emph{12th $\{$USENIX$\}$ symposium on
-  operating systems design and implementation ($\{$OSDI$\}$ 16)}}.
-  \bibinfo{pages}{265--283}.
-\newblock
-
-
-\bibitem[\protect\citeauthoryear{Firestone, Putnam, Mundkur, Chiou, Dabagh,
-  Andrewartha, Angepat, Bhanu, Caulfield, Chung, et~al\mbox{.}}{Firestone
-  et~al\mbox{.}}{2018}]%
-        {firestone2018accelnsdi}
-\bibfield{author}{\bibinfo{person}{Daniel Firestone}, \bibinfo{person}{Andrew
-  Putnam}, \bibinfo{person}{Sambhrama Mundkur}, \bibinfo{person}{Derek Chiou},
-  \bibinfo{person}{Alireza Dabagh}, \bibinfo{person}{Mike Andrewartha},
-  \bibinfo{person}{Hari Angepat}, \bibinfo{person}{Vivek Bhanu},
-  \bibinfo{person}{Adrian Caulfield}, \bibinfo{person}{Eric Chung},
-  {et~al\mbox{.}}} \bibinfo{year}{2018}\natexlab{}.
-\newblock \showarticletitle{Azure accelerated networking: Smartnics in the
-  public cloud}. In \bibinfo{booktitle}{\emph{15th $\{$USENIX$\}$ Symposium on
-  Networked Systems Design and Implementation ($\{$NSDI$\}$ 18)}}.
-  \bibinfo{pages}{51--66}.
-\newblock
-
-
 \bibitem[\protect\citeauthoryear{He, Wang, Fu, Tan, Hua, Zhang, and Zheng}{He
   et~al\mbox{.}}{2020}]%
         {he2020masq}
@@ -254,30 +166,6 @@ Retrieved March 13, 2021 from \tempurl}
   compatible}.
 \newblock In \bibinfo{booktitle}{\emph{Proceedings of the ACM Special Interest
   Group on Data Communication}}. \bibinfo{pages}{90--103}.
-\newblock
-
-
-\bibitem[\protect\citeauthoryear{Liu, Wu, and Panda}{Liu et~al\mbox{.}}{2004}]%
-        {mpi2004}
-\bibfield{author}{\bibinfo{person}{Jiuxing Liu}, \bibinfo{person}{Jiesheng Wu},
-  {and} \bibinfo{person}{Dhabaleswar~K Panda}.}
-  \bibinfo{year}{2004}\natexlab{}.
-\newblock \showarticletitle{High performance RDMA-based MPI implementation over
-  InfiniBand}.
-\newblock \bibinfo{journal}{\emph{International Journal of Parallel
-  Programming}} \bibinfo{volume}{32}, \bibinfo{number}{3}
-  (\bibinfo{year}{2004}), \bibinfo{pages}{167--198}.
-\newblock
-
-
-\bibitem[\protect\citeauthoryear{Pfefferle}{Pfefferle}{2014}]%
-        {pfefferle2014vverbs}
-\bibfield{author}{\bibinfo{person}{Jonas Pfefferle}.}
-  \bibinfo{year}{2014}\natexlab{}.
-\newblock \emph{\bibinfo{title}{vVerbs: a paravirtual subsystem for
-  RDMA-capable network interfaces}}.
-\newblock \bibinfo{thesistype}{Master's\ thesis}.
-  \bibinfo{school}{ETH-Z{\"u}rich}.
 \newblock
 
 
