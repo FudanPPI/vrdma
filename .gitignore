@@ -254,4 +254,5 @@ TSWLatexianTemp*
 comment.cut
 
 !submissions/*.pdf
+*.pdf
 
