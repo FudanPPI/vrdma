@@ -23,7 +23,9 @@ vRNIC backend is locates in the host user space as a virtual device. There are t
 
 \subsection{Verbs and hardware-specific libraries}
 % 1，为了实现上述vRNIC的完整功能，本文对于部分环境的用户库进行了修改：在容器中，对verbs库的修改主要是替换原生的与内核驱动交互的接口，该为与vRNIC前端交互，以便让verbs库的RDMA命令能够在用户空间转发到vRNIC前端。
-According the design of vRNIC, there are some necessary modifications in Verbs library and hardware-specific library, e.g. libmlx4. The Verbs library is hardware-independent, which provides general interface to upper applications and interact with RDMA kernel driver through system call. The hardware-specific library mainly includes the key details of RDMA resources, such as allocate memory and fillwith QP. In URN, the modifications in Verbs library is mainly about interfaces because the interface may be changed; And the modifications in hardware-specific library is mainly memory mapping operations, and the resource memory address translation, because the memory mapping brings inconsistent ion between the applications' memory address and the RNIC's recorded registered address (in vRNIC backend address space).
+According the design of vRNIC, there are some necessary modifications in Verbs library and hardware-specific library, e.g. libmlx4. The Verbs library is hardware-independent, which provides general interface to upper applications and interact with RDMA kernel driver through system call. The hardware-specific library mainly includes the key details of RDMA resources, such as allocate memory and fillwith QP. 
+
+In URN, the modifications in Verbs library is mainly about interfaces because the interface may be changed; And the modifications in hardware-specific library is mainly memory mapping operations, and the resource memory address translation, because the memory mapping brings inconsistent ion between the applications' memory address and the RNIC's recorded registered address (in vRNIC backend address space).
 
 Firstly, in host, we modified the memory allocation about RDMA resources in hardware-specific library. After modification, we can assign the mapped memory to register RDMA resources to physical RNIC.
 

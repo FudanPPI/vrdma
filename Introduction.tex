@@ -14,18 +14,18 @@ However, neither of existing solutions can simultaneously achieve above goals. T
 
 The hardware-based solution is based on PCI pass-through for less overhead, like SR-IOV~\cite{sr-iov}. For hardware-based solutions (e.g. SR-IOV), RDMA device resources are directly allocated to virtual machines or containers. Thus, the device utilization is static and inefficient. Moreover, RDMA networks in clouds are still managed by physical switches or routers. Thus, virtual network management is not scalable and portable in large-scale clouds.
 
-To address these problems, we propose a unified RDMA virtualization framework for hybrid virtual environment in clouds, namely uniRDMA, also with the design goals of flexible management and high-performance. uniRDMA consists of multiple vRNICs and management layer in each host server.
+To address these problems, we propose a unified RDMA virtualization framework for hybrid virtual environment in clouds, namely URN, also with the design goals of flexible management and high-performance. URN consists mainly of multiple vRNICs and the URN core in each server.
 
-As the basic abstract unit of uniRDMA, each vRNIC consists of backend and frontend. The backend is virtualized device in user-space with basic RDMA attributes, such as QPs (Queue Pairs) and MRs(Memory Regions). Thus, vRNIC is compatible for different RDMA kernel drivers. The frontend forwards RDMA commands to backend, and it is unified for VMs and containers through the same communication protocol. Moreover, to optimize the performance, RDMA resources are mapped between guests (VMs or containers) and backends. The management layer tacks charge of vRNICs in each host server, including management RDMA devices, configuring vRNIC address and routing rules. 
+As the virtual device for guest, each vRNIC consists of backend and frontend. The backend is virtualized device in user-space with basic RDMA attributes, such as QPs (Queue Pairs) and MRs(Memory Regions). Thus, vRNIC is compatible for different RDMA kernel drivers. The frontend forwards RDMA commands to backend, and it is unified for VMs and containers through the same communication protocol. Moreover, to optimize the performance, RDMA resources are mapped between guests (VMs or containers) and backends. The management layer tacks charge of vRNICs in each host server, including management RDMA devices, configuring vRNIC address and routing rules. 
 
-Finally, we implement the prototype and evaluate it in different aspects, such as throughput, latency, scalability, with and real-word applications. From the result, uniRDMA's performance is close to native RDMA in hybrid virtual environment and the overhead is less than 5\% to hardware-based virtualization. uniRDMA also has high scalability and adapts to real-world RDMA applications in hybrid cloud environments. The main contributions in this paper are as follows:
+Finally, we implement the prototype and evaluate it in different aspects, such as throughput, latency, scalability, with and real-word applications. From the result, URN's performance is close to native RDMA in hybrid virtual environment and the overhead is less than 5\% to hardware-based virtualization. URN also has high scalability and adapts to real-world RDMA applications in hybrid cloud environments. The main contributions in this paper are as follows:
 
 \begin{itemize}
 \item We proposed vRNIC, which is a para-virtualization RDMA device in host user-space for high flexibility and hardware independence. vRNIC is unified for both VMs and containers with specific driver. Meanwhile, the performance is optimized by mapping vRNIC to physical RNIC same as native RDMA.
 
 \item We proposed a management layers for vRNICs, which is responsible for vRNICs' instantition and mapping to physical RNIC. Also, virtual RDMA network are configured in the virtual layer.
 
-\item uniRDMA, is implemented and evaluated. The results proved that uniRDMA maintains high performance close to native RDMA.
+\item URN, is implemented and evaluated. The results proved that URN maintains high performance close to native RDMA.
 \end{itemize}
 
-The paper is organized as follows. Section 2 describes the background of uniRDMA designs. Section 4 describes the vRNIC design in uniRDMA, and Section 5 introduces the design of virtual layer. Then, Section 6 reports the experimental results. Section 7 introduces related work. Finally, Section 8 concludes our work.
+The paper is organized as follows. Section 2 describes the background of URN designs. Section 4 describes the vRNIC design in URN, and Section 5 introduces the design of virtual layer. Then, Section 6 reports the experimental results. Section 7 introduces related work. Finally, Section 8 concludes our work.
