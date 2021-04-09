@@ -5,18 +5,18 @@
  % 资源映射：根据资源所属于的物理地址空间，RDMA通信过程中主要有两类资源：内存资源（QP等），和设备资源（门铃寄存器）.
  Resource Mapping: According the physical address space, there are mainly two kinds of resources for RDMA: memory resources (e.g. QPs, MRs) and device resources (e.g. Doorbell registers). 
  
- % 对于内存资源: vRNIC后端需要将RDMA资源映射给guest 应用程序的虚拟地址。在这个过程中，应用需要将地址信息传递到后端，然后由后端根据对应的物理页面创建RDMA资源。在虚拟机中, 利用vhost-user的半虚拟化技术构建vRNIC后端，vRNIC后端可以与虚拟机共享整块内存。 在具体操作中，需要先借助vRNIC前端将GVA转换为GPA；然后，在vRNIC后端中，由于vRNIC后端已经和虚拟机共享整块内存，因此，GPA可以被线性转换为HVA。但是，从GVA到GPA的转换由于guest OS的内存管理， 可能存在非线性的不连续现象，进一步导致转换的HVA区域也是不连续的。此时，在后端可以利用mremap系统调用重新映射虚拟内存，以将对应的物理页面映射到连续的HVA区间,在通过修改的verbs库利用该虚拟地址创建RDMA资源。后续，后端可以根据该虚拟地址区域创建RDMA资源，从而完成了资源的映射。
+ % 对于内存资源: vRNIC后端需要将RDMA资源映射给guest 应用程序的虚拟地址。在这个过程中，应用需要将地址信息传递到后端，然后由后端根据对应的物理页面创建RDMA资源。在虚拟机中, 利用vhost-user的半虚拟化技术构建vRNIC后端，vRNIC后端可以与虚拟机共享整块内存。 在具体操作中，需要先借助vRNIC前端将GVA转换为GPA；然后，在vRNIC后端中，由于vRNIC后端已经和虚拟机共享整块内存，因此，GPA可以被线性转换为HVA。但是，从GVA到GPA的转换由于guest OS的内存管理， 可能存在非线性的不连续现象，进一步导致转换的HVA区域也是不连续的。此时，在后端可以利用mremap系统调用重新映射虚拟内存，以将对应的物理页面映射到连续的HVA区间,在通过修改的verbs库利用该虚拟地址创建RDMA资源。
  For memory resources: in VM, we utilize the vhost-user para-virtualization for vRNIC backends, and shared physical memory between vRNIC backends and guest. The guest virtual address (GHA) of guest RDMA resources are translate to guest physical address (GPA) in vRNIC frontend, and GPA is translated to host virtual address (HVA) in vRNIC backend. In specific, the HVA may be discontinuous and we remap it through simple system call.
  
  % 对于容器，可以直接通过IPC的共享内存来完成内存资源的映射，此时，不存在GHA和GPA的地址翻译问题，另外也不存在映射过程中的地址不连续问题。相应的，在容器的前端中，通过共享内存，将应用的RDMA资源重新映射到后端已创建RDMA资源的物理页面。对于不同的RDMA资源，容器和后端使用的共享文件路径是不同的，从而确保了RDMA资源映射内存的正确性，也确保了不同vRNIC后端的RDMA资源是隔离的。
- In containers, there are not GPA translation and discontinuous address problems, and we map resources through the shared memory IPC directly. Correspondingly, in both containers' verbs libraries and host's, the memory operations about RDMA resources are modified.
+ In containers, there are not GPA translation and discontinuous address problems, and we map resources through the shared memory IPC directly. Note that different RDMA resources, they use different shared memory file to finish the mapping. Thus, the mapping is isolated and security.
  
  %对于设备资源（例如门铃），本文采用了另一种虚拟化技术vhost，vhost 后端作为一个helper模块位于主机内核空间，负责完成虚拟机和容器对应虚拟地址到设备门铃寄存器的映射。在虚拟机中，对于上述地址翻译过程，直接通过vhost后端进行，并通过MMIO映射到设备的物理页面。对于容器场景，本文设计了一个自定义的设备接口，用来连接容器的vRNIC前端和对应的vhost后端, 容器通过该设备接口传输虚拟地址到vhost后端，再让vhost后端完成映射。
-For RDMA device resources: we design another utilize another para-virtualization vhost, vhost backend is as a helper module in host kernel space. For VMs, in vhost backend, the above address translation are finished  and remap the HVA to physical device resource (e.g. DoorBells) through MMIO. For containers, we design a costumed device interface to connect vRNIC frontend to the vhost backend for above mapping.
+ For RDMA device resources: we design another utilize another para-virtualization vhost, vhost backend is as a helper module in host kernel space. For VMs, in vhost backend, the above address translation are finished  and remap the HVA to physical device resource (e.g. DoorBells) through MMIO. For containers, we design a costumed device interface to connect vRNIC frontend to the vhost backend for above mapping.
  
  % RDMA数据路径
  % 在原生RDMA中，物理网卡中会缓存应用注册内存的页表信息，以根据应用QP中工作请求的虚拟地址获取对应内存中的物理页面，完成DMA传输。在URN中，guest的应用程序，在RDMA的数据传输中，QP中WQE填充的最后写入网卡的是GVA。然而，由于该内存区域是由vRNIC后端完成注册，并映射给guest，因此，对应的物理网卡设备中缓存的是vRNIC后端的页表，使用的HVA。因此，需要经过地址翻译以确保正常的RDMA传输。从HVA到GVA的转换关系，由后端在注册MR资源时可以得到。但是，对于单边操作，应用无法知晓远端的地址映射关系。本文设计了缓存机制，即在guest的verbs库维持了一个全局的地址翻译表，在首次单边操作时，会通过请求向URN core获取远端地址的映射关系，然后缓存到本地，以便后续的远端操作能够绕过后端，直接在本地执行。
-RDMA Data Path: In RDMA verbs, applications needs to fillwith local or remote memory address to work request in QPs. However, the memories are registered in host's vRNIC backends and the address recorded in RNIC is also HVA. 
+RDMA Data Path: In RDMA verbs, applications needs to fillwith local or remote memory address to work request in QPs. However, the memories are registered in host's vRNIC backends and the address recorded in RNIC is also HVA. Thus, there are address translation in data path. The main challenge is how to support translation for remote memory address. To solve it, we utilize the cache mechanism, at first, the vRNIC frontend request the backend to get remote address translation, and then, the memory mapping are maintained in guest verbs. For subsequent data commands, they can directly use the address mapping.
  
 
  

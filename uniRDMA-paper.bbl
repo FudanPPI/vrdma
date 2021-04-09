@@ -2,7 +2,7 @@
 %%% Do NOT edit. File created by BibTeX with style
 %%% ACM-Reference-Format-Journals [18-Jan-2012].
 
-\begin{thebibliography}{13}
+\begin{thebibliography}{22}
 
 %%% ====================================================================
 %%% NOTE TO THE USER: you can override these defaults by providing
@@ -37,6 +37,28 @@
 \providecommand\natexlab[1]{#1}
 \providecommand\showeprint[2][]{arXiv:#2}
 
+\bibitem[\protect\citeauthoryear{??}{ver}{2011}]%
+        {verbs}
+ \bibinfo{year}{2011}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{libverbs}}.
+\newblock
+\urldef\tempurl%
+\url{https://www.openfabrics.org/downloads/libibverbs/}
+\showURL{%
+Retrieved March 13, 2021 from \tempurl}
+
+
+\bibitem[\protect\citeauthoryear{??}{vho}{2011}]%
+        {vhost-net}
+ \bibinfo{year}{2011}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{UsingVhost}}.
+\newblock
+\urldef\tempurl%
+\url{https://www.linux-kvm.org/page/UsingVhost}
+\showURL{%
+Retrieved March 13, 2021 from \tempurl}
+
+
 \bibitem[\protect\citeauthoryear{??}{ofe}{2018}]%
         {ofed-manual}
  \bibinfo{year}{2018}\natexlab{}.
@@ -44,6 +66,28 @@
 \newblock
 \urldef\tempurl%
 \url{https://www.mellanox.com/related-docs/prod_software/Mellanox_OFED_Linux_User_Manual_v4_3.pdf}
+\showURL{%
+Retrieved March 13, 2021 from \tempurl}
+
+
+\bibitem[\protect\citeauthoryear{??}{vho}{2018}]%
+        {vhost-user-net}
+ \bibinfo{year}{2018}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{QEMU VhostUser}}.
+\newblock
+\urldef\tempurl%
+\url{https://wiki.qemu.org/Features/VirtioVhostUser}
+\showURL{%
+Retrieved March 13, 2021 from \tempurl}
+
+
+\bibitem[\protect\citeauthoryear{??}{sna}{2019}]%
+        {snabb}
+ \bibinfo{year}{2019}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{Snabb Switch}}.
+\newblock
+\urldef\tempurl%
+\url{https://github.com/snabbco/snabb}
 \showURL{%
 Retrieved March 13, 2021 from \tempurl}
 
@@ -81,6 +125,17 @@ Retrieved March 13, 2021 from \tempurl}
 Retrieved March 13, 2021 from \tempurl}
 
 
+\bibitem[\protect\citeauthoryear{??}{lin}{2021}]%
+        {linux-bridge}
+ \bibinfo{year}{2021}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{Linux Bridge}}.
+\newblock
+\urldef\tempurl%
+\url{https://wiki.linuxfoundation.org/networking/bridge}
+\showURL{%
+Retrieved March 13, 2021 from \tempurl}
+
+
 \bibitem[\protect\citeauthoryear{??}{kvm}{2021}]%
         {kvm}
  \bibinfo{year}{2021}\natexlab{}.
@@ -88,6 +143,17 @@ Retrieved March 13, 2021 from \tempurl}
 \newblock
 \urldef\tempurl%
 \url{https://www.linux-kvm.org/page/Main_Page}
+\showURL{%
+Retrieved March 13, 2021 from \tempurl}
+
+
+\bibitem[\protect\citeauthoryear{??}{vet}{2021}]%
+        {veth}
+ \bibinfo{year}{2021}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{Linux Veth}}.
+\newblock
+\urldef\tempurl%
+\url{https://man7.org/linux/man-pages/man4/veth.4.html}
 \showURL{%
 Retrieved March 13, 2021 from \tempurl}
 
@@ -111,6 +177,17 @@ Retrieved March 13, 2021 from \tempurl}
 \newblock
 \urldef\tempurl%
 \url{https://pcisig.com/specifications/iov/}
+\showURL{%
+Retrieved March 13, 2021 from \tempurl}
+
+
+\bibitem[\protect\citeauthoryear{??}{per}{2021}]%
+        {perftest}
+ \bibinfo{year}{2021}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{perftest}}.
+\newblock
+\urldef\tempurl%
+\url{https://github.com/linux-rdma/perftest}
 \showURL{%
 Retrieved March 13, 2021 from \tempurl}
 
@@ -169,6 +246,22 @@ Retrieved March 13, 2021 from \tempurl}
 \newblock
 
 
+\bibitem[\protect\citeauthoryear{Pfaff, Pettit, Koponen, Jackson, Zhou,
+  Rajahalme, Gross, Wang, Stringer, Shelar, et~al\mbox{.}}{Pfaff
+  et~al\mbox{.}}{2015}]%
+        {ovs-2015}
+\bibfield{author}{\bibinfo{person}{Ben Pfaff}, \bibinfo{person}{Justin Pettit},
+  \bibinfo{person}{Teemu Koponen}, \bibinfo{person}{Ethan Jackson},
+  \bibinfo{person}{Andy Zhou}, \bibinfo{person}{Jarno Rajahalme},
+  \bibinfo{person}{Jesse Gross}, \bibinfo{person}{Alex Wang},
+  \bibinfo{person}{Joe Stringer}, \bibinfo{person}{Pravin Shelar},
+  {et~al\mbox{.}}} \bibinfo{year}{2015}\natexlab{}.
+\newblock \showarticletitle{The design and implementation of open vswitch}. In
+  \bibinfo{booktitle}{\emph{12th $\{$USENIX$\}$ Symposium on Networked Systems
+  Design and Implementation ($\{$NSDI$\}$ 15)}}. \bibinfo{pages}{117--130}.
+\newblock
+
+
 \bibitem[\protect\citeauthoryear{Pfefferle, Stuedi, Trivedi, Metzler,
   Koltsidas, and Gross}{Pfefferle et~al\mbox{.}}{2015}]%
         {pfefferle2015hybrid}
@@ -180,6 +273,18 @@ Retrieved March 13, 2021 from \tempurl}
   RDMA-capable network interfaces}.
 \newblock \bibinfo{journal}{\emph{ACM SIGPLAN Notices}} \bibinfo{volume}{50},
   \bibinfo{number}{7} (\bibinfo{year}{2015}), \bibinfo{pages}{17--30}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Russell}{Russell}{2008}]%
+        {virtio-russell2008}
+\bibfield{author}{\bibinfo{person}{Rusty Russell}.}
+  \bibinfo{year}{2008}\natexlab{}.
+\newblock \showarticletitle{virtio: towards a de-facto standard for virtual I/O
+  devices}.
+\newblock \bibinfo{journal}{\emph{ACM SIGOPS Operating Systems Review}}
+  \bibinfo{volume}{42}, \bibinfo{number}{5} (\bibinfo{year}{2008}),
+  \bibinfo{pages}{95--103}.
 \newblock
 
 

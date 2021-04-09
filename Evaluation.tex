@@ -51,19 +51,6 @@ Compared with FreeFlow, when the message is small, the latency of uniRDMA has re
 	\caption{The Latenct of RDMA Write}
 	\label{fig:write-lat}
 \end{figure}
-(3) Scalability: 
-Scalability is a challenge when RDMA virtualization in large-scale virtual clusters. To evaluate uniRDMA's scalability, for 2, 4, 8, 16, 32, 64, and 128 pairs of virtual instances, a random number of virtual instances are selected to execute ``ib\_write\_bw'' command with 128KB message. Moreover, there are full virtual machines, full containers and hybrid virtual instances(50\% virtual machine and 50\% containers) when evaluating. Finally, the average throughput between virtual instance pairs is shown in Figure~\ref{fig:scabality}.
-
-\begin{figure}[!ht]
-	\centering
-	\includegraphics[width=1.0\linewidth]{images/scabality.pdf}
-	\caption{The Scabality}
-	\label{fig:scabality}
-\end{figure}
-
-From Figure~\ref{fig:scabality}, for all virtual environments, uniRDMA has good scalability and still maintains high performance. In contrast, the throughput of FreeFlow is down to only 10\% throughput compared to the peak. Because uniRDMA data commands do not need to be forwarded to the software virtualization layer for processing, the virtualization overhead does not increase due to the expansion of virtual instances. Constantly, when FreeFlow runs RDMA commands at the same time in a large-scale container, it is forwarded to the same RDMA context in virtual layer. When calling the QP queue or registered memory region in virtual layer, there is the overhead of lock mutual exclusion. Therefore, FreeFlow suffers from a drastic drop in performance in large-scale container scenarios.
-
-In addition, as shown in Figure~\ref{fig:scabality}, both uniRDMA and FreeFlow can support communication between 128 pairs of virtual instances. However, the maximum number of VFs of the Mellanox ConnectX-3 network card is only 126, so 128 pairs of virtual instances are not supported. This shows that uniRDMA has higher scalability than SR-IOV. Because VFs are statically allocated in SR-IOV and each VF is exclusively occupied by the virtual machine; while uniRDMA improves the utilization of VF through dynamic device pool and flexible mapping mechanism in virtual layer.
 
 \subsection{Real-world Applications}
 

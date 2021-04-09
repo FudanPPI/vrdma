@@ -1,24 +1,27 @@
-This is BibTeX, Version 0.99d (TeX Live 2018)
-Capacity: max_strings=100000, hash_size=100000, hash_prime=85009
-The top-level auxiliary file: uniRDMA-paper.aux
+This is BibTeX, Version 0.99dThe top-level auxiliary file: uniRDMA-paper.aux
 The style file: ACM-Reference-Format.bst
-Reallocated singl_function (elt_size=4) to 100 items from 50.
-Reallocated singl_function (elt_size=4) to 100 items from 50.
-Reallocated wiz_functions (elt_size=4) to 6000 items from 3000.
 Database file #1: reference.bib
-Reallocated singl_function (elt_size=4) to 100 items from 50.
 Warning--no key, author in hpc-cloud
 Warning--no author, editor, organization, or key in hpc-cloud
 Warning--to sort, need author or key in hpc-cloud
 Warning--no key, author in sr-iov
 Warning--no author, editor, organization, or key in sr-iov
 Warning--to sort, need author or key in sr-iov
-Warning--no key, author in mount-ns
-Warning--no author, editor, organization, or key in mount-ns
-Warning--to sort, need author or key in mount-ns
+Warning--no key, author in vhost-net
+Warning--no author, editor, organization, or key in vhost-net
+Warning--to sort, need author or key in vhost-net
+Warning--no key, author in vhost-user-net
+Warning--no author, editor, organization, or key in vhost-user-net
+Warning--to sort, need author or key in vhost-user-net
+Warning--no key, author in verbs
+Warning--no author, editor, organization, or key in verbs
+Warning--to sort, need author or key in verbs
 Warning--no key, author in ofed-manual
 Warning--no author, editor, organization, or key in ofed-manual
 Warning--to sort, need author or key in ofed-manual
+Warning--no key, author in mount-ns
+Warning--no author, editor, organization, or key in mount-ns
+Warning--to sort, need author or key in mount-ns
 Warning--no key, author in mlnx-ofed
 Warning--no author, editor, organization, or key in mlnx-ofed
 Warning--to sort, need author or key in mlnx-ofed
@@ -31,30 +34,68 @@ Warning--to sort, need author or key in kvm
 Warning--no key, author in docker
 Warning--no author, editor, organization, or key in docker
 Warning--to sort, need author or key in docker
-Reallocated glb_str_ptr (elt_size=4) to 20 items from 10.
-Reallocated global_strs (elt_size=20001) to 20 items from 10.
-Reallocated glb_str_end (elt_size=4) to 20 items from 10.
+Warning--no key, author in perftest
+Warning--no author, editor, organization, or key in perftest
+Warning--to sort, need author or key in perftest
+Warning--no key, author in veth
+Warning--no author, editor, organization, or key in veth
+Warning--to sort, need author or key in veth
+Warning--no key, author in linux-bridge
+Warning--no author, editor, organization, or key in linux-bridge
+Warning--to sort, need author or key in linux-bridge
+Warning--no key, author in snabb
+Warning--no author, editor, organization, or key in snabb
+Warning--to sort, need author or key in snabb
 Warning--no key, author in docker
 Warning--no key, author in docker
 Warning--no key, author in hpc-cloud
 Warning--no key, author in hpc-cloud
 Warning--no key, author in kvm
 Warning--no key, author in kvm
+Warning--no key, author in linux-bridge
+Warning--no key, author in linux-bridge
 Warning--no key, author in mlnx-ofed
 Warning--no key, author in mlnx-ofed
 Warning--no key, author in mount-ns
 Warning--no key, author in mount-ns
 Warning--no key, author in ofed-manual
 Warning--no key, author in ofed-manual
+Warning--no key, author in perftest
+Warning--no key, author in perftest
 Warning--no key, author in qemu
 Warning--no key, author in qemu
+Warning--no key, author in snabb
+Warning--no key, author in snabb
 Warning--no key, author in sr-iov
 Warning--no key, author in sr-iov
-Reallocated singl_function (elt_size=4) to 100 items from 50.
+Warning--no key, author in verbs
+Warning--no key, author in verbs
+Warning--no key, author in veth
+Warning--no key, author in veth
+Warning--no key, author in vhost-net
+Warning--no key, author in vhost-net
+Warning--no key, author in vhost-user-net
+Warning--no key, author in vhost-user-net
+Warning--no key, author in verbs
+Warning--no author, editor, organization, or key in verbs
+Warning--empty organization in verbs
+Warning--empty organization in verbs
+Warning--no key, author in vhost-net
+Warning--no author, editor, organization, or key in vhost-net
+Warning--empty organization in vhost-net
+Warning--empty organization in vhost-net
 Warning--no key, author in ofed-manual
 Warning--no author, editor, organization, or key in ofed-manual
 Warning--empty organization in ofed-manual
 Warning--empty organization in ofed-manual
+Warning--no key, author in vhost-user-net
+Warning--no author, editor, organization, or key in vhost-user-net
+Warning--empty organization in vhost-user-net
+Warning--empty organization in vhost-user-net
+Warning--no key, author in snabb
+Warning--no author, editor, organization, or key in snabb
+Warning--empty organization in snabb
+Warning--empty organization in snabb
 Warning--no key, author in mount-ns
 Warning--no author, editor, organization, or key in mount-ns
 Warning--empty organization in mount-ns
@@ -67,10 +108,18 @@ Warning--no key, author in hpc-cloud
 Warning--no author, editor, organization, or key in hpc-cloud
 Warning--empty organization in hpc-cloud
 Warning--empty organization in hpc-cloud
+Warning--no key, author in linux-bridge
+Warning--no author, editor, organization, or key in linux-bridge
+Warning--empty organization in linux-bridge
+Warning--empty organization in linux-bridge
 Warning--no key, author in kvm
 Warning--no author, editor, organization, or key in kvm
 Warning--empty organization in kvm
 Warning--empty organization in kvm
+Warning--no key, author in veth
+Warning--no author, editor, organization, or key in veth
+Warning--empty organization in veth
+Warning--empty organization in veth
 Warning--no key, author in mlnx-ofed
 Warning--no author, editor, organization, or key in mlnx-ofed
 Warning--empty organization in mlnx-ofed
@@ -79,6 +128,10 @@ Warning--no key, author in sr-iov
 Warning--no author, editor, organization, or key in sr-iov
 Warning--empty organization in sr-iov
 Warning--empty organization in sr-iov
+Warning--no key, author in perftest
+Warning--no author, editor, organization, or key in perftest
+Warning--empty organization in perftest
+Warning--empty organization in perftest
 Warning--no key, author in qemu
 Warning--no author, editor, organization, or key in qemu
 Warning--empty organization in qemu
@@ -89,47 +142,8 @@ Warning--empty publisher in kim2019freeflow
 Warning--empty address in kim2019freeflow
 Warning--empty publisher in li2019socksdirect
 Warning--empty address in li2019socksdirect
+Warning--empty publisher in ovs-2015
+Warning--empty address in ovs-2015
 Warning--empty publisher in wang2019vsocket
 Warning--empty address in wang2019vsocket
-You've used 13 entries,
-            5959 wiz_defined-function locations,
-            1385 strings with 16792 characters,
-and the built_in function-call counts, 12900 in all, are:
-= -- 1280
-> -- 392
-< -- 0
-+ -- 143
-- -- 128
-* -- 1020
-:= -- 1118
-add.period$ -- 50
-call.type$ -- 13
-change.case$ -- 84
-chr.to.int$ -- 13
-cite$ -- 125
-duplicate$ -- 1265
-empty$ -- 903
-format.name$ -- 148
-if$ -- 2985
-int.to.chr$ -- 2
-int.to.str$ -- 1
-missing$ -- 20
-newline$ -- 165
-num.names$ -- 40
-pop$ -- 604
-preamble$ -- 1
-purify$ -- 201
-quote$ -- 0
-skip$ -- 459
-stack$ -- 0
-substring$ -- 875
-swap$ -- 117
-text.length$ -- 0
-text.prefix$ -- 0
-top$ -- 0
-type$ -- 376
-warning$ -- 80
-while$ -- 35
-width$ -- 0
-write$ -- 257
-(There were 80 warnings)
+(There were 145 warnings)
