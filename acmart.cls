@@ -235,7 +235,7 @@
   \or % acmtog
     \def\ACM@fontsize{9pt}%
   \or % sigconf
-    \def\ACM@fontsize{10pt}%
+    \def\ACM@fontsize{9pt}%
   \or % siggraph
     \def\ACM@fontsize{9pt}%
    \or % sigplan
@@ -2794,7 +2794,7 @@
  \def\@secfont{\sffamily\large\section@raggedright\MakeTextUppercase}
  \def\@subsecfont{\sffamily\large\section@raggedright}
 \or % sigconf
- \def\@secfont{\bfseries\Large\section@raggedright}
+ \def\@secfont{\bfseries\Large\section@raggedright\MakeTextUppercase}
  \def\@subsecfont{\bfseries\Large\section@raggedright}
 \or % siggraph
  \def\@secfont{\sffamily\bfseries\Large\section@raggedright\MakeTextUppercase}

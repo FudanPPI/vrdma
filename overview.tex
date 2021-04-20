@@ -2,6 +2,13 @@
 %URN构主要由vRNIC（前端和后端）和URN core两大部分组成。vRNIC是一个半虚拟化的RDMA网卡设备，每个vRNIC都有一对前后端，通过前后端的交互为guest提供虚拟的RDMA服务；URN 是对vRNIC虚拟RDMA的管理模块。此外， 对host和容器的verbs进行了修改以以便与URN框架协作。
 The architecture of URN is shown in Figure~\ref{fig:framework-overview}. URN mainly consists of the vRNIC (virtual RDMA Network Interface Controller) and the URN core. The vRNIC is a para-virtualized virtual device for the guest environment, which includes a pair of frontend and backend modules; the URN core is a management unit for all vRNIC instances on the host. Besides, some modifications are required for  verbs libraries on the host and inside the containers to interact with the URN.
 
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[width=1\linewidth]{images/framework-overview.png}
+	\caption{Architecture Overview: The URN core manages all RDMA control path and data path can directly access physical RNIC through shared memory}
+	\label{fig:framework-overview}
+\end{figure}
+
 % (1) vRNIC Frontend(FE): FE位于guest，是一个虚拟的RDMA网卡接口提供给上层verbs。Guest应用可以通过verbs库直接使用FE。在虚拟机里，FE在guest内核，通过与原RDMA内核驱动一致的接口与verbs库交互；在容器里，FE是一个用户库，容器应用使用修改的verbs库时链接FE，并通过定制化的接口与FE交互，该过程无需再陷入到主机内核。
 (1) vRNIC Frontend: locates in the guest environment acting as the interface of the vRNIC. Applications in the guest environment can use the vRNIC interface through Verbs library. For VMs, the frontend virtual device is in guest kernel space and is designed to expose interfaces the same way as the RDMA device driver to the upper unmodified Verbs library. For containers, the frontend module is provided as a library that is linked to the applications aloneside with Verbs library.
 
@@ -16,10 +23,3 @@ The architecture of URN is shown in Figure~\ref{fig:framework-overview}. URN mai
 
 % 此外，本文对容器的verbs库和主机verbs库进行了少量修改。在容器的修改，让Verbs库可以直接在用户空间与FE交互, 不用经过主机内核。在主机的修改，以支持RDMA后端使用共享内存对QP和MR等资源进行映射。为了实现与应用程序的透明性，上述修改均未破坏RDMA应用与Verbs库的API。
 In addition,  we modified the Verbs libraries in containers so that the RDMA Verbs requests made to the kernel drivers can be redirected to the vRNIC Frontends. Note that Verbs APIs in the guest environment are not modified so that URN transparent to the guest RDMA applications. A few APIs in the Verbs library in the host user space are modified to support specifying a given memory address to be registered to the physical RNIC devices as key resource memory such as QP and MR. Currently, vanilla Verbs APIs don't allow applications to specify the address of resource memory region. But this capability is essential for URN to establish a zero-copy data path in the virtual environment. This will be discussed in detail in section XX.
-
-\begin{figure}[!ht]
-	\centering
-	\includegraphics[width=1\linewidth]{images/framework-overview.png}
-	\caption{uniRDMA Framework Overview}
-	\label{fig:framework-overview}
-\end{figure}
