@@ -1,13 +1,59 @@
+%%%********* 中文 ********%%%
 % 第4章 设计
-\section{Design}
 
-% URN的目标是实现一个统一的软件虚拟化架构，能够同时为虚拟机和容器提供RDMA服务，并实现对虚拟RDMA的统一管理。此外，该框架还需具备与原生RDMA接近的高性能。在本章，介绍了URN中的一些关键性设计工作。
-The goal of URN is to provide a unified RDMA virtualization framework for the cloud environment where containers, virtual machines and containers inside virtual machine could coexist, even on the same server. In this framework, virtual and physical RDMA resources on one server are solely managed and scheduled by the URN core. The second design goal of URN is that the performance of virtualized RDMA should be close to the native RDMA. The third design goal is to be transparent to the vanilla RDMA applications, and to bring minimal code changes to RDMA software stack. In this section, we introduce some key design details.
+%    URN的目标是为混合虚拟环境（指容器，虚拟机或虚拟机内容器等虚拟实例共存，甚至部署于同一服务器）提供一个统一的RDMA虚拟化框架。URN的第二个目标是，服务器上的虚拟的或物理的RDMA资源仅被URN core 集中管理和调度。URN的第三个目标是虚拟RDMA的性能接近原生RDMA。第四个目标是对已有的RDMA应用程序透明，并且对RDMA软件栈引入最小的代码改变量。在本章，我们介绍了URN中的一些关键性设计工作。
+
+% 4.1， vRNIC 设计
+%   vRNIC 由前后端组成， 前端由xxx组成， 后端xxx，维持了虚拟和物理的RDMA上下文及其映射关系。控制路径xxx，经过前后端， 数据路径xxx，绕过前后端：【该部分在overview里面已经介绍过了？如何厘清Overview和Design的边界？】
+
+%  4.1.1 用户空间的vRNIC后端
+%  vRNIC后端的主要功能？
+%  vRNIC后端的功能主要有两个：
+%  1， 接受和执行vRNIC前端传递的RDMA控制命令，并返回给Guest中的前端， 如create_qp 
+%  2， 配合vRNIC前端，完成RDMA资源（如QP）和数据从后端到guest应用程序的映射。
+
+%  vRNIC后端实现在用户空间的好处？
+%  在URN中，vRNIC 后端实现在主机的用户空间作为一个虚拟设备。在用户空间主要有三方面的优势：
+%  1， 用户空间更适合管理：开发管理功能，在用户空间更加简单并且灵活；
+%  2，用户空间的稳定性更好：由于用户空间不存在面向内核的攻击面；
+%  3，用户空间的兼容性更好，因为用户空间对于不同的系统架构、内核版本和设备内核驱动兼容.
+
+%  vRNIC后端实现在用户空间的挑战和解决方式？
+%  vRNIC后端的挑战是在主机用户空间完成上述的两个功能：1， 执行guest转发的RDMA命令；2，完成RDMA资源映射。因为用户空间的vRNIC后端本质上仍然是主机端的RDMA应用，没法直接利用RDMA内核软件栈中的API以及主机操作系统的内存管理。为了解决这一问题： 
+% 为了实现功能1，对于虚拟机，我们需要将虚拟机内核发出的RDMA命令和参数转化为verbs的命令和参数，对于容器，直接修改容器的verbs用户库，并进行转发；
+% 为了实现功能2， 利用了共享内存的系统调用，以与guest的RDMA资源使用相同的内存物理页面。为此，对于虚拟机：在虚拟机启动时，vRNIC后端即与虚拟机完成指定内存的共享，虚拟机创建RDMA资源时仅使用对应的与vRNIC后端共享的物理内存；对于容器：在容器应用创建RDMA资源时，会修改verbs库以使用共享内存创建资源，并将资源的共享路径传递给vRNIC后端。 因此，对于vRNIC后端，使用修改的verbs库，使用对应的共享内存去创建资源，便可以完成对虚拟机或容器应用的资源映射。
+
+
+% 4.2  URN Core 设计
+    % URN core的功能主要有两个：1，实例化各vRNIC后端； 2，创建虚拟的RDMA连接.
+
+% 4.2.1， URN core如何实例化vRNIC后端？
+% 注意到后端在主机用户空间，因此，URN core有必要建立一个消息通道在vRNIC和所有guest之间，因为URN core(主机用户空间) 是隔离虚拟机监视器或容器的。当guest需要vRNIC时，他们可以请求URN core在主机用户空间中实例化相应的后端。为了构建这个通道，我们使用了UNIX套接字对于虚拟机及容器环境。当虚拟机或容器需要一个新的vRNIC时，对套接字发出的实例化请求会被URN处理。为了快速支持多个实例化请求，这个过程中采用了反应器模式。
+
+% 4.2.2， URN core如何创建虚拟RDMA连接？
+% 在云环境中，虚拟网络配置是实现很多功能的基础，例如多租户隔离、便携的虚拟机或容器迁移。虚拟网络配置包括了虚拟的网络地址，虚拟的路由规则以及其他软件定义的配置协议。URN在用户空间，支持灵活的虚拟RDMA网络配置。
+% 首先，通过vRNIC后端控制接口，URN Core 可以用vRNIC后端维护的虚拟地址(例如vGID)配置vRNIC， 该地址可以通过vRNIC前端反映到客户端的应用程序中。
+
+%其次，借助mgmt center 可以在每个URN Core中定义虚拟RDMA网络路由规则。每个vRNIC后端都配置了组ID，路由规则定义为:{group ID1, group ID2, Policy}。一个关于查找路由规则的回调函数在实例化时注册到每个vRNIC后端。这样，路由规则就可以实时地反映到服务器的所有vRNIC后端中。例如，如图4所示，容器1和容器2的vrnic被配置到同一组中，因此允许创建RDMA连接。作为对比，容器和虚拟机1是隔离的因为属于不同组。最后，vgid在物理RNIC中不能被识别，网络地址映射在vRNIC后端被创建和更新。如果路由规则允许，这对vgid将被转换成物理的gid来创建RDMA连接.
+
+% 4.3，管理功能
+%  4.3.1 基本管理功能
+    %  在URN中，管理者可以通过mgmt center向不同的URN core下发各种策略，包括控制平面和数据平面。管理框架图如图5所示。
+    %  在控制路径：控制路径可以实现的管理功能包括路由管理、防火墙等。这些策略主要依靠RDMA资源，如QP进行控制。具体地，vRNIC后端按照mgmt下发的策略，可以在创建RDMA资源前执行策略，并在策略执行后将结果或资源信息返回给mgmt中维持各RDMA上下文信息的数据库中。
+    %  在数据路径：云环境中需要更多的管理功能，例如QoS，流量计费等策略。显然，这些策略依赖RDMA中数据路径的信息，例如消息大小。然而，在URN中，vRNIC前端和后端都在数据路径中被绕过。因此，我们应该将这些管理扩展到guest中的特定硬件库中，因为数据路径是在这个库中实现的。对于策略，可以通过管理中心进行配置和分发。注意，这些扩展需要所有客户机都信任库，并且这些修改应该包含在TCB(可信计算库)中。
+%  4.3.2 讨论：
+%    （1）虚拟机迁移：容器或虚拟机迁移在云中有很多好处，例如资源利用和故障转移。通过使用虚拟RDMA网络，URN可以支持脱机迁移，而无需为应用程序重新配置物理RDMA网络。具体来说，在重新启动迁移的虚拟实例后，应用程序可以通过相同的网络地址重建RDMA连接。唯一的工作是修改URN core中的地址映射.目前，由于RDMA应用程序中的内存区域在旁路或单侧通信下可能存在不确定性，因此对动态迁移仍然存在困难。该问题与URN无关.
+%%%*********************%%%
+
+
+\section{Design}
+% URN的目标是为混合虚拟环境（指容器，虚拟机或虚拟机内容器等虚拟实例共存，甚至部署于同一服务器）提供一个统一的RDMA虚拟化框架。在这个框架里，服务器上的虚拟的或物理的RDMA资源仅被URN core 集中管理和调度。URN的第二个目标是虚拟RDMA的性能接近原生RDMA。第三个目标是对已有的RDMA应用程序透明，并且对RDMA软件栈引入最小的代码改变量。在本章，我们介绍了URN中的一些关键性设计工作。
+The goal of URN is to provide a unified RDMA virtualization framework for hybrid virtual environments where containers, virtual machines and containers inside virtual machine could coexist, even on the same server. In this framework, virtual and physical RDMA resources on one server are solely managed and scheduled by the URN core. The second design goal of URN is that the performance of virtualized RDMA should be close to the native RDMA. The third design goal is to be transparent to the vanilla RDMA applications, and to bring minimal code changes to RDMA software stack. In this section, we introduce some key design details.
+
 
 \subsection{vRNIC Design}
-
-% vRNIC是一个软件的虚拟RDMA设备，包含前后端，前端负责为上层verb库提供接口并转发RDMA 命令，后端在主机端，通过与URN core或verbs库交互，以模拟guest对vRNIC的RDMA操作。 我们继承了控制和数据通道分离的哲学，和已有的RDMA虚拟化方案一样，如hyv和MasQ，控制路径上guest应用在本地的虚假RDMA上下文中执行verbs命令，并经过FE转发到BE维持的真实RDMA上下文中执行，之后将结果返回给guest；在数据路径上，将guest应用的RDMA资源与vRNIC BE上下文中的RDMA资源进行映射，guest应用的RDMA资源被注册到了物理网卡中，之后guest应用可以在本地直接使用RDMA资源进行数据操作。
-vRNIC is a virtual device, which consists of the frontend and backend. The frontend forward the commands of Verbs library in the guest user space to backend. The backend execute the commands by interacting with the physical RNIC through Verbs library in host user space. We inherited the philosophy that the control path and data path of RDMA operations are virtualized in different ways\cite{pfefferle2015hybrid}\cite{he2020masq}\cite{kim2019freeflow}. On the control path, para-virtualization technique is used that control commands from the guest Verb library are served by the frontend and forwarded to backend. On the data path, direct-passthrough technique is used that applications in the guest environment can directly map and use physical RDMA resources so that no guest OS kernel or host virtualization layer is involved when sending and receiving network pakages. The details of memory mapping implementations in URN framework is described in section 5 Implexxx.
+% vRNIC是一个虚拟RDMA设备，包含前后端：前端在guest端, 负责为上层verb库提供接口并转发RDMA 命令；后端在主机端，通过与URN core或verbs库交互，以模拟guest对vRNIC的RDMA操作。 我们继承了控制和数据通道分离的哲学，和已有的RDMA虚拟化方案一样，如hyv和MasQ，控制路径上guest应用在本地的虚假RDMA上下文中执行verbs命令，并经过FE转发到BE维持的真实RDMA上下文中执行，之后将结果返回给guest；在数据路径上，将guest应用的RDMA资源与vRNIC BE上下文中的RDMA资源进行映射，guest应用的RDMA资源被注册到了物理网卡中，之后guest应用可以在本地直接使用RDMA资源进行数据操作。
+vRNIC is a virtual RDMA device, which consists of the frontend and backend. The frontend forward the commands of Verbs library in the guest user space to backend. The backend execute the commands by interacting with the physical RNIC through Verbs library in host user space. We inherited the philosophy that the control path and data path of RDMA operations are virtualized in different ways\cite{pfefferle2015hybrid}\cite{he2020masq}\cite{kim2019freeflow}. On the control path, para-virtualization technique is used that control commands from the guest Verb library are served by the frontend and forwarded to backend. On the data path, direct-passthrough technique is used that applications in the guest environment can directly map and use physical RDMA resources so that no guest OS kernel or host virtualization layer is involved when sending and receiving network packages. The details of memory mapping implementations in URN framework is described in section 5 Implexxx.
 
 % 前端：
 % vRNIC前端作为vRNIC的设备接口提供给guest中的verbs库。Verbs命令可以通过前端转发到后端。在虚拟机中，vRNIC前端位于guest内核空间，并模拟原生的RDMA内核驱动为上层的verbs库提供与原生一致的接口，例如设备总线，设备文件。因此，当虚拟机中的前端加载后，可以直接使用未修改的verbs库。这样的好处是让URN系统更加稳定。
@@ -35,22 +81,11 @@ Based on the above information, the vRNIC backend can interact with the URN core
 
 \begin{figure}[!ht]
 	\centering
-	\includegraphics[width=0.7\linewidth]{images/vrnic-backend.png}
+	\includegraphics[width=0.8\linewidth]{images/vrnic-backend.png}
 	\caption{The information maintained in vRNIC backends}
 	\label{fig:route-config}
 \end{figure}
 
-\subsection{Verbs and Hardware-specific Libraries}
-% 1，根据vRNIC的设计，需要对verbs库及设备相关库进行必要的修改。对于原生RDMA来说，verbs库是设备无关的，提供通用的verbs接口给上层应用，并通过通用的设备接口与内核驱动进行交互。硬件相关的库主要隐藏了与RDMA资源的重要细节，例如，资源的内存分配，以及QP队列的填充操作等等。
-According the design of vRNIC, there are some necessary modifications in Verbs library and hardware-specific library, e.g. libmlx4. For native RDMA, the Verbs library is hardware-independent, which provides general interface to upper applications and interact with RDMA kernel driver through the general device interface. The hardware-specific library mainly hides the key details about manipulating RDMA resources, such as allocating memory and fillwithing QP. 
-
-%在URN中，Verbs库中的修改主要与接口有关，在设备相关库中，修改主要与内存映射操作以及地址翻译等相关。因为内存映射在应用的内存地址和网卡记录的地址之间带来了不一致的问题。首先，在主机端，我们在设备相关库中，修改了地址分配的函数，在修改后，可以直接指定映射后的地址去注册RDMA资源到物理网卡。
-In URN, the modifications in Verbs library is mainly about interfaces; And the modifications in hardware-specific library is mainly memory mapping operations, and the resource memory address translation, because the memory mapping brings inconsistent ion between the applications' memory address and the RNIC's recorded registered address (in vRNIC backend address space).
-
-Firstly, in host, we modified the memory allocation about RDMA resources in hardware-specific library. After modification, we can assign the mapped memory when registering RDMA resources (e.g. QPs) to physical RNIC.
-
-% 对于容器来说，我们修改了RDMA内核驱动与verbs之间的接口，并且用到前端的接口进行替换。对于容器来说，不同修改verbs用户库因为前端在内核中模拟了同样的设备接口。对于虚拟机和容器来说，所有的地址翻译都是需要的。
-For containers, we modified interface between Verbs library and RDMA kernel driver, and replace with the interface to vRNIC frontend. For VMs, we do not modify the Verbs library due to the simulated device interface is same as native RDMA. For both VMs and containers, the address translation is needed in data path.
 
 \subsection{URN Core}
 % URN core被设计用来管理虚拟RDMA网络和物理RDMA资源在每个主机上， 包括实例化vRNIC后端，虚拟网络配置和RDMA资源限制等。同样的，URN实现在用户空间。
@@ -82,11 +117,12 @@ Second, the virtual RDMA network routing rules can be defined in each URN core. 
 	\label{fig:route-config}
 \end{figure}
 
+\subsection{Management}
 
 \begin{figure}[!ht]
 	\centering
-	\includegraphics[width=0.7\linewidth]{images/urn-interface.png}
-	\caption{URN Core Interface: QP examples}
+	\includegraphics[width=1\linewidth]{images/urn-interface.png}
+	\caption{Management Architecture in URN}
 	\label{fig:framework-overview}
 \end{figure}
 
@@ -97,14 +133,8 @@ Hardware resource management is another important feature in URN core. In URN co
 Besides, hardware resources can be utilized flexible in URN core. In URN core, the status of all hardware resources can be summarized by the vRNIC backends and the Verbs library. By flexibly mapping virtual RDMA contexts to physical hardware resources, efficient utilization of hardware resources can be achieved. For example, the VFs can be used for performance isolation in clouds. But VFs is limited with maximum e.g. 63~126, and the allocation of VFs is static. Thus, if the guests is more than the VFs in a server, the performance isolation for each guest is not meet. To solve this problem, the URN core can flexibly map VFs to vRNICs to achieve the performance isolation for each guest. If the URN core finds that the vRNIC is idle, the VF of the vRNIC is released by URN core and it can be allocated to another ready vRNIC.
 
 
-\subsection{Discussions}
-% 4.4 discussion 
-% （1）云环境管理： 云环境中需要更多的管理功能，例如QoS，流量计费等策略。显然，这些策略依赖RDMA中数据路径的信息，例如消息大小。然而，在URN中，vRNIC前端和后端都在数据路径中被绕过。因此，我们应该将这些管理扩展到guest中的特定硬件库中，因为数据路径是在这个库中实现的。对于策略，可以通过管理中心进行配置和分发。注意，这些扩展需要所有客户机都信任库，并且这些修改应该包含在TCB(可信计算库)中。
-(1) More management for clouds: There are lots of important managements in clouds, e.g. QoS, metering and so on. Apparently, these policies are dependent on the information about data path in RDMA, e.g. the message size. However, in URN, both vRNIC Frontend and Backend are bypassed in the data path. Thus, we should extend these management into specific-hardware library in guest, because data path is mainly implemented in this library. The policies can be defined and distribute through the management center. Note that, these extension needs that the library is trusted for all guests, and the modification should be included into TCB (trusted computing base).
 
+% 4.4 discussion 
 
 % （2）虚拟实例迁移:容器或虚拟机迁移在云中有很多好处，例如资源利用和故障转移。通过使用虚拟RDMA网络，URN可以支持脱机迁移，而无需为应用程序重新配置物理RDMA网络。具体来说，在重新启动迁移的虚拟实例后，应用程序可以通过相同的网络地址重建RDMA连接。唯一的工作是修改URN core中的地址映射.目前，由于RDMA应用程序中的内存区域在旁路或单侧通信下可能存在不确定性，因此对动态迁移仍然存在困难。该问题与URN无关.
-(2) Virtual Instances Migration: Migration of containers or VMs has many benefits in clouds, e.g. resource utilization and fail-over. With the virtual RDMA network, URN can support offline migration without reconfiguring the physical RDMA network for applications. In specific, after rebooting the migrated virtual instance, the application can rebuild the RDMA connection through the same network address. The only work is modifying the address mapping in URN core. Currently, for live migrations, it is still hard because memory regions in RDMA application may be uncertain under bypassing or one-side communication. And the problem is unrelated to URN.
-
-% （3） 其他网络扩展： RDMA也可以被用来加速其他网络应用，例如基于TCP/IP网络协议栈的socket应用。现有的工作包括vSocket和SockDirect等。在URN中，同样可以通过扩展已有架构来实现优化guest socket的效果。通过修改vRNIC的前后端，可以将guest的socket命令转发到后端由RDMA执行。对应的，还需要修改与容器中的socket用户库，以将命令直接通过前端转发到后端。在后端，将socket命令通过RDMA网络执行，然后返回给guest。对于数据路径，同样可以通过映射方式实现零拷贝。
-(3) Other network extensions: RDMA can also be exploited to optimize the performance of other network applications,  such as TCP/IP.  Existing works include vSocket ~\cite{wang2019vsocket}, SockDirect~\cite{li2019socksdirect} so on. In URN, the socket applications in the guest can also be optimized through some extensions. By modifying the vRNIC frontend and backends, the socket commands can be forwarded to the backend and executed through physical RDMA network. For data paths, zero copy can also be achieved by mapping.
+ Virtual Instances Migration: Migration of containers or VMs has many benefits in clouds, e.g. resource utilization and fail-over. With the virtual RDMA network, URN can support offline migration without reconfiguring the physical RDMA network for applications. In specific, after rebooting the migrated virtual instance, the application can rebuild the RDMA connection through the same network address. The only work is modifying the address mapping in URN core. Currently, for live migrations, it is still hard because memory regions in RDMA application may be uncertain under bypassing or one-side communication. And the problem is unrelated to URN.
