@@ -14,9 +14,13 @@ However, neither of existing solutions can simultaneously achieve above goals. T
 
 The hardware-based solution is based on PCI pass-through for less overhead, like SR-IOV~\cite{sr-iov}. For hardware-based solutions (e.g. SR-IOV), RDMA device resources are directly allocated to virtual machines or containers. Thus, the device utilization is static and inefficient. Moreover, RDMA networks in clouds are still managed by physical switches or routers. Thus, virtual network management is not scalable and portable in large-scale clouds.
 
-To address these problems, we propose a unified RDMA virtualization framework for hybrid virtual environment in clouds, namely URN, also with the design goals of flexible management and high-performance. URN consists mainly of multiple vRNICs and the URN core in each server.
+To address these problems, we propose a unified RDMA virtualization framework for hybrid virtual environment in clouds, namely URN (Unified RDMA Network), also with the design goals of flexible management and high-performance. URN consists mainly of multiple vRNICs (virtual RDMA Network Interface Controller), the URN core in each server and the management center in the cluster.
 
-As the virtual device for guest, each vRNIC consists of backend and frontend. The backend is virtualized device in user-space with basic RDMA attributes, such as QPs (Queue Pairs) and MRs(Memory Regions). Thus, vRNIC is compatible for different RDMA kernel drivers. The frontend is the virtual device interface in the guest for upper Verbs library. Moreover, to optimize the performance, RDMA resources are mapped between guests (VMs or containers) and backends. The management layer tacks charge of vRNICs in each host server, including management RDMA devices, configuring vRNIC address and routing rules. 
+As the virtual device for guest, each vRNIC consists of backend and frontend. The backend is a virtualized device in user-space with basic RDMA attributes, such as QPs (Queue Pairs) and MRs(Memory Regions). Thus, vRNIC is compatible for different RDMA kernel drivers. The frontend is the virtual device interface in the guest for upper Verbs library. Moreover, to optimize the performance, RDMA resources are mapped between guests (VMs or containers) and backends. 
+
+The URN core is designed to manage the virtual and physical RDMA resources for the host, including instantiating vRNIC backends, managing virtual RDMA network configurations and policies. URN core also interact with physical RNIC through Verbs libraries. 
+
+With the help of management center, control policies can be defined and influence each guest, e.g. QoS, ACL. 
 
 Finally, we implement the prototype and evaluate it in different aspects, such as throughput, latency, scalability, with and real-word applications. From the result, URN's performance is close to native RDMA in hybrid virtual environment and the overhead is less than 5\% to hardware-based virtualization. URN also has high scalability and adapts to real-world RDMA applications in hybrid cloud environments. The main contributions in this paper are as follows:
 
