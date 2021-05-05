@@ -3,54 +3,59 @@
 
 %    为了适应混合虚拟环境（指容器，虚拟机或虚拟机内容器等虚拟实例共存，甚至部署于同一服务器，URN的首要目标是为提供一个统一的RDMA虚拟化框架。此外，为了RDMA资源的利用率和管理的灵活性，URN的第二个目标是，服务器上的虚拟的或物理的RDMA资源仅被URN core 集中管理和调度。URN的第三个目标是虚拟RDMA的性能接近原生RDMA，因为网络性能是应用使用RDMA的核心诉求。第四个目标是尽可能地保证兼容性，主要体现为对已有的RDMA应用程序透明，并且对RDMA软件栈引入最小的代码改变量。在本章，我们介绍了URN中的一些关键性设计工作。
 
-% 4.1  vRNIC 设计
+% 4.1  URN Core实例化vRNIC
+    
+% vRNIC是一个虚拟RDMA设备，包含前后端。vRNIC是一个虚拟RDMA设备，包含前后端：前端在guest端, 负责为上层verb库提供接口并转发RDMA 命令；后端在主机端，以模拟guest对vRNIC的RDMA操作。对于vRNIC后端，我们将其设计在主机用户空间，用户空间有诸多好处，细节可以见2.1节。
 
-% vRNIC是一个虚拟RDMA设备，包含前后端。vRNIC是一个虚拟RDMA设备，包含前后端：前端在guest端, 负责为上层verb库提供接口并转发RDMA 命令；后端在主机端，以模拟guest对vRNIC的RDMA操作。 
+% vRNIC的实例化是在URN core中进行的。首先，在实例化vRNIC时，需要对vRNIC的不变属性进行初始化。vRNIC中的不变属性包括RDMA地址vGID，设备号等等。对于RDMA地址vGID，URN core会通过mgmt core进行协调和登记，以确保各vRNIC的RDMA地址等信息是不冲突的并维护在统一的数据库中。
 
-% 4.1.1 vRNIC后端
-% 对于vRNIC后端，我们将其设计在主机用户空间，用户空间有诸多好处，细节可以见2.1节。在vRNIC后端中，需要维护vRNIC的两方面属性，以向guest应用提供完整的RDMA功能：
+% 其次，vRNIC实例化需要构建vRNIC后端与guest（vRNIC前端）之间的消息通道。对于容器来说，容器与vRNIC后端共享某一IPC命名空间，即可完成vRNIC前端与后端之间的消息交互。对于虚拟机来说，由于vRNIC后端在主机用户空间，而VM对应的hypervisor位于主机内核空间。为了避免guest的消息先拷贝到hypervisor层再到vRNIC后端，我们采用了vRNIC后端与guest共享内存的方式作为消息通道。具体来说，虚拟机内存区域对应的物理页面，与vRNIC后端之间是共享的。这样，guest中的任意RDMA消息，均可以直接由vRNIC后端获取，而无需进入到主机内核空间，同时也减少了消息从guest到vRNIC后端的延迟。
 
-% 其一，静态属性，是vRNIC所具备的成员或属性。vRNIC的静态属性主要包括：1）RDMA地址等硬件信息，供上层guest查询；2）RDMA资源缓冲区，如QP，MR，CQ或MR等，用以存储虚拟的RDMA资源实例或其信息等。只有vRNIC具备了这两类静态属性，经过实例化后，guest才能够使用vRNIC以实现RDMA。由于vRNIC后端是由软件实现的，其静态属性可以完全使用任意的虚拟值，vRNIC的静态属性与物理RDMA设备解耦。对于RDMA地址的虚拟化，有助于实现RDMA网络虚拟化，也方便了后续虚拟实例的迁移。因为，vRNIC向guest暴露的RDMA地址是虚拟地址，RDMA应用对底层的物理RDMA地址配置无感知。对于RDMA资源缓冲区的虚拟化，方便了对各虚拟实例使用RDMA资源进行限制与管理。例如，vRNIC在实例化时，可以限制vRNIC资源buffer的大小，以限制某一guest对RDMA资源的使用情况。
+% 最后，vRNIC实例化需要确保各vRNIC之间的消息通道是隔离的。在云环境中，同一主机上可能部署多个虚拟机或容器，该主机的URN core需要实例化多个vRNIC后端，以满足不同的guest实例。因此，需要确保各vRNIC之间的消息通道是隔离的，尤其是容器，由于其隔离性不如虚拟机彻底。如果多个容器和主机共享同一文件命名空间或IPC空间，那么，很容易通过扫描获取到其他容器或虚拟机vRNIC的消息通道。为此，URN core利用了文件命名空间的机制，将各vRNIC消息通道进行隔离。具体来说，无论虚拟机还是容器，vRNIC前后端之间的消息通道都是基于位于特定文件命名空间的共享文件的，对于别的guest实例，尤其是其他容器，是不可见的。
 
-% 其二，动态属性，是vRNIC所支持的操作过程。vRNIC可以支持RDMA的控制路径和数据路径， 两者均与具体的RDMA资源实例相关，例如控制路径主要是QP、MR等RDMA资源实例的创建、 更新或销毁，vRNIC后端需要随时记录和变更缓冲区中的资源实例信息，包括key，ID及页表信息等；数据路径主要是RDMA资源的直接使用。虚拟的RDMA资源实例最终仍需反映到物理RDMA网卡上，即每次对虚拟RDMA资源实例的操作均需要反映到对应的真实RDMA资源上，以实现RDMA功能。此外，在RDMA的上下文中，各RDMA资源之间具备复杂的交互关系，例如QP和CQ之间具备直接关联，MR和QP等也具备间接关联。因此，vRNIC后端中为了具备完整的动态属性，需要维护维护三方面的信息：
-% 1，来自guest的虚拟RDMA资源实例，这部分虚拟RDMA资源实例或信息主要存储与上述静态属性的资源缓冲区中；
-% 2，由物理网卡创建的RDMA资源实例，这部分由vRNIC后端利用verbs库或系统调用等在用户空间维护，各RDMA资源实例之间构成真实的RDMA上下文；
-% 3，虚拟实例到真实实例之间的对应关系，注意，这个对应关系是一对一关联，用以确保各虚拟RDMA上下文中，各虚拟RDMA资源之间的交互关系是严格与真实的RDMA上下文相吻合的，确保不会出现错误。
+% 4.2  vRNIC支持透明的RDMA操作
 
-% 完成了上面两种属性的虚拟化之后，vRNIC可以作为一个软件的虚拟RDMA设备，可以为上层的guest提供RDMA服务。
+% vRNIC 在实例化并分配给guest之后，guest可以基于vRNIC实现透明的RDMA操作，其中包括控制路径和数据路径。在vRNIC中，控制路径和数据路径分离。其中，需要经过vRNIC后端，在vRNIC后端中创建RDMA资源时会确保资源映射到guest应用。数据路径不需要经过vRNIC后端，直接在guest本地完成，避免了数据路径频繁的拷贝或切换开销。此外，vRNIC在原有的RDMA路径中加入了连接管理功能，以适应虚拟机和容器的云环境。
 
-% 4.1.2 vRNIC前端
-% vRNIC前端为不同的虚拟场景提供统一的接口。对于虚拟机来说，vRNIC是外部设备，由虚拟机OS驱动；对于容器，vRNIC是主机与容器共享的虚拟设备接口，可直接在容器用户空间使用。 因此，虚拟机和容器中有不同的vRNIC前端。 
-% 在虚拟机中，vRNIC前端作为设备驱动在vRNIC内核里面。vRNIC前端拦截RDMA内核驱动的RDMA命令，而不是用户空间verbs库。通过这种方式，vRNIC前端在虚拟机中既支持原生的用户空间Verbs API也能支持内核驱动的与设备无关的API。 RDMA内核驱动包括与设备无关的OFED模块和设备相关的模块。为此，虚拟机中的vRNIC前端需要配合一个自定义的设备相关的驱动模块，该模块用来配合RDMA内核驱动中已有的与设备无关的OFED模块，注册模拟设备的相关函数到OFED驱动模块中。RDMA应用在控制路径上的的verbs命令经过Verbs库的系统调用后，到达OFED驱动，从而调用自定义设备相关模块的接口。在该接口中，来自guest用户空间的verbs命令会转化成guest内核OFED驱动的RDMA命令。vRNIC前端会将该命令转发到vRNIC后端。vRNIC后端在主机用户空间，且使用主机的Verbs库接口。因此，guest中vRNIC前端在转发命令到后端前，仍需要将内核的RDMA命令和参数转化为序列化的Verbs的RDMA命令和参数形式，以让vRNIC后端调用。
-% 在容器中，为了保证在用户空间完成vRNIC前端转发verbs命令的功能，容器的verbs库中与内核RDMA驱动交互的接口，被替换为vRNIC前端接口。即vers库中与内核交互的RDMA命令及参数，并被劫持到vRNIC前端。然后，通过vRNIC前端转发到vRNIC后端，无需对命令和参数进行转化。
 
-% 4.1.3 映射优化
-% RDMA的操作过程分为控制路径和数据路径：控制路径包括创建RDMA资源和建立RDMA连接，一般在连接初始化阶段完成，不影响传输过程；而数据路径与数据收发操作相关，每次数据的传输过程中都会涉及，是影响RDMA网络性能的关键。因此，对于RDMA命令的虚拟化方式，我们继承了控制和数据通道分离的哲学，和已有的RDMA虚拟化方案一样，如hyv和MasQ。 在控制路径上： guest应用在本地的虚假RDMA上下文中执行verbs命令，创建RDMA资源或建立连接，例如create_qp, 并经过vRNIC前端转发到后端维持的真实RDMA上下文中执行，之后将结果返回给guest。在数据路径上，guest应用使用虚拟RDMA资源，guest的verbs命令直接在本地执行即可，从而绕过了vRNIC的前后端。 
+% 4.2.1 控制路径
+% 控制路径依次包括设备打开，创建资源（QP，CQ及MR等），连接建立等，主要包括了图中的第1-7步。
 
-% 要实现上述功能，需要将guest中控制和数据命令、参数等拷贝到vRNIC后端，由vRNIC后端在真实的RDMA上下文中执行，然后将结果拷贝到vRNIC前端。这种方式比较简单，但是导致额外的数据拷贝，从而影响RDMA性能。为了解决这个问题，对RDMA资源进行了直接映射的方式。
+% 4.2.1.1 虚拟设备绑定和打开
+% 第一步：Guest应用获取并打开vRNIC设备。vRNIC后端会将vRNIC设备绑定到对应的物理网卡，然后打开真实的RDMA设备。
 
+% 4.2.1.2 RDMA资源创建和映射
 % RDMA资源按照位于的物理地址空间，分为内存资源（如QP）和设备资源（如门铃）。这些RDMA资源的映射操作，均通过vRNIC的前后端来完成。
 % 对于内存资源（如QP），对于虚拟机：在虚拟机启动时，vRNIC后端即与虚拟机完成指定内存的共享，虚拟机创建RDMA资源时仅使用对应的与vRNIC后端共享的物理内存；对于容器：在容器应用创建RDMA资源时，会修改verbs库以使用共享内存创建资源，并将资源的共享路径传递给vRNIC后端。因此，对于vRNIC后端，使用修改的verbs库，使用对应的共享内存去创建资源，便可以完成对虚拟机或容器应用的资源映射。
-% 设备资源（如门铃），位于设备地址空间，由RDMA设备驱动管理。因此，无法在用户空间完成映射。为此，我们设计了一个用于映射RDMA设备资源且与host端RDMA内核驱动解耦的内核模块。vRNIC前端会将设备资源映射的命令和地址参数，转发到一个host内核模块，由该模块完成映射操作。
+% 设备资源（如门铃），位于设备地址空间，由RDMA设备驱动管理。因此，无法在用户空间完成映射。为此，我们设计了一个用于映射RDMA设备资源且与host端RDMA内核驱动解耦的内核模块。vRNIC前端会将设备资源映射的命令和地址参数，转发到一个host内核模块，由该模块完成映射操作。具体细节见实现章节。 
 
+% 因此，guest应用在创建RDMA资源的步骤如下：
+% 第二步：Guest应用创建QP/CQ等RDMA资源。...
+% 第三步：Guest应用注册MR。...
 
-% 4.2  URN Core 设计
-    % 在每台主机上，URN core设计的目的是为了管理服务器上的虚拟或物理RDMA资源，因此，URN core的功能主要有两个：1，实例化各vRNIC后端； 2，创建虚拟的RDMA连接.
-
-% 4.2.1 vRNIC实例化及分配
-
-% vRNIC实例化由URN core进行，在实例化vRNIC时，需要对vRNIC的静态属性进行初始化。对于RDMA地址等硬件信息，URN core会通过mgmt core进行协调和登记，以确保各vRNIC的RDMA地址等信息是不冲突的并维护在统一的数据库中。对于各RDMA资源缓冲区，其初始化时各RDMA资源实例都为空，即还未创建状态。vRNIC在何时进行实例化，分为动态和静态等实例化模式。对于静态模式，由URN core先对vRNIC进行实例化，待接受来自guest的vRNIC请求后，立即将该vRNIC实例分配给对应guest； 对于动态模式，则是在接受来自guest的vRNIC请求后，再进行实例化并分配给guest。通常来说，可以使用动态模式，避免了vRNIC实例的冗余，节省了内存等不必要开销。
-
-% vRNIC在实例化后，需要考虑如何分配给各个guest，为此，URN core与虚拟机和容器之间建立了一个消息通道，以接受虚拟机和容器探测vRNIC设备的请求，完成vRNIC实例与guest之间的绑定。当guest需要vRNIC时，他们可以请求URN core在主机用户空间中实例化相应的后端。为了构建这个通道，我们使用了UNIX套接字对于虚拟机及容器环境。当虚拟机或容器需要一个新的vRNIC时，对套接字发出的实例化请求会被URN处理。为了快速支持多个实例化请求，这个过程中采用了反应器模式。
-
-
-% 4.2.2 虚拟RDMA连接
+% 4.2.1.3 虚拟RDMA连接建立
 % 在云环境中，虚拟网络配置是实现很多功能的基础，例如多租户隔离、便携的虚拟机或容器迁移。虚拟网络配置包括了虚拟的网络地址，虚拟的路由规则以及其他软件定义的配置协议。URN在用户空间，支持灵活的虚拟RDMA网络配置。
 % 首先，通过vRNIC后端控制接口，URN Core 可以用vRNIC后端维护的虚拟地址(例如vGID)配置vRNIC， 该地址可以通过vRNIC前端反映到客户端的应用程序中。
 
-%其次，借助mgmt center 可以在每个URN Core中定义虚拟RDMA网络路由规则。每个vRNIC后端都配置了组ID， 路由规则定义为:{group ID1, group ID2, Policy}。一个关于查找路由规则的回调函数在实例化时注册到每个vRNIC后端。 这样，路由规则就可以实时地反映到服务器的所有vRNIC后端中。例如，如图4所示，容器1和容器2的vrnic被配置到同一组中，因此允许创建RDMA连接。作为对比，容器和虚拟机1是隔离的因为属于不同组。最后，vgid在物理RNIC中不能被识别，网络地址映射在vRNIC后端被创建和更新。如果路由规则允许，这对vgid将被转换成物理的gid来创建RDMA连接.
+%其次，借助mgmt center 可以在每个URN Core中定义虚拟RDMA网络路由规则。每个vRNIC后端都配置了组ID， 路由规则定义为:{group ID1, group ID2, Policy}。一个关于查找路由规则的回调函数在实例化时注册到每个vRNIC后端。 这样，路由规则就可以实时地反映到服务器的所有vRNIC后端中。例如，如图4所示，容器1和容器2的vrnic被配置到同一组中，因此允许创建RDMA连接。作为对比，容器和虚拟机1是隔离的因为属于不同组。最后，vgid在物理RNIC中不能被识别，网络地址映射在vRNIC后端被创建和更新。如果路由规则允许，这对vgid将被转换成物理的gid来创建RDMA连接. 因此，对于guest应用来说，虚拟RDMA的连接建立如下：
 
-% 4.3，管理功能
+% 第四步：Guest应用查询vRNIC的vGID地址。
+% 第五步：Guest应用与远端交换vGID，QP ID及MR key等信息。
+% 第六步：Guest应用基于远端vGID，QP ID及key与远端QP配对。
+% 第七步：Guest应用将QP修改为连接状态，两端RDMA连接建立。
+
+% 4.2.2 数据路径
+
+% 数据路径发生在连接建立后，主要操作注册的MR中的内容。RDMA的数据路径包含双边操作（Send/Recv)和单边操作（Read,Write）等多种数据操作。数据路径主要包括了图中的第8和9步。
+
+% 4.2.2.1 双边操作
+% 第八步：Guest应用发送注册内存中的数据。
+% 第九步：Guest应用轮询CQ获取数据操作的完成事件。
+
+% 4.2.2.2 单边操作
+% 单边操作中，由于guest应用需要知晓远端guest MR的内存地址及key。进一步，还需要知晓远端guest对应的vRNIC后端的MR内存地址。为此，我们建立了一个分布式的KV数据库，存储各节点注册MR的映射关系。在guest执行单边操作时，将向分布式KV数据库查询，以获取远端对应的MR内存地址，从而实现单边操作。然而，由于频繁地查询分布式KV数据库会带来较高的延迟，为此，我们利用了RDMA数据收发的局部性，在guest本地建立了一个KV缓存区，以加速单边操作的性能。
+
+% 4.3，虚拟RDMA管理
 %  4.3.1 基本管理功能
 %  在URN中，管理者可以通过mgmt center向不同的URN core下发各种策略，包括控制平面和数据平面。管理框架图如图5所示。
 %  在控制路径：控制路径可以实现的管理功能包括路由管理、防火墙等。这些策略主要依靠RDMA资源，如QP进行控制。具体地，vRNIC后端按照mgmt下发的策略，可以在创建RDMA资源前执行策略，并在策略执行后将结果或资源信息返回给mgmt中维持各RDMA上下文信息的数据库中。
@@ -65,10 +70,48 @@
 % URN的目标是为混合虚拟环境（指容器，虚拟机或虚拟机内容器等虚拟实例共存，甚至部署于同一服务器）提供一个统一的RDMA虚拟化框架。在这个框架里，服务器上的虚拟的或物理的RDMA资源仅被URN core 集中管理和调度。URN的第二个目标是虚拟RDMA的性能接近原生RDMA。第三个目标是对已有的RDMA应用程序透明，并且对RDMA软件栈引入最小的代码改变量。在本章，我们介绍了URN中的一些关键性设计工作。
 The goal of URN is to provide a unified RDMA virtualization framework for hybrid virtual environments where containers, virtual machines and containers inside virtual machine could coexist, even on the same server. In this framework, virtual and physical RDMA resources on one server are solely managed and scheduled by the URN core. The second design goal of URN is that the performance of virtualized RDMA should be close to the native RDMA. The third design goal is to be transparent to the vanilla RDMA applications, and to bring minimal code changes to RDMA software stack. In this section, we introduce some key design details.
 
+\subsection{URN Core}
+% URN core被设计用来管理虚拟RDMA网络和物理RDMA资源在每个主机上， 包括实例化vRNIC后端，虚拟网络配置和RDMA资源限制等。同样的，URN实现在用户空间。
+URN core is designed to manage the virtual and physical RDMA resources for the host, including instantiating vRNIC backends, virtual network configuration and RDMA resources limitation. Also, URN is in host user space for the same reasons in section xxx.
+
+% URN core如何实例化vRNIC后端？
+%注意到后端在主机用户空间，因此，URN core有必要建立一个消息通道在vRNIC和所有guest之间，因为URN core(主机用户空间) 是隔离虚拟机监视器或容器的。当guest需要vRNIC时，他们可以请求URN core在主机用户空间中实例化相应的后端。为了构建这个通道，我们使用了UNIX套接字对于虚拟机及容器环境。当虚拟机或容器需要一个新的vRNIC时，对套接字发出的实例化请求会被URN处理。为了快速支持多个实例化请求，这个过程中采用了反应器模式。
+Recall that the vRNIC backends is in host user space, it is necessary to build a communication channel between URN and all guests, because the URN core is another process in host and the isolated with both containers and the hypervisor(VMs). When guests need a vRNIC, they can request the URN core to instantiate corresponding backend in host user space. To build this channel, we utilize the UNIX socket for both VMs and containers. When VMs or containers need a new vRNIC, the instantiating request to socket are deal with URN. To support multiple request rapidly, the reactor mode are adopted in the process. 
+
+
+% URN core 对BE提供统一接口？
+% 除了实例化vRNIC后端，URN core 还包括了管理功能:包括虚拟网络管理和硬件资源管理。 为了实现这些管理，URN core 首先要监控vRNIC后端的属性和上下文，并在URN核心中汇总信息(如资源内存映射)。为此，URN提供了记录RDMA上下文及属性的接口。在RNIC后端中，这些记录接口在Verbs命令执行后被调用，以更新记录信息;
+%其次，URN core还提供了控制接口，并且用户定义的配置或控制策略可以部署到vRNIC后端。记录和控制接口都是回调函数，当vRNIC后端实例化时，它们被注册到vRNIC后端。接下来介绍虚拟网络配置和硬件资源管理:
+Besides instantiating vRNIC backends, the URN core is also designed for the management: including virtual network and hardware resources. To achieve the management, at first, the attributes and contexts in vRNIC backends should be monitored and the information (e.g. resource memory mapping) should be summarized in URN core. Thus, the URN provides the recording interfaces about the attributes and contexts, and the interfaces are executed in vRNIC backends when the Verbs commands are executed; 
+second, the control interfaces are also provided and user-defined configuration or control policies can be deployed into vRNIC backends. Both recording and control interfaces are lots of callback functions and they are registered into vRNIC backends when vRNIC backends instantiating. Later, the virtual network configurations an hardware resources management are introduced:
+
+% 具体讲URN core提供了哪些管理功能：
+% 1, 虚拟网络构建：在云环境中，虚拟网络配置是实现很多功能的基础，例如多租户隔离、便携的虚拟机或容器迁移。虚拟网络配置包括了虚拟的网络地址，虚拟的路由规则以及其他软件定义的配置协议。URN在用户空间，支持灵活的虚拟RDMA网络配置。
+In clouds, virtual network configuration is important for lots of features, such as multi-tenant isolation and portable guest migrations. The virtual network configuration includes virtual network address, virtual network routing rules and other software-defined information. URN support flexible virtual RDMA network configurations in user space. 
+%首先，通过vRNIC后端控制接口，URN可以用vRNIC后端维护的虚拟地址(例如vGID)配置vRNIC，该地址可以通过vRNIC前端反映到客户端的应用程序中。
+First, through the control interface to vRNIC backends, URN can configure the vRNIC with virtual address (e.g. vGID) which maintained in vRNIC backends, and the address can be reflected into applications in the guest through the vRNIC frontend.
+%其次，可以在每个URN核心中定义虚拟RDMA网络路由规则。每个vRNIC后端都配置了组ID，路由规则定义为:{group ID1, group ID2, Policy}。一个关于查找路由规则的回调函数在实例化时注册到每个vRNIC后端。这样，路由规则就可以实时地反映到服务器的所有vRNIC后端中。例如，如图~\ref{fig:route-config}所示，容器1和容器2的vrnic被配置到同一组中，因此允许创建RDMA连接。作为对比，容器和虚拟机1是隔离的因为属于不同组。最后，vgid在物理RNIC中不能被识别，网络地址映射在vRNIC后端被创建和更新。如果路由规则允许，这对vgid将被转换成物理的gid来创建RDMA连接.
+Second, the virtual RDMA network routing rules can be defined in each URN core. Each vRNIC backend is configured with the group ID and the routing rules can be defined as: {Group ID1, Group ID2, Policy}. A callback function about lookuping routing rules is registered to each vRNIC backends when instantiating vRNIC backends. Thus, the routing rules can be reflected in real time for all vRNIC backends in the server. For example, as shown in Figure~\ref{fig:route-config}, the vRNICs for container 1 and container 2 are configured into the same group, thus RDMA connections are allowed to create. In contrast, the container 1 and VM 1 are isolated RDMA network because different groups. Finally, the vGIDs is not recognized in physical RNIC, and the network address mappings are created and updated in the vRNIC backends. If the routing rules allow, the pair of vGIDs will be translate to physical GIDs to create the RDMA connection.
+
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[width=1.0\linewidth]{images/route-config}
+	\caption{Group Configuration and Routing: The vRNICs of container 1 and container 2 are configured in one group. Thus, two containers can create RDMA connections. And VM 1 are not allowed to create RDMA connections to containers in this figure because it is not added into the group. }
+	\label{fig:route-config}
+\end{figure}
+
 
 \subsection{vRNIC Design}
 % vRNIC是一个虚拟RDMA设备，包含前后端：前端在guest端, 负责为上层verb库提供接口并转发RDMA 命令；后端在主机端，通过与URN core或verbs库交互，以模拟guest对vRNIC的RDMA操作。 我们继承了控制和数据通道分离的哲学，和已有的RDMA虚拟化方案一样，如hyv和MasQ，控制路径上guest应用在本地的虚假RDMA上下文中执行verbs命令，并经过FE转发到BE维持的真实RDMA上下文中执行，之后将结果返回给guest；在数据路径上，将guest应用的RDMA资源与vRNIC BE上下文中的RDMA资源进行映射，guest应用的RDMA资源被注册到了物理网卡中，之后guest应用可以在本地直接使用RDMA资源进行数据操作。
 vRNIC is a virtual RDMA device, which consists of the frontend and backend. The frontend forward the commands of Verbs library in the guest user space to backend. The backend execute the commands by interacting with the physical RNIC through Verbs library in host user space. We inherited the philosophy that the control path and data path of RDMA operations are virtualized in different ways\cite{pfefferle2015hybrid}\cite{he2020masq}\cite{kim2019freeflow}. On the control path, para-virtualization technique is used that control commands from the guest Verb library are served by the frontend and forwarded to backend. On the data path, direct-passthrough technique is used that applications in the guest environment can directly map and use physical RDMA resources so that no guest OS kernel or host virtualization layer is involved when sending and receiving network packages. The details of memory mapping implementations in URN framework is described in section 5 Implexxx.
+
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[width=1\linewidth]{images/RDMA-path.png}
+	\caption{The Workflow of RDMA SEND operation}
+	\label{fig:route-config}
+\end{figure}
+
 
 % 前端：
 % vRNIC前端作为vRNIC的设备接口提供给guest中的verbs库。Verbs命令可以通过前端转发到后端。在虚拟机中，vRNIC前端位于guest内核空间，并模拟原生的RDMA内核驱动为上层的verbs库提供与原生一致的接口，例如设备总线，设备文件。因此，当虚拟机中的前端加载后，可以直接使用未修改的verbs库。这样的好处是让URN系统更加稳定。
@@ -101,36 +144,6 @@ Based on the above information, the vRNIC backend can interact with the URN core
 	\label{fig:route-config}
 \end{figure}
 
-
-\subsection{URN Core}
-% URN core被设计用来管理虚拟RDMA网络和物理RDMA资源在每个主机上， 包括实例化vRNIC后端，虚拟网络配置和RDMA资源限制等。同样的，URN实现在用户空间。
-URN core is designed to manage the virtual and physical RDMA resources for the host, including instantiating vRNIC backends, virtual network configuration and RDMA resources limitation. Also, URN is in host user space for the same reasons in section xxx.
-
-% URN core如何实例化vRNIC后端？
-%注意到后端在主机用户空间，因此，URN core有必要建立一个消息通道在vRNIC和所有guest之间，因为URN core(主机用户空间) 是隔离虚拟机监视器或容器的。当guest需要vRNIC时，他们可以请求URN core在主机用户空间中实例化相应的后端。为了构建这个通道，我们使用了UNIX套接字对于虚拟机及容器环境。当虚拟机或容器需要一个新的vRNIC时，对套接字发出的实例化请求会被URN处理。为了快速支持多个实例化请求，这个过程中采用了反应器模式。
-Recall that the vRNIC backends is in host user space, it is necessary to build a communication channel between URN and all guests, because the URN core is another process in host and the isolated with both containers and the hypervisor(VMs). When guests need a vRNIC, they can request the URN core to instantiate corresponding backend in host user space. To build this channel, we utilize the UNIX socket for both VMs and containers. When VMs or containers need a new vRNIC, the instantiating request to socket are deal with URN. To support multiple request rapidly, the reactor mode are adopted in the process. 
-
-
-% URN core 对BE提供统一接口？
-% 除了实例化vRNIC后端，URN core 还包括了管理功能:包括虚拟网络管理和硬件资源管理。 为了实现这些管理，URN core 首先要监控vRNIC后端的属性和上下文，并在URN核心中汇总信息(如资源内存映射)。为此，URN提供了记录RDMA上下文及属性的接口。在RNIC后端中，这些记录接口在Verbs命令执行后被调用，以更新记录信息;
-%其次，URN core还提供了控制接口，并且用户定义的配置或控制策略可以部署到vRNIC后端。记录和控制接口都是回调函数，当vRNIC后端实例化时，它们被注册到vRNIC后端。接下来介绍虚拟网络配置和硬件资源管理:
-Besides instantiating vRNIC backends, the URN core is also designed for the management: including virtual network and hardware resources. To achieve the management, at first, the attributes and contexts in vRNIC backends should be monitored and the information (e.g. resource memory mapping) should be summarized in URN core. Thus, the URN provides the recording interfaces about the attributes and contexts, and the interfaces are executed in vRNIC backends when the Verbs commands are executed; 
-second, the control interfaces are also provided and user-defined configuration or control policies can be deployed into vRNIC backends. Both recording and control interfaces are lots of callback functions and they are registered into vRNIC backends when vRNIC backends instantiating. Later, the virtual network configurations an hardware resources management are introduced:
-
-% 具体讲URN core提供了哪些管理功能：
-% 1, 虚拟网络构建：在云环境中，虚拟网络配置是实现很多功能的基础，例如多租户隔离、便携的虚拟机或容器迁移。虚拟网络配置包括了虚拟的网络地址，虚拟的路由规则以及其他软件定义的配置协议。URN在用户空间，支持灵活的虚拟RDMA网络配置。
-In clouds, virtual network configuration is important for lots of features, such as multi-tenant isolation and portable guest migrations. The virtual network configuration includes virtual network address, virtual network routing rules and other software-defined information. URN support flexible virtual RDMA network configurations in user space. 
-%首先，通过vRNIC后端控制接口，URN可以用vRNIC后端维护的虚拟地址(例如vGID)配置vRNIC，该地址可以通过vRNIC前端反映到客户端的应用程序中。
-First, through the control interface to vRNIC backends, URN can configure the vRNIC with virtual address (e.g. vGID) which maintained in vRNIC backends, and the address can be reflected into applications in the guest through the vRNIC frontend.
-%其次，可以在每个URN核心中定义虚拟RDMA网络路由规则。每个vRNIC后端都配置了组ID，路由规则定义为:{group ID1, group ID2, Policy}。一个关于查找路由规则的回调函数在实例化时注册到每个vRNIC后端。这样，路由规则就可以实时地反映到服务器的所有vRNIC后端中。例如，如图~\ref{fig:route-config}所示，容器1和容器2的vrnic被配置到同一组中，因此允许创建RDMA连接。作为对比，容器和虚拟机1是隔离的因为属于不同组。最后，vgid在物理RNIC中不能被识别，网络地址映射在vRNIC后端被创建和更新。如果路由规则允许，这对vgid将被转换成物理的gid来创建RDMA连接.
-Second, the virtual RDMA network routing rules can be defined in each URN core. Each vRNIC backend is configured with the group ID and the routing rules can be defined as: {Group ID1, Group ID2, Policy}. A callback function about lookuping routing rules is registered to each vRNIC backends when instantiating vRNIC backends. Thus, the routing rules can be reflected in real time for all vRNIC backends in the server. For example, as shown in Figure~\ref{fig:route-config}, the vRNICs for container 1 and container 2 are configured into the same group, thus RDMA connections are allowed to create. In contrast, the container 1 and VM 1 are isolated RDMA network because different groups. Finally, the vGIDs is not recognized in physical RNIC, and the network address mappings are created and updated in the vRNIC backends. If the routing rules allow, the pair of vGIDs will be translate to physical GIDs to create the RDMA connection.
-
-\begin{figure}[!ht]
-	\centering
-	\includegraphics[width=1.0\linewidth]{images/route-config}
-	\caption{Group Configuration and Routing: The vRNICs of container 1 and container 2 are configured in one group. Thus, two containers can create RDMA connections. And VM 1 are not allowed to create RDMA connections to containers in this figure because it is not added into the group. }
-	\label{fig:route-config}
-\end{figure}
 
 \subsection{Management}
 
