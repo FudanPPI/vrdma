@@ -16,9 +16,9 @@ For software virtualization of I/O devices, there are two main choices for where
 \subsection{RDMA}
 As popular high-performance network in supercomputing, RDMA has hardware protocol stack and zero copy technology. With RDMA, applications can bypass the kernel to read and write remote memory data, without the participation of remote CPU. 
 
-% RDMA网卡中将控制路径和数据路径分离，在数据路径具备零拷贝，绕过内核以及硬件协议栈等特点，因此具备了高性能。具体；；来讲，控制路径上，RDMA网卡会按上层应用的命令创建RDMA资源并维护RDMA上下文，例如，RDMA网卡会在创建资源时缓存资源的key，ID及注册内存的页表等信息；在数据路径上，RDMA网卡依照RDMA资源中的地址信息以零拷贝的方式读写数据，并通过网卡硬件协议栈进行收发，减少了CPU的消耗。此外，对于用户空间的RDMA应用，RDMA网卡在数据路径绕过了操作系统，直接根据缓存的页表读写用户空间的内存。
+% RDMA网卡具备数据零拷贝，绕过内核以及硬件协议栈等特点，因此具备了高性能。具体来讲，RDMA中控制路径和数据路径分离，控制路径上，RDMA网卡会按上层应用的命令创建RDMA资源并维护RDMA上下文，例如，RDMA网卡会在创建资源时缓存资源的key，ID及注册内存的页表等信息；在数据路径上，RDMA网卡依照RDMA资源中的地址信息以零拷贝的方式读写数据，并通过网卡硬件协议栈进行收发，减少了CPU的消耗。此外，对于用户空间的RDMA应用，RDMA网卡在数据路径绕过了操作系统，直接根据缓存的页表读写用户空间的内存。
 
-% RDMA有多种不同的实现方式，例如，InfiniBand，RoCE和iWarp。不过，Verbs是上层应用使用RDMA网卡的基本接口。
+% RDMA有多种不同的实现方式，例如，InfiniBand，RoCE和iWarp。不过，Verbs是上层应用使用RDMA网卡的基本接口。接下面英文：
 
 Verbs~\cite{verbs} is the basic interface for applications to utilize RDMA. It is similar as socket for traditional network applications. As shown in Figure~\ref{fig:rdma-feat}, RDMA Verbs is also separated to control path and data path as RNIC device. In control path: applications open device and setup the RDMA context. The main resources in RDMA context include Queue Pairs (QPs), Complete Queues(CQs), Memory Regions (MRs). The control verbs include ibv\_create\_qp, reg\_mr;  In data path: applications directly use RDMA resources to transport data and the transport is asynchronous. In specific, applications fillwith the work request into the Send Queue or Receive Queue in a QP, each work request includes the address, size and key of the message. Then the RNIC can execute the operation. The data verbs include ibv\_post\_send and ibv\_post\_recv. Compared control path, data path bypasses the kernel to avoid context switch.
 
