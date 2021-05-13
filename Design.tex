@@ -29,13 +29,31 @@ As a virtual RDMA device, the vRNIC backend needs to maintain the hardware prope
 (2) The RDMA context created on the physical RNIC,  including various RDMA resources, which is maintained in the vRNIC backend with the help of the Verbs libraries;
 (3) The mapping between the virtual RDMA context and the physical RDMA context. The mapping of RDMA resources is one-to-one, because shared physical RDMA context cannot achieve the performance isolation.
 
+% 如果所有对RDMA资源的操作，均在guest应用和vRNIC后端之间进行拷贝，会引入额外的数据拷贝，导致RDMA性能下降。考虑到控制路径仅涉及到初始化和连接建立的过程，其开销是一次性的，而数据路径包括了RDMA应用的每次数据传输，是影响RDMA性能的关键。因此，为了提高RDMA网络性能，在vRNIC设计过程中，RDMA数据路径中使用了共享内存映射的方式。具体来说，vRNIC后端与guest共享了一块内存区域，vRNIC后端使用该共享内存创建RDMA资源并映射给上层的guest应用，包括MR、QP、CQ和DoorBell等。guest应用基于这些映射的RDMA资源执行数据路径的操作，就是对RDMA物理网卡执行数据操作，不用经过vRNIC后端和虚拟机操作系统，避免了额外的数据拷贝和切换的开销，从而实现了与原生RDMA相当的性能。同时，因为guest中的数据路径涉及RDMA资源对应的内存空间对于vRNIC后端都是共享的，因此，guest中的所有数据操作对于vRNIC都是可见的，从而便于在vRNIC后端实现对guest RDMA数据传输的各种管理，例如包过滤、防火墙等。
+
 % 4.1.2 vRNIC前端
 \subsubsection{vRNIC Frontend}
 
 % 为了对虚拟机和容器通用，vRNIC前端为不同的虚拟场景提供统一的接口，用于连接guest中的应用和vRNIC后端。虚拟机和容器中有不同的vRNIC前端。 
 % 在虚拟机中，vRNIC后端是外部设备，由虚拟机OS中的vRNIC前端驱动。原生RDMA内核驱动包括与设备无关的OFED模块和设备相关的模块，OFED模块接受来自verbs库的命令，提供了内核层级的RDMA API；设备相关模块调用物理网卡设备的硬件接口，执行来自RDMA命令。对应的，在虚拟机中为了使用vRNIC完成RDMA功能，还需要构建一个自定义的设备相关的驱动模块，实现与原生一样的设备相关接口并注册到OFED模块。与原生RDMA不同的是，在这些接口的逻辑中，OFED中的RDMA命令不会在RDMA网卡硬件上执行，而是被转发到vRNIC前端模块，再由vRNIC后端执行。因此，原生的RDMA应用无需修改便可运行在虚拟机中，而且虚拟机内核空间仍然可以使用RDMA。
-% 在容器中，vRNIC后端可以和容器应用共享主机操作系统，两者仅位于不同的命名空间。为了在容器的用户空间使用vRNIC，容器的verbs库中与内核RDMA驱动交互的接口，被替换为vRNIC前端接口。Vers库中与内核交互的RDMA命令及参数，被劫持到vRNIC前端。然后通过vRNIC前端转发到vRNIC后端。
+% 在容器中，vRNIC后端可以和容器应用共享主机操作系统，两者仅位于不同的命名空间。为了在容器的用户空间使用vRNIC，容器的verbs库中与内核RDMA驱动交互的接口，被替换为vRNIC前端接口。Vers库中与内核交互的RDMA命令及参数，被劫持到vRNIC前端,并被转发到vRNIC后端。
 
+% 4.1.3 Guest Verbs库和用户态驱动
+
+% Verbs库基于物理RDMA设备相关的内核及用户态驱动，为RDMA应用提供了Verbs接口。在原生RDMA场景中，Verbs库是面向使用RDMA网卡的应用或其他用户库的通用接口Verbs，在控制路径上，Verbs库接受RDMA应用的Verbs命令并与RDMA内核驱动进行交互，在数据路径上，Verbs库调用设备相关用户态驱动，直接与RDMA物理网卡交互，绕过了操作系统内核。虚拟机或容器中RDMA应用均是基于vRNIC进行。为了让虚拟机或容器中的应用使用vRNIC，同时维持vRNIC对RDMA应用的透明性，虚拟机及容器中的Verbs库在保证与原生接口一致的情况下，需要适配vRNIC架构。
+
+% 在容器中，为了让vRNIC前端接受应用的Verbs命令，将Verbs库中与内核驱动交互的接口替换为与vRNIC前端交互的接口。此外，为了让容器应用与vRNIC后端之间完成RDMA资源的共享内存映射，包括MR、QP/CQ和DoorBell，具体修改如下：
+%（1）针对MR：由于MR的内存区域是由应用指定的，在Verbs用户库中将应用指定的MR内存重新映射到指定的共享内存，然后将该共享内存信息随MR命令及参数传递到vRNIC后端。
+%（2）针对QP/CQ：原生RDMA中QP/CQ内存的分配是在用户态驱动中进行的，我们在用户态驱动中增加了基于共享内存分配RDMA资源的函数，例如alloc_shm_buf，通过该函数分配好QP/CQ内存后，对应的共享内存信息会随RDMA命令和参数传递到vRNIC后端。
+% vRNIC后端在收到这些命令和参数后，在创建QP/CQ时，其分配的内存需指定为与虚拟机或容器共享的内存，此时，仍需扩展用户态驱动，主要增加了基于指%定内存地址分配QP/CQ等RDMA资源内存的函数，例如alloc_assigned_buf。
+
+%（3）针对DoorBell：在原生RDMA中，DoorBell由Verbs库打开RDMA内核驱动提供的设备接口并执行映射操作。在vRNIC中，修改了Verbs库中这一操作，让Verbs库打开虚拟的设备接口，将命令和参数传递到主机内核模块执行。
+
+% 在虚拟机中，由于vRNIC在实例化时已经共享了虚拟机的整块物理内存空间，虚拟机应用使用默认的方式分配MR、QP或CQ等RDMA资源的内存，无需对Verbs进行修改。在虚拟机内核的vRNIC前端驱动中，将RDMA资源的内存信息随RDMA命令转发给vRNIC后端，vRNIC后端便可依据这些内存信息，可以创建RDMA资源并映射给虚拟机使用。
+
+% 在完成上述修改后，仍需在虚拟机及容器的设备相关库中对数据路径的工作请求进行额外的地址转换。在数据路径中，guest的RDMA应用往QP中写入工作请求，该请求对应的内存地址是虚拟机或容器应用的地址空间gvm（guest virtual memory），RDMA物理网卡中缓存的MR页表信息则是主机vR0NIC后端共享MR的地址空间s-hvm（shared host virtual memory），因此，仍然需要对RDMA工作请求中的gvm进行转换，将gvm转换成s-hvm，再将转换地址后的工作请求写入已经映射的QP中，之后物理RDMA网卡才可以执行guest的工作请求。对于这一地址转换工作，需要修改guest中的 用户态驱动。具体做法是，在guest用户态驱动中记录有MR资源的地址映射关系，包括MR的Key，gvm，s-hvm，即{key, gvm, s-hvm},待guest应用执行数据操作时，根据key查询映射关系，将对应的gvm转换成s-hvm即可。
+
+% 基于上述修改，无论是虚拟机还是容器，RDMA应用在控制路径中，RDMA命令经过Verbs库，vRNIC前端到达vRNIC后端，在vRNIC后端中创建RDMA源时会确保资源映射到guest应用。基于映射的RDMA资源，数据路径不需要经过虚拟机操作系统和vRNIC后端，RDMA工作请求直接在guest本地驱动物理RDMA网卡执行，避免了数据路径频繁的拷贝或切换开销。
 
 % 4.2  URN Core 设计
 \subsection{URN Core}
@@ -61,7 +79,9 @@ As a virtual RDMA device, the vRNIC backend needs to maintain the hardware prope
 
 % 对于虚拟RDMA路由配置，每台主机的URN core中配置了虚拟RDMA网络路由规则。具体来说，URN core在实例化vRNIC时，还给每个vRNIC都配置了组ID，路由规则的定义形式为:{group ID1, group ID2, Policy}。例如，如图4所示，容器1和容器2的vrnic被配置到同一组中，因此允许创建RDMA连接。作为对比，容器1和虚拟机1属于不同的用户组，按路由规则无法建立RDMA连接。各虚拟实例之间建立RDMA连接的具体细节可以参考4.3.1。
 
-% URN core中的虚拟网络配置是动态调整的，因此，容器和虚拟机迁移后无需更改物理网卡及交换机等硬件的网络配置，实现便携的虚拟机或容器迁移。基于URN core中的路由规则，可以支持云环境中的多租户隔离。
+% RDMA网络与传统TCP不同，RDMA还支持单边操作。在guest应用的RDMA单边操作中，RDMA的工作请求中包含了远端guest MR的内存地址及key，远端MR内存地址同样需要在RDMA用户态驱动中完成转换，将远端的gvm转换为远端vRNIC后端的s-hvm。为了便于guest应用查询远端gvm对应的s-hvm，我们在URN core中建立了一个分布式的KV数据库，存储各节点注册MR的映射关系{key，gvm，s-hvm}。在guest应用执行单边操作时，将向URN core 中的分布式KV数据库查询，以获取远端对应的s-hvm，缓存到本地并写入工作请求。
+
+% 总之，URN core中的虚拟网络配置是动态调整的，因此，容器和虚拟机迁移后无需更改物理网卡及交换机等硬件的网络配置，实现便携的虚拟机或容器迁移。基于URN core中的路由规则，可以支持云环境中的多租户隔离。而各URN core存储的MR地址映射关系，对RDMA网络特有的单边操作给予了支持。
 
 
 \begin{figure}[!ht]
@@ -74,8 +94,7 @@ As a virtual RDMA device, the vRNIC backend needs to maintain the hardware prope
 
 % 4.3 虚拟RDMA workflow
 \subsection{Virtual RDMA Workflow}
-
-% RDMA的工作流程包括控制路径和数据路径。基于vRNIC和URN core，在虚拟机和容器中可以实现透明的RDMA操作，其中包括控制路径和数据路径。为了实现高性能的RDMA，我们在vRNIC中也采用了控制路径和数据路径分离的设计。其中，控制路径需要经过vRNIC后端，在vRNIC后端中创建RDMA源时会确保资源映射到guest应用。基于映射的RDMA资源，数据路径不需要经过vRNIC后端，直接在guest本地完成，避免了数据路径频繁的拷贝或切换开销。此外，vRNIC在原有的RDMA控制路径中加入了连接管理功能，以适应虚拟机和容器的云环境。
+% 为了更好地说明虚拟RDMA的工作过程，我们介绍了虚拟RDMA的详细工作流程，如图4所示。虚拟RDMA的工作流程涉及guest中的应用、verbs库以及主机的vRNIC后端交互。整个工作流程依次分为初始化阶段、连接阶段和数据阶段。其中，初始化阶段和连接阶段属于RDMA控制路径，初始化阶段分别包括设备打开和RDMA资源创建，连接阶段中RDMA应用与远端建立连接。数据阶段中RDMA应用执行数据路径的传输操作。
 
 \begin{figure}[!ht]
 	\centering
@@ -84,49 +103,31 @@ As a virtual RDMA device, the vRNIC backend needs to maintain the hardware prope
 	\label{fig:route-config}
 \end{figure}
 
-% 4.3.1 控制路径
-%  如图4所示，控制路径依次包括初始化阶段（I1-I3）和连接阶段（C1-C3）。在初始化阶段分别包括设备打开（I1）和RDMA资源创建（I2,I3）。稍后的连接阶段，RDMA应用与远端基于QP与远端建立连接。具体细节如下： 
+% 4.3.1 初始化阶段
+%  初始化阶段主要完成资源的初始化，分别包括设备打开（I1）、注册内存buffer（I2）和创建QP/CQ等RDMA资源（I3）。具体细节如下： 
 
-%（1）初始化阶段
-% I1：Guest应用获取并打开vRNIC设备。vRNIC后端会打开在vRNIC实例化时绑定的物理RDMA设备。
+% I1（Guest应用打开vRNIC设备）：Guest应用依次调用Verbs接口ibv_get_devicelist和ibv_open_device，获取并打开vRNIC设备。 Guest中的Verbs库将传递这些命令和参数到vRNIC后端，vRNIC后端会打开在vRNIC实例化时绑定的物理RDMA设备。
 
-%（2）RDMA资源创建和映射
-% 按照使用的内存类型，RDMA资源分为主存资源（使用物理内存，如QP）和设备资源（使用设备内存，如门铃）。
-% 对于主存资源（如QP，CQ和MR），在创建资源的过程中完成资源映射操作。无论是虚拟机还是容器，这类资源映射都是基于共享内存的方式来完成。具体如图4所示：
+% I2（Guest应用注册MR）：在容器中，Verbs库中将应用指定的MR内存重新映射到某一共享内存，然后将该路径随MR命令及参数传递到vRNIC后端，虚拟机无需此步骤，因为在实例化vRNIC时已与vRNIC后端共享整个内存。对于容器和虚拟机，vRNIC后端在收到该命令及参数后，会使用对应的共享内存注册MR，并返回MR内存地址（s-hvm）和key等信息，在虚拟机和容器的Verbs库中，则会记录guest中MR内存地址（gvm）与s-hvm，以及MR的key，这三者的对应关系，用于后续的数据路径操作。
 
-% I2：Guest应用注册MR。由于MR的内存区域是由应用指定的，为了让MR的内存和vRNIC后端完成映射，同时维持URN对应用的透明性，我们修改了容器的Verbs库，将应用指定的MR内存重新映射到某一共享内存，然后将该路径随MR命令及参数传递到vRNIC后端。
-% 对于虚拟机，由于vRNIC在实例化时，vRNIC后端已经和虚拟机的整块内存完成了共享，虚拟机中的Verbs库此时无需额外映射工作。vRNIC后端在收到该命令及参数后，会使用对应的共享内存注册MR，并返回MR内存地址（s-hvm）和key等信息，在虚拟机和容器的Verbs库中，则会记录guest中MR内存地址（gvm）与s-hvm，以及MR的key，这三者的对应关系，用于后续的数据路径操作。
 
-% I3：Guest应用创建QP/CQ等RDMA资源。原生RDMA中QP/CQ内存的分配是硬件相关的用户库中进行的，该库中对于QP/CQ等RDMA资源内存的分配方式并未包括共享内存。因此，为了让QP和CQ内存和vRNIC后端之间完成映射，同时避免修改Verbs库与应用交互的Verbs API（例如ibv_create_qp， ibv_create_cq），我们在硬件相关的用户库中增加了基于共享内存分配RDMA资源的函数，例如alloc_shm_buf，通过该函数分配好QP/CQ内存后，对应的共享内存路径会随RDMA命令和参数传递到vRNIC后端。
-% 对于虚拟机，由于vRNIC实例化是vRNIC后端已经共享了虚拟机的整块内存，无需这一步骤。
-% vRNIC后端在收到这些命令和参数后，在创建QP/CQ时，其分配的内存需是与虚拟机或容器共享的内存，此时，仍需修改设备相关的用户库，主要增加了基于指定内存地址分配QP/CQ等RDMA资源内存的函数，例如alloc_assigned_buf。在创建资源后，vRNIC后端会返回QPN等RDMA资源的元数据。 
-% 总之，对于QP/CQ等RDMA资源，Verbs库和RDMA设备相关用户库对RDMA虚拟化的支持不够，未考虑到使用共享内存映射RDMA资源的情形。为此，我们建议Verbs库或设备相关库中增加以下API，以加强对各场景下RDMA虚拟化的支持，如下表所示：
-% API  所属库  功能 
-% alloc_shm_buf()  设备相关库 创建并分组共享内存作为RDMA资源内存
-% alloc_assigned_buf(addr, size) 设备相关库 为RDMA资源指定某一内存区域
-% ibv_create_qp/cq_shm() 基于共享内存区域创建QP/CQ
-% ibv_assigned_qp/cq 使用指定的内存区域创建QP/CQ
+% I3（Guest应用创建QP/CQ）：在容器中，Verbs及其设备相关库使用共享内存分配QP/CQ的buffer，对应的共享内存路径会随RDMA命令和参数传递到vRNIC后端，虚拟机无需此步骤，因为在实例化vRNIC时已与vRNIC后端共享整个内存。对于容器和虚拟机，vRNIC后端在收到这些命令和参数后，在创建QP/CQ时，使用接收的共享内存地址分配QP/CQ等RDMA资源内存，在创建资源后，vRNIC后端会返回QPN等RDMA资源的元数据。 
 
-% 对于设备资源（如门铃），它位于设备地址空间，由RDMA设备驱动管理。因此，无法在用户空间完成映射。为此，我们设计了一个用于映射RDMA设备资源且与host端RDMA内核驱动解耦的内核模块。vRNIC前端会将设备资源映射的命令和地址参数，转发到一个host内核模块，由该模块完成映射操作。具体细节见实现章节。 
+%4.3.2 连接阶段
+% 连接阶段主要建立基于QP的RDMA连接，依次包括查询GID（C1）、交换连接信息（C2）和基于QP建立连接（C3），具体细节如下：
 
-%（3）虚拟RDMA连接建立
+% C1（获取GID）：Guest应用执行ibv_query_gid，请求获取vRNIC的vGID地址，vRNIC后端在收到该命令后，会获取绑定的物理RDMA网卡的GID，并记录（vGID，GID）对应关系。不过，vRNIC后端返回给guest的仍然是vGID。
 
-% C1：Guest应用查询vRNIC的vGID地址。vRNIC后端会获取绑定的物理RDMA网卡的GID，并记录（vGID，GID）对应关系。不过，vRNIC后端返回给guest的仍然是vGID。
+% C2（交换连接信息）：Guest应用与远端RDMA连接所需的地址信息vGID，QPN和MR key等。 该步骤完全由应用程序完成，无需依靠Verbs库和vRNIC后端。例如，应用中可以使用TCP socket来与远端guest应用完成这一系列信息的交换。
 
-% C2：Guest应用与远端RDMA连接所需的地址信息vGID，QPN和MR key等。 该步骤完全由应用程序完成，无需调用Verbs库。例如，应用中可以使用TCP socket来与远端guest应用完成这一系列信息的交换，
-%  C3：Guest应用使用本地QP，基于远端vGID，QPN等信息与远端QP建立连接。该命令需要转发到vRNIC后端执行。vRNIC后端会先根据设置的路由表规则进行判断，如果远端vGID符合路由规则，就会将vGID转换成对应的GID，基于GID，QP ID及Key完成与远端vRNIC后端QP的配对。从vGID到GID的转换，实现了RDMA连接的网络虚拟化。
-% 第七步：Guest应用将QP修改为连接状态，两端RDMA连接建立。在完成配对后，该命令会转发到vRNIC后端，由后端基于物理RDMA网卡的QP执行。由于QP在前面的第二步中已完成映射，在vRNIC后端QP处于连接状态后，guest中的QP同样会处于连接状态。
+% C3（基于QP建立连接）：Guest应用将C2获取的远端vGID、QPN等信息作为ibv_modify_qp的参数,基于QP与远端建立RDMA连接。该命令转发到vRNIC后端后，vRNIC后端会先根据设置的路由表规则进行判断，如果远端vGID符合路由规则，就会将vGID转换成对应的GID，基于GID，QP ID及Key完成与远端vRNIC后端QP的配对。从vGID到GID的转换，实现了RDMA连接的网络虚拟化。
 
-% 4.3.2 数据路径
+% 4.3.3 数据阶段
+% 数据路径发生在连接建立后，对注册的MR中的内容执行操作。RDMA的数据路径包括图中的D1和D2。
 
-% 数据路径发生在连接建立后，主要操作注册的MR中的内容。RDMA的数据路径包含双边操作（Send/Recv)和单边操作（Read,Write）等多种数据操作。数据路径主要包括了图中的第8和9步。
+% D1（收发数据）：Guest应用发送或接收MR中的数据。由于MR和QP已经完成了资源映射，此时，数据操作时的数据块（MR中）和工作请求（QPs）可以直接由RDMA物理网卡访问。不过，工作请求中的地址信息仍然是guest中的地址，而第三步中创建MR时，物理网卡记录是vRNIC后端中的页表信息。因此，需要借助前面缓存的三元组信息，将工作请求中的guest地址转换为vRNIC后端地址，再填充到QP中。如果是单边操作，其工作请求中还包含远端地址信息，在第一次执行命令时还需要向vRNIC后端发送请求，获取URN core中存储的远端MR地址映射关系，并缓存到本地。然后将工作请求中的本地及远端地址均进行转换，填充到QP中。
 
-% (1) 双边操作
-% D1：Guest应用发送MR中的数据。由于MR和QP已经完成了资源映射，此时，数据操作时的数据块（MR中）和工作请求（QPs）可以直接由RDMA物理网卡访问。不过，工作请求中的地址信息仍然是guest中的地址，而第三步中创建MR时，物理网卡记录是vRNIC后端中的页表信息。因此，需要借助前面缓存的三元组信息，将工作请求中的guest地址转换为vRNIC后端地址，再填充到QP中。
-% D2：Guest应用轮询CQ获取数据操作的完成事件。由于CQ已经完成了资源映射，此时，物理网卡中工作完成的通知会直接写入到guest的CQ中。
-
-% (2) 单边操作
-% 单边操作中，第八步和第九步仅在已建立RDMA连接的一端执行。单边操作的工作请求中包含了远端guest MR的内存地址及key，该信息在第五步已经由两端guest应用完成交换。由于远端应用注册MR时，其RDMA网卡中在缓存的是远端vRNIC后端的页表， 单边操作还需要知晓远端vRNIC后端的MR内存地址。为此，我们建立了一个分布式的KV数据库，存储各节点注册MR的映射关系。在guest执行单边操作时，将向分布式KV数据库查询，以获取远端vRNIC后端的MR内存地址，将其写入单边操作的工作请求中，从而实现单边操作。然而，由于频繁地查询分布式KV数据库会带来较高的延迟，为此，我们利用了RDMA数据收发的局部性，在guest本地建立了一个KV缓存区，以加速单边操作的性能。
+% D2（轮询CQ）：Guest应用轮询CQ获取数据操作的完成事件。由于CQ已经完成了资源映射，此时，物理网卡中工作完成的通知会直接写入到guest的CQ中。
 
 
 % 4.4 mgmt center
@@ -134,13 +135,28 @@ As a virtual RDMA device, the vRNIC backend needs to maintain the hardware prope
 
 % 在URN框架里，整个集群配备一个mgmt center，作为配置管理策略，存储各节点RDMA资源信息的中心。
 
-% 通过mgmt center，管理者向不同节点的URN core下发各种策略，包括控制平面和数据平面。管理框架图如图5所示。
-%  在控制路径：控制路径可以实现的管理功能包括路由管理、防火墙等。这些策略主要依靠RDMA资源，如QP进行控制。具体地，vRNIC后端按照mgmt下发的策略，可以在创建RDMA资源前执行策略，并在策略执行后将结果或资源信息返回给mgmt中维持各RDMA上下文信息的数据库中。
-%  在数据路径：云环境中需要更多的管理功能，例如QoS，流量计费等策略。显然，这些策略依赖RDMA中数据路径的信息，例如消息大小。然而，在URN中，vRNIC前端和后端都在数据路径中被绕过。因此，我们应该将这些管理扩展到guest中的特定硬件库中，因为数据路径是在这个库中实现的。对于策略，可以通过管理中心进行配置和分发。注意，这些扩展需要所有客户机都信任库，并且这些修改应该包含在TCB(可信计算库)中。
+% 通过mgmt center，管理者向不同节点的URN core下发各种策略，包括控制平面策略，如连接管理，防火墙等；和数据平面策略，如Qos、流量计费等。管理框架图如图5所示：策略由mgmt center下发到URN core，URN core通过agent接收策略后，其中，URN core将控制平面策略配置给管理的各vRNIC后端。对于数据平面策略，URN core将其发送给各guest Verbs库中的agent，然后在各RDMA应用本地执行。
+
+%  连接管理、防火墙等控制平面策略主要基于RDMA连接进行，而RDMA连接依靠QP等RDMA资源，因此，这些策略主要依靠RDMA资源，如QP进行控制。由于包括QP在内的所有RDMA资源均已经映射在vRNIC后端中，因此，控制策略可以直接传送到各vRNIC后端，依靠映射的RDMA资源执行。 对于数据路径，依靠监控各vRNIC后端维护的映射好的RDMA资源，如QP/CQ等，可以完成QoS等数据功能。然而，这样做将消耗额外的CPU资源而且对轮询的处理效率要求极高。因此，本文将数据策略进一步从URN core下发到各guest的用户库，在各RDMA应用本地执行，策略执行结果则可以返回给URN core或mgmt center。注意，这些扩展需要所有客户机都信任库，并且这些修改应该包含在TCB(可信计算库)中。？
+
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[width=1\linewidth]{images/urn-interface.png}
+	\caption{The Architecture of URN Management}
+	\label{fig:route-config}
+\end{figure}
 
 % 4.5 discussion
+% 为了更好地在云环境中使用虚拟RDMA，在这节里对URN架构讨论了一些与云环境和虚拟化相关的问题：
 \subsection{Discussion}
 
 %  （1）虚拟机迁移： 容器或虚拟机迁移在云中有很多好处，例如资源利用和故障转移。通过使用虚拟RDMA网络，URN可以支持脱机迁移，而无需为应用程序重新配置物理RDMA网络。具体来说，在重新启动迁移的虚拟实例后，应用程序可以通过相同的网络地址重建RDMA连接。唯一的工作是修改URN core中的地址映射.目前，由于RDMA应用程序中的内存区域在旁路或单侧通信下可能存在不确定性，因此对动态迁移仍然存在困难，URN 并未不会引入更大的困难.
  Virtual Instances Migration: Migration of containers or VMs has many benefits in clouds, e.g. resource utilization and fail-over. With the virtual RDMA network, URN can support offline migration without reconfiguring the physical RDMA network for applications. In specific, after rebooting the migrated virtual instance, the application can rebuild the RDMA connection through the same network address. The only work is modifying the address mapping in URN core. Currently, for live migrations, it is still hard because memory regions in RDMA application may be uncertain under bypassing or one-side communication. And the problem is unrelated to URN.
+ 
+ % （2）对RDMA虚拟化扩展的支持：对于QP/CQ等RDMA资源，Verbs库和RDMA设备相关用户库对RDMA虚拟化的支持不够，未考虑到使用共享内存映射RDMA资源的情形。为此，我们建议Verbs库或设备相关库中增加以下API，以加强对各场景下RDMA虚拟化的支持，如下表所示：
+% API  所属库  功能 
+% alloc_shm_buf()  设备相关库 创建并分组共享内存作为RDMA资源内存
+% alloc_assigned_buf(addr, size) 设备相关库 为RDMA资源指定某一内存区域
+% ibv_create_qp/cq_shm() 基于共享内存区域创建QP/CQ
+% ibv_assigned_qp/cq 使用指定的内存区域创建QP/CQ
 %%%*********************%%%
