@@ -40,25 +40,28 @@ As a virtual RDMA device, the vRNIC backend needs to maintain the hardware prope
 % 4.2  URN Core 设计
 \subsection{URN Core}
 
-% vRNIC作为虚拟设备，是动态分配给各虚拟机或容器的，而且各vRNIC需要共享底层物理RDMA网卡。为了对vRNIC进行统一管理，促进物理RDMA网卡资源的高效利用，以及实现各vRNIC之间的虚拟RDMA网络，我们在各主机服务器上构建了一个统一的虚拟层URN core。URN core的主要功能包括实例化vRNIC和配置虚拟RDMA网络等。
-
-
+% 为了对vRNIC进行统一管理，高效利用物理RDMA网卡，我们构建了一个统一的虚拟层URN core。URN core部署于集群的每台服务器上，其主要功能包括实例化vRNIC和配置虚拟RDMA网络等。
 
 % 4.2.1 实例化vRNIC 
+% URN core在收到虚拟机或容器应用申请vRNIC的请求后，会实例化vRNIC。URN core在实例化vRNIC的主要工作包括： 初始化vRNIC属性、绑定vRNIC到物理网卡、构建vRNIC前后端消息通道以及隔离各vRNIC实例等。
 
-% 首先，在实例化vRNIC时，URN Core需要对vRNIC的不变属性进行初始化。vRNIC中的不变属性包括RDMA地址vGID，设备号等等。对于RDMA地址vGID，URN core会通过mgmt center进行协调和登记，以确保各vRNIC的RDMA地址等信息是不冲突的并维护在统一的数据库中。由于vRNIC后端接受的RDMA命令，最终仍需要基于物理RDMA网卡执行。因此，实例化vRNIC后，仍需与对应的RDMA物理网卡设备完成绑定。如果是多网卡设备或者多个网卡接口（如使用SR-IOV），还需确定从vRNIC到对应物理网卡接口的映射关系。
+% 初始化vRNIC属性：为了让vRNIC具备与硬件一致的功能接口，URN Core需要对vRNIC的不变属性进行初始化。vRNIC中的不变属性包括RDMA地址vGID，设备号等等。对于RDMA地址vGID，URN core会随机生成IPv6格式的虚拟值，同时通过mgmt center进行协调和登记，以确保各vRNIC的RDMA地址等信息是不冲突的并维护在统一的数据库中。
 
-% 其次，URN Core需要构建vRNIC后端与vRNIC前端（guest）之间的消息通道。对于容器来说，容器与vRNIC后端共享某一IPC命名空间，即可完成vRNIC前端与后端之间的消息交互。对于虚拟机来说，由于vRNIC后端在主机用户空间，而hypervisor位于主机内核空间。为了避免guest的消息先拷贝到hypervisor层再到vRNIC后端，我们在vRNIC后端与guest中的vRNIC前端之间构建一块共享内存，以此作为消息通道。具体来说，虚拟机内存区域对应的物理页面，与vRNIC后端之间是共享的。这样，guest中的任意RDMA消息，均可以直接由vRNIC后端获取，而无需进入到主机内核空间，同时也减少了消息从guest到vRNIC后端的延迟。
+% 绑定vRNIC到物理网卡：vRNIC实例需要依靠物理网卡实现RDMA功能，因此，实例化vRNIC时需要将vRNIC实例与对应的物理RDMA网卡绑定。如果是多网卡设备或者多个网卡接口（如使用SR-IOV），还需确定从vRNIC到对应物理网卡接口的映射关系。
 
-% 最后，URN core需要确保各vRNIC之间的消息通道是隔离的。在云环境中，同一主机上可能部署多个虚拟机或容器，该主机的URN core需要实例化多个vRNIC后端，以满足不同的guest实例。因此，需要确保各vRNIC之间的消息通道是隔离的，尤其是容器，由于其隔离性不如虚拟机彻底。如果多个容器和主机共享同一文件命名空间或IPC空间，那么，很容易通过扫描获取到其他容器或虚拟机vRNIC的消息通道。为此，URN core利用了文件命名空间的机制，将各vRNIC消息通道进行隔离。具体来说，无论虚拟机还是容器，vRNIC前后端之间的消息通道都是基于位于特定文件命名空间的共享文件的，对于别的guest实例，尤其是其他容器，是不可见的。
+% 构建vRNIC消息通道：URN Core需要构建vRNIC后端与vRNIC前端（guest）之间的消息通道。对于容器来说，容器与vRNIC后端共享某一IPC命名空间，即可完成vRNIC前端与后端之间的消息交互。对于虚拟机来说，由于vRNIC后端在主机用户空间，而hypervisor位于主机内核空间。为了避免guest的消息先拷贝到hypervisor层再到vRNIC后端，我们在vRNIC后端与guest中的vRNIC前端之间构建一块共享内存，以此作为消息通道。具体来说，虚拟机内存区域对应的物理页面，与vRNIC后端之间是共享的。这样，guest中的任意RDMA消息，均可以直接由vRNIC后端获取，而无需进入到主机内核空间，同时也减少了消息从guest到vRNIC后端的延迟。
+
+% vRNIC实例隔离：URN core需要确保各vRNIC之间的消息通道是隔离的。在云环境中，同一主机上可能部署多个虚拟机或容器，该主机的URN core需要实例化多个vRNIC后端，以满足不同的guest实例。因此，需要确保各vRNIC之间的消息通道是隔离的，尤其是容器，由于其隔离性不如虚拟机彻底。如果多个容器和主机共享同一文件命名空间或IPC空间，那么，很容易通过扫描获取到其他容器或虚拟机vRNIC的消息通道。URN core利用了文件命名空间的机制，文件命名空间中的文件对于其他命名空间是不可见的。URN core在实例化vRNIC时，将各vRNIC消息通道对应的文件位于不同的命名空间，从而实现了各vRNIC实例之间消息通道的隔离。
 
 % 4.2.2 配置虚拟RDMA网络
 
-%在云环境中，虚拟网络配置是实现很多功能的基础，例如多租户隔离、便携的虚拟机或容器迁移，因为容器和虚拟机迁移后无需更改物理网卡及交换机等硬件的网络配置。虚拟网络配置包括了虚拟的网络地址，虚拟的路由规则等。
+% URN core在实例化vRNIC后，需要对vRNIC的网络进行配置，包括虚拟RDMA地址配置以及虚拟RDMA路由配置。
 
-% 首先，URN core 在实例化vRNIC时， 给vRNIC配置的vGID是虚拟值，与物理网卡的GID无关。
+% 对于虚拟RDMA地址配置，URN core 在实例化vRNIC时， 给vRNIC配置的vGID是虚拟值，与物理网卡的GID无关。
 
-% 其次，每台主机的URN core中配置了虚拟RDMA网络路由规则。具体来说，URN core在实例化vRNIC时，除了硬件属性以外，还给每个vRNIC都配置了组ID。 路由规则的定义形式为:{group ID1, group ID2, Policy}。例如，如图4所示，容器1和容器2的vrnic被配置到同一组中，因此允许创建RDMA连接。作为对比，容器和虚拟机1是隔离的因为属于不同组。建立连接的具体细节可以参考4.3.1中的第（3）节。
+% 对于虚拟RDMA路由配置，每台主机的URN core中配置了虚拟RDMA网络路由规则。具体来说，URN core在实例化vRNIC时，还给每个vRNIC都配置了组ID，路由规则的定义形式为:{group ID1, group ID2, Policy}。例如，如图4所示，容器1和容器2的vrnic被配置到同一组中，因此允许创建RDMA连接。作为对比，容器1和虚拟机1属于不同的用户组，按路由规则无法建立RDMA连接。各虚拟实例之间建立RDMA连接的具体细节可以参考4.3.1。
+
+% URN core中的虚拟网络配置是动态调整的，因此，容器和虚拟机迁移后无需更改物理网卡及交换机等硬件的网络配置，实现便携的虚拟机或容器迁移。基于URN core中的路由规则，可以支持云环境中的多租户隔离。
 
 
 \begin{figure}[!ht]
