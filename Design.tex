@@ -67,40 +67,52 @@ In the container, to forward the Verbs calls to the vRNIC backend, the interface
 In the virtual machine, the whole physical memory of the virtual machine is already shared with the vRNIC backend when the vRNIC instantes. Though the application defaultly allocates the buffers of MR, QP or CQ without modification, the vRNIC backend still can get the corresponding shared memory piece. In specific, through the vRNIC frontend in the guest kernel, the GPA(guest physical memory addresses of these buffers can be forwarded to the vRNIC backend along with the Verbs calls and parameters, and the vRNIC backend can translate the GPA to the HVA (host virtual memory address) and use the shared memory pieces as the buffers of RDMA resources.
 
 % 在完成上述修改后，在数据路径中，guest的RDMA应用往QP中写入工作请求，其内存地址是虚拟机或容器应用的地址空间gvm（guest virtual memory），RDMA物理网卡将根据缓存的页表检查工作请求中的地址，但是其缓存的MR页表信息则是主机vRNIC后端的s-hvm（shared host virtual memory）。因此，为了仍物理网卡成功执行guest中的工作请求，需要对RDMA工作请求中的gvm转换成s-hvm。为此，我们在guest用户态驱动中记录有MR资源的地址映射关系，即{key, gvm, s-hvm},在数据路径中，工作请求在写入QP之前，其gvm将转换成s-hvm。
-After the above modifications, in the data path, the application in the guest writes the QP buffer with a work request whose memory address is still the gvm, but the gvm address will be checked in the physical RNIC through the cached page table that is about s-hvm in the vRNIC backend. Therefore, to make the vRNIC execute the work request in the guest successfully, it is still necessary to convert the gvm to the s-hvm 
-in the work request. To achieve it, we record the memory address mapping relationship of MR buffer in the guest user-space driver {key, gvm, s-hvm}. In the data path, the gvm of a RDMA work request can be translated into the s-hvm before it is written into the QP buffer.
+After the above modifications, in the data path, the application in the guest writes the QP buffer with a work request whose memory address is still the gvm, but the gvm address will be checked in the physical RNIC through the cached page table that is about s-hvm in the vRNIC backend. Therefore, to make the vRNIC execute the work request in the guest successfully, it is still necessary to convert the gvm to the s-hvm in the work request. To achieve it, we record the memory address mapping relationship of MR buffer in the guest user-space driver {key, gvm, s-hvm}. In the data path, the gvm of a RDMA work request can be translated into the s-hvm before it is written into the QP buffer.
 
 % 基于上述修改，无论是虚拟机还是容器，RDMA控制verbs将经过vRNIC前端到达vRNIC后端，在vRNIC后端中执行操作并映射RDMA资源。基于映射的RDMA资源，数据Verbs操作不需要转发到vRNIC后端,可以直接在guest用户空间，和原生RDMA一样避免了径额外的的拷贝或切换开销。
-Based on the above modifications, in both VMs and containers, the control Verbs operations are forwarded into the vRNIC backend through the vRNIC frontend, the vRNIC backend executes the operations and map the buffers of RDMA resources. Based on mapped RDMA resources, the data Verbs operations are not forwarded to the vRNIC backend, and can executed directly in the guest user-space, which avoids the cost of additional data copy or context switching as native RDMA.
+Based on the above modifications, in both VMs and containers, the control Verbs operations are forwarded into the vRNIC backend through the vRNIC frontend, the vRNIC backend executes the operations and map the buffers of RDMA resources. Based on mapped RDMA resources, the data Verbs operations are not forwarded to the vRNIC backend, and can executed directly in the guest user-space, which avoids the overhead of additional data copy or context switching as native RDMA.
 
 % 4.2  URN Core 设计
 \subsection{URN Core}
 
-% 为了对vRNIC进行统一管理，高效利用物理RDMA网卡，我们构建了一个统一的虚拟层URN core。URN core部署于集群的每台服务器上，其主要功能包括实例化vRNIC和配置虚拟RDMA网络等。
+% 为了对vRNIC进行统一管理，高效利用物理RDMA网卡，我们构建了一个统一的虚拟层URN core。URN core部署于集群的每台服务器上，用于实例化vRNIC和配置虚拟RDMA网络等。
+To manage vRNICs unifiedly and exploit the physical RNIC, we built a unified virtualization layer, namely URN Core. URN Core is deployed on each server in the cluster for instantiating vRNICs and configuring the virtual RDMA network.
+
 
 % 4.2.1 实例化vRNIC 
-% URN core在收到虚拟机或容器应用申请vRNIC的请求后，会实例化vRNIC。URN core在实例化vRNIC的主要工作包括： 初始化vRNIC属性、绑定vRNIC到物理网卡、构建vRNIC前后端消息通道以及隔离各vRNIC实例等。
+\subsubsection{instantiating vRNICs}
+% URN core在收到guest中应用申请vRNIC的请求后，会实例化vRNIC。实例化vRNIC的主要工作包括： 初始化vRNIC属性、绑定vRNIC到物理网卡、构建vRNIC前后端消息通道以及隔离各vRNIC实例等。
+URN Core instantiates a vRNIC once receiving the request from the application in the guest. Instantiating vRNIC mainly includes: initializing vRNIC attributes, binding the vRNIC to the physical RNIC, building the message channel between the vRNIC frontend and backend, and isolating vRNIC instances.
 
-% 初始化vRNIC属性：为了让vRNIC具备与硬件一致的功能接口，URN Core需要对vRNIC的不变属性进行初始化。vRNIC中的不变属性包括RDMA地址vGID，设备号等等。对于RDMA地址vGID，URN core会随机生成IPv6格式的虚拟值，同时通过mgmt center进行协调和登记，以确保各vRNIC的RDMA地址等信息是不冲突的并维护在统一的数据库中。
+% 初始化vRNIC属性：为了模拟与硬件一致的功能接口，URN Core需要对vRNIC的不变属性进行初始化，包括RDMA地址vGID，设备号等等。对于RDMA地址vGID，URN core会随机生成IPv6格式的虚拟值，同时登记到mgmt center的数据库中。
+Initializing vRNIC attributes: To emulate the interface as physical RNIC, URN Core needs to initialize the invariant properties of vRNIC, including RDMA address vGID, device number, and so on. For RDMA addresses vGID, URN Core randomly generates the values in the IPv6 format and registers them into the database in the management center.
 
 % 绑定vRNIC到物理网卡：vRNIC实例需要依靠物理网卡实现RDMA功能，因此，实例化vRNIC时需要将vRNIC实例与对应的物理RDMA网卡绑定。如果是多网卡设备或者多个网卡接口（如使用SR-IOV），还需确定从vRNIC到对应物理网卡接口的映射关系。
+Binding vRNIC to the physical RNIC: The vRNIC instance relies on the physical RNIC to implement RDMA. Therefore, it is necessary to bind the vRNIC instance to the physical RNIC when instantiating. If there are multiple physical RNICs or interfaces (such as SR-IOV), the mapping from the vRNIC to the RNIC interface needs to be determined.
 
-% 构建vRNIC消息通道：URN Core需要构建vRNIC后端与vRNIC前端（guest）之间的消息通道。对于容器来说，容器与vRNIC后端共享某一IPC命名空间，即可完成vRNIC前端与后端之间的消息交互。对于虚拟机来说，由于vRNIC后端在主机用户空间，而hypervisor位于主机内核空间。为了避免guest的消息先拷贝到hypervisor层再到vRNIC后端，我们在vRNIC后端与guest中的vRNIC前端之间构建一块共享内存，以此作为消息通道。具体来说，虚拟机内存区域对应的物理页面，与vRNIC后端之间是共享的。这样，guest中的任意RDMA消息，均可以直接由vRNIC后端获取，而无需进入到主机内核空间，同时也减少了消息从guest到vRNIC后端的延迟。
+% 构建vRNIC消息通道：URN Core需要构建vRNIC后端与vRNIC前端之间的消息通道。对于容器来说，容器与vRNIC后端共享某一IPC命名空间，即可完成vRNIC前端与后端之间的消息交互。对于虚拟机来说，由于vRNIC后端在主机用户空间，而hypervisor位于主机内核空间。为了避免guest的消息先拷贝到hypervisor层再到vRNIC后端，我们构建一块共享内存，以此作为消息通道。具体来说，虚拟机物理内存与vRNIC后端之间是共享的。guest中的任意RDMA消息，均可以直接由vRNIC后端获取，同时也减少了从guest到vRNIC后端的延迟。
+Build the vRNIC message channel: URN Core needs to build a message channel between the vRNIC backend and the frontend. For containers, the container can share an IPC namespace with the vRNIC backend to make the message interaction between the vRNIC frontend and the backend. For VMs, the vRNIC backend is in host user-space and the hypervisor is in host kernel-space. To avoid the messages being copied to the hypervisor and then copied to the vRNIC backend, we build a shared memory as the message channel. Specifically, the physical memory in the VM is shared with the vRNIC backend. Any RDMA messages in the guest can be fetched directly from the vRNIC backend, and the latency from the guest to the vRNIC backend is decreased.
 
 % vRNIC实例隔离：URN core需要确保各vRNIC之间的消息通道是隔离的。在云环境中，同一主机上可能部署多个虚拟机或容器，该主机的URN core需要实例化多个vRNIC后端，以满足不同的guest实例。因此，需要确保各vRNIC之间的消息通道是隔离的，尤其是容器，由于其隔离性不如虚拟机彻底。如果多个容器和主机共享同一文件命名空间或IPC空间，那么，很容易通过扫描获取到其他容器或虚拟机vRNIC的消息通道。URN core利用了文件命名空间的机制，文件命名空间中的文件对于其他命名空间是不可见的。URN core在实例化vRNIC时，将各vRNIC消息通道对应的文件位于不同的命名空间，从而实现了各vRNIC实例之间消息通道的隔离。
+RNIC instance isolation: URN Core needs to ensure that message channels between different vRNICs are isolated. In a cloud environment, multiple virtual machines or containers may be deployed on the same host, and the URN core of that host needs to instantiate multiple vRNICs for different guest instances. Therefore, you need to ensure that message channels between vRNICs are isolated, especially containers, which are not as completely isolated as VMs. If multiple containers and hosts share the same file namespace or IPC space, then it is easy to scan for vRNIC message channels to other containers or VMs. URN Core takes advantage of the mechanism of file namespaces, where files are not visible to other namespaces. When instantiating a vRNIC, URN Core places the corresponding files of each vRNIC message channel in different namespaces, so as to realize the isolation of message channels between each vRNIC instance.
 
 % 4.2.2 配置虚拟RDMA网络
+\subsubsection{configuring the virtual RDMA network}
 
 % URN core在实例化vRNIC后，需要对vRNIC的网络进行配置，包括虚拟RDMA地址配置以及虚拟RDMA路由配置。
+After the instantiation of the vRNIC, the URN core needs to configure the vRNIC's network, including virtual RDMA address configuration and virtual RDMA routing configuration.
+For virtual RDMA address configurations, the vGID assigned to the vRNIC by URN Core is a virtual value, independent of the physical RNIC, when it instantiates the vRNIC.
 
-% 对于虚拟RDMA地址配置，URN core 在实例化vRNIC时， 给vRNIC配置的vGID是虚拟值，与物理网卡的GID无关。
+% 对于虚拟RDMA地址配置，URN core 在实例化vRNIC时， 给vRNIC配置的vGID是虚拟值，与物理网卡无关。
 
 % 对于虚拟RDMA路由配置，每台主机的URN core中配置了虚拟RDMA网络路由规则。具体来说，URN core在实例化vRNIC时，还给每个vRNIC都配置了组ID，路由规则的定义形式为:{group ID1, group ID2, Policy}。例如，如图4所示，容器1和容器2的vrnic被配置到同一组中，因此允许创建RDMA连接。作为对比，容器1和虚拟机1属于不同的用户组，按路由规则无法建立RDMA连接。各虚拟实例之间建立RDMA连接的具体细节可以参考4.3.1。
+For virtual RDMA routing configurations, virtual RDMA network routing rules are configured in the URN core at each host. In particular, URN Core also configures the group ID for each vRNIC when it instantiates the vRNIC. Routing rules are defined as {group ID1, group ID2, Policy}. For example, as shown in Figure 4, the vRNIC of container 1 and container 2 are configured into the same group, thus allowing RDMA connections to be created. As a contrast, container 1 and VM 1 belong to different user groups and cannot establish an RDMA connection according to routing rules. See 4.3.1 for details on establishing RDMA connections between virtual instances.
 
-% RDMA网络与传统TCP不同，RDMA还支持单边操作。在guest应用的RDMA单边操作中，RDMA的工作请求中包含了远端guest MR的内存地址及key，远端MR内存地址同样需要在RDMA用户态驱动中完成转换，将远端的gvm转换为远端vRNIC后端的s-hvm。为了便于guest应用查询远端gvm对应的s-hvm，我们在URN core中建立了一个分布式的KV数据库，存储各节点注册MR的映射关系{key，gvm，s-hvm}。在guest应用执行单边操作时，将向URN core 中的分布式KV数据库查询，以获取远端对应的s-hvm，缓存到本地并写入工作请求。
+% RDMA网络与传统TCP不同，RDMA还支持单边操作。在guest应用的RDMA单边操作中，RDMA的工作请求中包含了远端的gvm及key，远端MR内存地址同样需要在RDMA用户态驱动中转换为远端vRNIC后端的s-hvm。为了便于远端地址的转换，我们在URN core中建立了一个分布式的KV数据库，存储各节点注册MR的映射关系{key，gvm，s-hvm}。在guest应用执行单边操作时，将向URN core 中的分布式KV数据库查询，以获取远端对应的s-hvm，缓存到本地并在写入工作请求以前。
+Unlike traditional TCP, RDMA networks also support one-side operations. The remote gvm and key is inclued in the one-side work request, and the gvm also needs to be translate to the remote s-hvm in the RDMA user-space. To facilitate the remote memory address translation, we set up a distributed KV database in the URN core to store the mapping of registered MR {Key, GVM, S-HVM} for each host. When the application in the guest performs a one-side operation, it will query the distributed KV database in the URN Core for the remote s-hvm, and caches it locally before writing the work request.
 
 % 总之，URN core中的虚拟网络配置是动态调整的，因此，容器和虚拟机迁移后无需更改物理网卡及交换机等硬件的网络配置，实现便携的虚拟机或容器迁移。基于URN core中的路由规则，可以支持云环境中的多租户隔离。而各URN core存储的MR地址映射关系，对RDMA网络特有的单边操作给予了支持。
-
+In summary, the virtual network configuration in the URN Core is dynamically , so it is unnecessary to change the network configuration of hardware such as the physical RNICs and switches to enable portable virtual machine or container migration. Based on routing rules in the URN Core, multi-tenant isolation in a cloud environment can be supported. The MR memory mapping relationship stored by each URN core to supports the unique one-sided operation of RDMA network.
 
 \begin{figure}[!ht]
 	\centering
