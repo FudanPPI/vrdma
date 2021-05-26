@@ -38,9 +38,9 @@ If all RDMA operations in the guest are forwarded to the vRNIC backend, the addi
 % 在虚拟机或容器中，vRNIC前端都是连接虚拟机或容器应用到vRNIC后端，但是它们的设计上有差别。 
 % 在虚拟机场景中，vRNIC后端模拟了一个外部设备，由虚拟机OS中的vRNIC前端驱动。原生RDMA内核驱动包括与设备无关的OFED模块和设备相关的模块，OFED模块接收verbs操作并转化为内核层级的RDMA 命令；设备相关模块注册具体接口到OFED，并通过物理RNIC执行这些调用。对应的，在虚拟机中为了使用vRNIC，一个自定义的设备相关的驱动模块被构建在虚拟机内核，用来提供与原生类似的设备相关接口并注册它们到OFED模块。OFED中的RDMA命令将通过这些设备相关接口，被转发到vRNIC前端模块，再从前端转发到vRNIC后端去执行。因此，原生的RDMA应用无需修改便可运行在虚拟机中，而且虚拟机内核仍然可以使用RDMA。
 % 在容器场景中，应用和vRNIC后端共享主机内核，仅位于不同的命名空间。为了在容器中使用vRNIC，容器的verbs库中与内核RDMA驱动交互的接口，被替换为vRNIC前端接口。Verbs操作被劫持到vRNIC前端,并被转发到vRNIC后端。
-In both VMs and containers, the vRNIC frontend connects the application in the guest to the vRNIC backend, but the designs are different. 
-In VMs, the vRNIC backend emulates as an external device, driven by the vRNIC frontend in the guest kernel. The native RDMA kernel driver includes device-independent modules (OFED) and device-specific driver. OFED accepts the Verbs operations and translates them into the kernel-level RDMA commands. The device-specific driver registers the specific interface into OFED and executes these calls via physical RNIC. Correspondingly, to use vRNIC in VMs, a custom device-specific driver is built to provide the similar device-specific interfaces and register them into OFED. But RDMA commands in the OFED will be forwarded to the vRNIC frontend via the registered device-specific interfaces; from there
+In both VMs and containers, the vRNIC frontend connects the application in the guest to the vRNIC backend, but the designs are different. In VMs, the vRNIC backend emulates as an external device, driven by the vRNIC frontend in the guest kernel. The native RDMA kernel driver includes device-independent modules (OFED) and device-specific driver. OFED accepts the Verbs operations and translates them into the kernel-level RDMA commands. The device-specific driver registers the specific interface into OFED and executes these calls via physical RNIC. Correspondingly, to use vRNIC in VMs, a custom device-specific driver is built to provide the similar device-specific interfaces and register them into OFED. But RDMA commands in the OFED will be forwarded to the vRNIC frontend via the registered device-specific interfaces; from there
 they are further forwarded to the vRNIC backend to be executed. As a result, RDMA applications can run in the VM without modification, and RDMA can be used in the guest kernel. 
+
 In containers, the application shares the host kernel with the vRNIC backend, only in different namespace. To use vRNIC in the containers, the Verbs library interfaces that interact with the RDMA kernel driver are replaced with the vRNIC frontend interface. The Verbs operations are hijacked to the vRNIC frontend and further forwarded to the vRNIC backend.
 
 % 4.2  URN Core 设计
@@ -79,8 +79,8 @@ For virtual RDMA address configurations, the vGID assigned to the vRNIC by URN C
 % 对于虚拟RDMA路由配置，每台主机的URN core中配置了虚拟RDMA网络路由规则。具体来说，URN core在实例化vRNIC时，还给每个vRNIC都配置了组ID，路由规则的定义形式为:{group ID1, group ID2, Policy}。例如，如图4所示，容器1和容器2的vrnic被配置到同一组中，因此允许创建RDMA连接。作为对比，容器1和虚拟机1属于不同的用户组，按路由规则无法建立RDMA连接。各虚拟实例之间建立RDMA连接的具体细节可以参考4.3.1。
 For virtual RDMA routing configurations, virtual RDMA network routing rules are configured in the URN core at each host. In particular, URN Core also configures the group ID for each vRNIC when it instantiates the vRNIC. Routing rules are defined as {group ID1, group ID2, Policy}. For example, as shown in Figure 4, the vRNIC of container 1 and container 2 are configured into the same group, thus allowing RDMA connections to be created. As a contrast, container 1 and VM 1 belong to different user groups and cannot establish an RDMA connection according to routing rules. See 4.3.1 for details on establishing RDMA connections between virtual instances.
 
-% RDMA网络与传统TCP不同，RDMA还支持单边操作。在guest应用的RDMA单边操作中，RDMA的工作请求中包含了远端的gvm及key，远端MR内存地址同样需要在RDMA用户态驱动中转换为远端vRNIC后端的s-hvm。为了便于远端地址的转换，我们在URN core中建立了一个分布式的Key-Value数据库，存储各节点注册MR的映射关系{key，gvm，s-hvm}。在guest应用执行单边操作时，将向URN core 中的分布式KV数据库查询，以获取远端对应的s-hvm，缓存到本地并在写入工作请求以前。
-Unlike traditional TCP, RDMA networks also support one-side operations. The remote gvm and key is included in the one-side work request, and the gvm also needs to be translate to the remote s-hvm in the RDMA user-space. To facilitate the remote memory address translation, we set up a distributed key-value database in the URN core to store the mapping of registered MR {Key, GVM, S-HVM} for each host. When the application in the guest performs a one-side operation, it will query the distributed KV database in the URN Core for the remote s-hvm, and caches it locally before writing the work request.
+% RDMA网络与传统TCP不同，RDMA还支持单边操作。在guest应用的RDMA单边操作中，RDMA的工作请求中包含了远端的gvm及key，远端MR内存地址同样需要在RDMA用户态驱动中转换为远端vRNIC后端的HVA。为了便于远端地址的转换，我们在URN core中建立了一个分布式的Key-Value数据库，存储各节点注册MR的映射关系{key，gva, hva}。在guest应用执行单边操作时，将向URN core 中的分布式KV数据库查询，以获取远端MR的HVA，缓存到本地并在写入工作请求以前。
+Unlike traditional TCP, RDMA networks also support one-side operations. The remote gvm and key is included in the one-side work request, and the GVA also needs to be translate to the remote HVA in the RDMA user-space. To facilitate the remote memory address translation, we set up a distributed key-value database in the URN core to store the mapping of registered MR {MR-KEY, GVA, HVA} for each host. When the application in the guest performs a one-side operation, it will query the distributed key-value database in the URN Core for the remote HVA of MR, and caches it locally before writing the work request.
 
 % 总之，URN core中的虚拟网络配置是动态调整的，因此，容器和虚拟机迁移后无需更改物理网卡及交换机等硬件的网络配置，实现便携的虚拟机或容器迁移。基于URN core中的虚拟路由规则，可以支持云环境中的多租户隔离。而各URN core存储的MR地址映射关系，对单边操作给予了支持。
 In summary, the virtual network configuration in the URN Core is dynamical, so it is unnecessary to change the network configuration of hardware such as the physical RNICs and switches to enable portable VM or container migration. Based on virtual routing rules in the URN Core, multi-tenant isolation in a cloud environment can be supported. The MR memory mapping is recorded at each URN core to support one-sided operations.
@@ -122,10 +122,10 @@ In the control path, there are different modifications between VMs and container
 (3) DoorBell: In native RDMA, the RDMA device is opened in the Verbs library and DoorBell is mapped to the applications through the RDMA kernel driver. In URN, the container's Verbs library opens the virtual device interface and maps the DoorBell through the vRNIC backend and a costumed kernel module. The details will be introduced in Section 5.
 
 % 在虚拟机中，vRNIC在实例化时已经共享了虚拟机的整块物理内存空间。即使虚拟机应用使用默认的方式分配MR、QP或CQ等RDMA资源的内存，无需修改，vRNIC后端可以获取对应的共享内存块。具体地，通过虚拟机内核的vRNIC前端驱动中，将这些buffer的GPA（虚拟机物理内存信息）随RDMA命令和参数转发给vRNIC后端，vRNIC后端可以将GPA翻译为HVA，并使用这些共享内存块作为RDMA资源MR，QP或CQ的buffer，如图4-b-4所示。
-In the VM, the whole physical memory of the VM is already shared with the vRNIC backend when the vRNIC instantes. Though the application defaultly allocates the buffers of MR, QP or CQ without modification, the vRNIC backend still can get the corresponding shared memory piece. In specific, through the vRNIC frontend in the guest kernel, the GPA(guest physical memory addresses of these buffers can be forwarded to the vRNIC backend along with the Verbs calls and parameters, and the vRNIC backend can translate the GPA to the HVA (host virtual memory address) and use the shared memory pieces as the buffers of MR, QP or CQ resources, as shown in Figure~\ref{fig:verbs-driver} (b)-4.
+In the VM, the whole physical memory of the VM is already shared with the vRNIC backend when the vRNIC instantes. Though the application defaultly allocates the buffers of MR, QP/CQ without modification, the vRNIC backend still can get the corresponding shared memory piece. In specific, through the vRNIC frontend in the guest kernel, the GPA(guest physical memory addresses of these buffers can be forwarded to the vRNIC backend along with the Verbs calls and parameters, and the vRNIC backend can translate the GPA to the HVA (host virtual memory address) and use the shared memory pieces as the buffers of MR, QP/CQ resources, as shown in Figure~\ref{fig:verbs-driver} (b)-4.
 
 % 在数据路径上，针对虚拟机和容器场景的修改都一致。guest中未修改的RDMA应用往QP中写入工作请求，工作请求中待传输数据的内存地址仍然是GVA，RDMA物理网卡将根据缓存的页表检查工作请求中的地址，但是其缓存的MR页表信息则是主机vRNIC后端的HVA。因此，为了仍物理网卡成功执行guest中的工作请求，需要对RDMA工作请求中的GVA转换成HVA。为此，我们在guest用户态驱动中记录有MR资源的地址映射关系，即{key, GVA, HVA},在数据路径中，工作请求在写入QP之前，其gvm将转换成s-hvm。
-In the data path, the modifications is same for VMs and containers. The unmodified application in the guest writes the QP buffer with a WQE (work request element) whose memory address for the transforming data is still the GVA, but the address will be checked in the physical RNIC through the cached page table that is about the HVA of the vRNIC backend. Therefore, to make the vRNIC execute the work request in the guest successfully, it is still necessary to convert the GVA to the HVA in the WQE, as shown in Figure~\ref{fig:verbs-driver} (a, b)-4. To achieve it, we record the memory address mapping relationship of MR buffer in the guest user-space driver {MR-KEY, GVA, HVA}, and the GVA of a WQE can be translated into the HVA before it is written into the QP buffer.
+In the data path, the modifications is same for VMs and containers. The unmodified application in the guest writes the QP buffer with a WQE (work request element) whose memory address for the transforming data is still the GVA, but the address will be checked in the physical RNIC through the cached page table that is about the HVA of the vRNIC backend. Therefore, to make the vRNIC execute the work request in the guest successfully, it is still necessary to convert the GVA to the HVA in the WQE, as shown in Figure~\ref{fig:verbs-driver} (a, b)-4. To achieve it, we record the memory address mapping relationship of MR buffer in the guest user-space driver \{MR-KEY, GVA, HVA\}, and the GVA of a WQE can be translated into the HVA before it is written into the QP buffer.
 
 % 基于上述修改，无论是虚拟机还是容器，RDMA控制verbs将经过vRNIC前端到达vRNIC后端，在vRNIC后端中执行操作并映射RDMA资源。基于映射的RDMA资源，数据Verbs操作不需要转发到vRNIC后端,可以直接在guest用户空间，和原生RDMA一样避免了径额外的的拷贝或切换开销。
 Based on the above modifications, in both VMs and containers, the control Verbs operations are forwarded into the vRNIC backend through the vRNIC frontend, the vRNIC backend executes the operations and map the buffers of RDMA resources. Based on mapped RDMA resources, the data Verbs operations are not forwarded to the vRNIC backend, and can executed directly in the guest user-space, which avoids the overhead of additional data copy or context switching as native RDMA.
@@ -144,27 +144,35 @@ Figure 4 illustrate the detailed workflow of virtual RDMA. The workflow of the v
 
 % 4.3.1 初始化阶段
 %  初始化阶段主要完成资源的初始化，分别包括设备打开（I1）、注册内存buffer（I2）和创建QP/CQ等RDMA资源（I3）。具体细节如下： 
-\subsubsection{Initialization phase}
+\subsubsection{Initialization Phase}
 Initialization stage is mainly about the initialization of resources, including vRNIC device opening (I1), MR registration (I2) and QP/CQ creation (I3). The details are as follows:
-% I1（Guest应用打开vRNIC设备）：Guest应用依次调用Verbs接口ibv_get_devicelist和ibv_open_device，获取并打开vRNIC设备。 Guest中的Verbs库将传递这些命令和参数到vRNIC后端，vRNIC后端会打开在vRNIC实例化时绑定的物理RDMA设备。
-I1(vRNIC device opening): The application gets and opens the vRNIC device by calling the Verbs ibv\_get\_device\_list and ibv\_open\_device in turn. The Verbs library in the guest forwards these calls and parameters to the vRNIC backend, which opens the physical RNIC that was bound to the vRNIC when instantiation.
+% I1（Guest应用打开vRNIC设备）：Guest应用依次调用Verbs接口ibv_get_devicelist和ibv_open_device，获取并打开vRNIC设备。这些调用会被劫持到vRNIC后端，vRNIC后端将打开在vRNIC实例化时绑定的物理RDMA设备。
+I1(vRNIC Device Opening): The application gets and opens the vRNIC device by calling the Verbs ibv\_get\_device\_list and ibv\_open\_device in turn. The calls will be intercepted to the vRNIC backend, which will open the physical RNIC that was bound to the vRNIC when instantiation.
 
-% I2（Guest应用注册MR）：在容器中，Verbs库中将应用指定的MR内存重新映射到某一共享内存，然后将该路径随MR命令及参数传递到vRNIC后端，虚拟机无需此步骤，因为在实例化vRNIC时已与vRNIC后端共享整个内存。对于容器和虚拟机，vRNIC后端在收到该命令及参数后，会使用对应的共享内存注册MR，并返回MR内存地址（s-hvm）和key等信息，在虚拟机和容器的Verbs库中，则会记录guest中MR内存地址（gvm）与s-hvm，以及MR的key，这三者的对应关系，用于后续的数据路径操作。
+% I2（Guest应用注册MR）：在容器中，Verbs库中将MR buffer重新映射到某一共享内存，虚拟机无需此步骤， 因为在实例化vRNIC时已与vRNIC后端共享整个内存。vRNIC后端会使用对应的共享内存注册MR，并返回MR buffer 的 HVM和MR-key等信息。在Verbs库中， 则会记录MR-key, GVA 和 HVA的对应关系，以用于后续的数据Verbs操作。
+I2(MR Registration): In the container, the Verbs library remaps the MR buffer to a shared memory. This step is not required in the VM because the whole memory is already shared with the vRNIC backend when vRNIC instantiating. The vRNIC backend will use the corresponding shared memory to register MR, and return the HVM of MR buffer and MR-key, etc. In the Verbs library, the mapping {MR-KEY, HVA, GVA} is recorded for subsequent data Verbs operations.
 
-
-% I3（Guest应用创建QP/CQ）：在容器中，Verbs及其设备相关库使用共享内存分配QP/CQ的buffer，对应的共享内存路径会随RDMA命令和参数传递到vRNIC后端，虚拟机无需此步骤，因为在实例化vRNIC时已与vRNIC后端共享整个内存。对于容器和虚拟机，vRNIC后端在收到这些命令和参数后，在创建QP/CQ时，使用接收的共享内存地址分配QP/CQ等RDMA资源内存，在创建资源后，vRNIC后端会返回QPN等RDMA资源的元数据。 
+% I3（Guest应用创建QP/CQ）：在容器中，Verbs库使用共享内存分配QP/CQ buffer，虚拟机无需此步骤。vRNIC后端将创建QP/CQ时，使用对应的共享内存创建QP/CQ，并会返回QPN, CQN等元数据。 
+I3(QP/CQ creation): In the container, the Verbs library use the shared memory to allocate QP/CQ buffer. The virtual machine does not need this step. The vRNIC backend will use the corresponding shared memory to create QP/CQ and return the metadata such as QPN, CQN.
 
 %4.3.2 连接阶段
-% 连接阶段主要建立基于QP的RDMA连接，依次包括查询GID（C1）、交换连接信息（C2）和基于QP建立连接（C3），具体细节如下：
+\subsubsection{Connection Phase}
+% 连接阶段表示RDMA基于QP建立连接，依次包括查询GID（C1）、交换连接信息（C2）和基于QP建立连接（C3），具体细节如下：
+The connection phase means that the RDMA connection is established based on QP, including querying GID (C1), exchanging connection information (C2) and establishing connection (C3) in sequence. The details are as follows:
 
-% C1（获取GID）：Guest应用执行ibv_query_gid，请求获取vRNIC的vGID地址，vRNIC后端在收到该命令后，会获取绑定的物理RDMA网卡的GID，并记录（vGID，GID）对应关系。不过，vRNIC后端返回给guest的仍然是vGID。
+% C1（获取GID）：Guest应用调用Verbs ibv_query_gid，请求获取vRNIC的vGID地址。vRNIC后端将获取绑定的物理RDMA网卡的GID，记录（vGID，GID）对应关系, 并返回vGID给应用。 
+C1 (Querying GID): The application calls Verbs ibv\_query\_gid for the vGID of vRNIC. The vRNIC backend will query the GID of the bounded physical RNIC, records the mapping {vGID, GID} and returns the vGID to the guest.
 
-% C2（交换连接信息）：Guest应用与远端RDMA连接所需的地址信息vGID，QPN和MR key等。 该步骤完全由应用程序完成，无需依靠Verbs库和vRNIC后端。例如，应用中可以使用TCP socket来与远端guest应用完成这一系列信息的交换。
+% C2（交换连接信息）：应用与远端交换建立连接所需的信息vGID，QPN和MR key等。 该步骤完全由应用独立完成。例如，应用中可以使用TCP/IP 或RDMA-CM来交换信息。
+C2 (Exchanging Connection Information): The applications exchanges the connection information with the remote, such as vGID, QPN and MR-KEY. This step is done independently in the application. For example, the application can use TCP/IP or RDMA-CM to exchange the information.
 
-% C3（基于QP建立连接）：Guest应用将C2获取的远端vGID、QPN等信息作为ibv_modify_qp的参数,基于QP与远端建立RDMA连接。该命令转发到vRNIC后端后，vRNIC后端会先根据设置的路由表规则进行判断，如果远端vGID符合路由规则，就会将vGID转换成对应的GID，基于GID，QP ID及Key完成与远端vRNIC后端QP的配对。从vGID到GID的转换，实现了RDMA连接的网络虚拟化。
+% C3（连接建立）：应用调用verbs ibv_modify_qp 并将本地/远端的vGID、QPN等作为参数。该命令转发到vRNIC后端后，vRNIC后端会先根据URN core的路由表规则进行判断，如果允许，就会将本地/远端 vGID转换为对应的GID，再根据QPN，在两个vRNIC后端的QP间建立RDMA连接。
+C3 (Connection Establish): The application calls the Verb ibv\_modify\_qp with the parameters, including local/remote vGID, local/remote QPN. The vRNIC backend will check the routing table from URN core. If allowed, the local/remote vGID will be converted to GID, and RDMA connection is established based on local/remote QP in two vRNIC backends through the QPN. 
 
 % 4.3.3 数据阶段
-% 数据路径发生在连接建立后，对注册的MR中的内容执行操作。RDMA的数据路径包括图中的D1和D2。
+% 数据路径发生在连接建立后，主要是对本地/远端 MR中的内容执行收发操作。RDMA的数据路径包括图中的D1和D2。
+\subsubsection{Data Phase}
+The data phase is after the RDMA connection is established and about how to send/receive the content in the local/remote MR buffers. 
 
 % D1（收发数据）：Guest应用发送或接收MR中的数据。由于MR和QP已经完成了资源映射，此时，数据操作时的数据块（MR中）和工作请求（QPs）可以直接由RDMA物理网卡访问。不过，工作请求中的地址信息仍然是guest中的地址，而第三步中创建MR时，物理网卡记录是vRNIC后端中的页表信息。因此，需要借助前面缓存的三元组信息，将工作请求中的guest地址转换为vRNIC后端地址，再填充到QP中。如果是单边操作，其工作请求中还包含远端地址信息，在第一次执行命令时还需要向vRNIC后端发送请求，获取URN core中存储的远端MR地址映射关系，并缓存到本地。然后将工作请求中的本地及远端地址均进行转换，填充到QP中。
 
