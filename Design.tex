@@ -3,28 +3,28 @@
 \section{Design}
 
 % URN的设计目标是为提供一个统一的RDMA虚拟化框架，以适应混合虚拟化环境，同时实现统一的灵活的RDMA资源管理，并具备与原生RDMA接近的性能。此外，URN应尽可能确保最大的兼容性，对已有RDMA应用透明。
-The goals of URN are to provide a unified RDMA virtualization framework for the hybrid virtual environment, meet the unified flexible RDMA resource management and make the performance of virtual RDMA close to the native RDMA meanwhile. Besides, URN should ensure maximum compatibility and be completely transparent to the application. 
+The goals of URN are: 1) to provide a unified RDMA virtualization framework for the hybrid virtualization environment where VMs and containers may be deployed on the same host machine; 2) to provide a single point of RDMA resource management for all RDMA resource users; 3) to keep the performance overhead of the RDMA virtualization to the minimum. Besides, URN should bring minimum impact to existing RDMA software stack and be completely transparent to the RDMA application. 
 
 %URN主要包含了vRNIC，URN core和mgmt center。vRNIC是对虚拟机和容器通用的虚拟RDMA网卡设备，URN core则是各主机服务器上的用于集中管理RDMA资源的虚拟化层, mgmt center可以跨多主机管理协调RDMA网络的控制策略。在本章，我们介绍了URN中的一些关键性设计工作。
-To achieve the above goals, URN mainly consists of the vRNICs, the URN core and the management center. vRNIC is a virtual RDMA network device that is common to VMs and containers, URN Core is a virtualization layer for centralized RDMA resource management on each server, and the management center is configured with multiple control policies. In this section, we introduce some key designs in URN.
+URN consists of 3 major parts, the vRNICs, the URN core and the management center. vRNIC is a virtual RDMA network device that looks like a real RDMA device inside VMs and containers. URN Core is a virtualization layer for centralized RDMA resource management on the host machine. And the management center is a centralized management entity in the data center keeps and coordinates management and control policies for the RDMA network.
 
 % 4.1  vRNIC设计
 \subsection{vRNIC}
 
 % vRNIC是一个虚拟RDMA设备，由前后端驱动组成。后端在主机端，模拟RDMA设备；前端在guest端, 作为vRNIC的接口，转发guest应用的RDMA 命令到vRNIC后端。
-The vRNIC is a virtual RDMA device that consists of a frontend and backend driver. The vRNIC backend is in the host and emulates the RDMA device in the host. As the interface of vRNIC, the vRNIC frontend is in the guest and forwards the RDMA commands from the upper-level RDMA software to the vRNIC backend. 
+The vRNIC is a virtual RDMA device that consists of a frontend and a backend. The vRNIC backend is placed in the host and emulates the behavior of a RDMA device. The vRNIC frontend is placed in the guest space that exposes RDMA device interfaces to the upper device drivers. Commands are forwarded from the vRNIC frontend to the vRNIC backend to be actually executed or emulated.
 
 % 4.1.1 vRNIC后端
 \subsubsection{vRNIC Backend}
 
 % vRNIC后端被放在主机用户空间，因为vRNIC后端在用户空间有诸多好处，例如，更小的攻击面，更高的管理灵活性，以及对内核API无依赖等，具体细节可以见2.1节。
-The vRNIC backend is placed in the host user-space, because there are many benefits in user-space, which is discussed in detail at section 2.1.
+In URN design, the vRNIC backend is placed in the host user-space instead of the host kernel-space. This is because the device emulator in the user-space can be developed, deployed, managed more easily than that in the kernel-space. Also, its faults can be isolated from the OS kernel.
 
 % vRNIC作为一个虚拟RDMA设备，vRNIC后端需要维护关于RDMA网卡的硬件属性，与物理RDMA网卡对应，例如RDMA地址vGID，RDMA设备类型等。此外，在vRNIC的运行过程中，vRNIC后端中需要维护三方面的上下文：
 % 1，来自guest的虚拟RDMA上下文信息，主要记录了虚拟RDMA资源的信息；
 % 2，由物理网卡创建的RDMA上下文，包含各RDMA资源，由vRNIC后端通过调用verbs库创建和维护；
 % 3，虚拟RDMA上下文到物理RDMA上下文之间的对应关系。对应关系是一对一的，因为一对一是RDMA性能隔离的基础。
-As a virtual RDMA device, the vRNIC backend needs to maintain the hardware properties that correspond to the physical RNIC, such as the RDMA address GID, the RDMA device vendor, etc. In addition, three aspects of context need to be maintained in the vRNIC backend at the run-time:
+As a virtual RNIC device emulator, the vRNIC backend needs to maintain the same amount of hardware properties that the physical RNIC has, such as the RDMA address GID, the RDMA device vendor. In addition, three aspects of contexts need to be maintained in the vRNIC backend at the run-time:
 (1) Virtual RDMA context information from the guest, mainly including the information about RDMA resources in the guest;
 (2) The RDMA context created on the physical RNIC,  including various RDMA resources, which is maintained in the vRNIC backend with the help of the Verbs libraries;
 (3) The mapping between the virtual RDMA context and the physical RDMA context. The mapping of RDMA resources is one-to-one,  because one-to-one is the base of performance isolation..
