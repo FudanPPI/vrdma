@@ -133,7 +133,7 @@ Based on the above modifications, in both VMs and containers, the control Verbs 
 % 4.3 虚拟RDMA workflow
 \subsection{Virtual RDMA Workflow}
 % 图4说明了虚拟RDMA的详细工作过程。虚拟RDMA的工作流程涉及guest中的应用、verbs库以及主机的vRNIC后端交互。整个工作流程依次分为初始化阶段、连接阶段和数据阶段。其中，初始化阶段分别包括设备打开和RDMA资源创建，连接阶段中RDMA应用通过QP与远端建立连接。数据阶段中RDMA应用执行数据路径的操作。
-Figure 4 illustrate the detailed workflow of virtual RDMA. The workflow of the virtual RDMA involves the application, the Verbs library and user-space driver in the guest, and the vRNIC backend in the host. In sequence, the whole workflow can be divided into initialization phase, connection phase and data phase. The initialization phase includes device opening and RDMA resource initialization. In the connection phase, the RDMA application establishes a connection with the remote through QP. In the data phase, the RDMA application performs the operations in the data path.
+Figure 4 illustrate the detailed workflow of virtual RDMA. The workflow of the virtual RDMA involves the application, the Verbs libraries (including the user-space driver) in the guest, and the vRNIC backend in the host. In sequence, the whole workflow can be divided into initialization phase, connection phase and data phase. The initialization phase includes device opening and RDMA resource initialization. In the connection phase, the RDMA application establishes a connection with the remote through QP. In the data phase, the RDMA application performs the operations in the data path.
 
 \begin{figure}[!ht]
 	\centering
@@ -170,14 +170,15 @@ C2 (Exchanging Connection Information): The applications exchanges the connectio
 C3 (Connection Establish): The application calls the Verb ibv\_modify\_qp with the parameters, including local/remote vGID, local/remote QPN. The vRNIC backend will check the routing table from URN core. If allowed, the local/remote vGID will be converted to GID, and RDMA connection is established based on local/remote QP in two vRNIC backends through the QPN. 
 
 % 4.3.3 数据阶段
-% 数据路径发生在连接建立后，主要是对本地/远端 MR中的内容执行收发操作。RDMA的数据路径包括图中的D1和D2。
+% 数据路径发生在连接建立后，主要是对本地/远端 MR中的内容执行收发操作，包括图中的D1（收发数据）和D2 (轮询CQ）。具体如下：
 \subsubsection{Data Phase}
-The data phase is after the RDMA connection is established and about how to send/receive the content in the local/remote MR buffers. 
+The data phase is after the RDMA connection is established and about how to send/receive the content in the local/remote MR buffers, including D1 (Send/Recv Data) and D2 (Poll the CQ). The details are as follows:
 
-% D1（收发数据）：Guest应用发送或接收MR中的数据。由于MR和QP已经完成了资源映射，此时，数据操作时的数据块（MR中）和工作请求（QPs）可以直接由RDMA物理网卡访问。不过，工作请求中的地址信息仍然是guest中的地址，而第三步中创建MR时，物理网卡记录是vRNIC后端中的页表信息。因此，需要借助前面缓存的三元组信息，将工作请求中的guest地址转换为vRNIC后端地址，再填充到QP中。如果是单边操作，其工作请求中还包含远端地址信息，在第一次执行命令时还需要向vRNIC后端发送请求，获取URN core中存储的远端MR地址映射关系，并缓存到本地。然后将工作请求中的本地及远端地址均进行转换，填充到QP中。
+% D1（收发数据）：在双边操作中，两端应用分别执行Verbs ibv_post_recv和ibv_post_send对本地MR中的数据进行收发。对于其中的参数WQE, Verbs库会将其中的本地MR数据地址GVA转换为HVA。在单边操作中，仅执行ibv_post_send，但是WQE参数中包括了本地/远端 MR数据块地址。在第一次执行单边操作时，将向vRNIC后端获取远端MR GVA与HVA对应关系，并缓存到本地Verbs库，然后对本地/远端 MR数据块地址执行从GVA到HVA的转换。
+D1 (Send/Recv Data): In two-side operation, data in the local MR can be sent and received by executing Verbs ibv\_post\_recv and ibv\_post\_send, respectively. For the parameter WQE, the Verbs libraries will translate the local MR data address from GVA to HVA. In one-sided operations, only ibv\_post\_send is called, but the parameter WQE includes the local/remote MR data address. When the first one-side operation, the mapping {GVA, HVA} for remote MR buffer will be queried from the vRNIC backend, cached into the Verbs libraries, and there the local/remote MR data address will be converted from GVA to HVA.
 
-% D2（轮询CQ）：Guest应用轮询CQ获取数据操作的完成事件。由于CQ已经完成了资源映射，此时，物理网卡中工作完成的通知会直接写入到guest的CQ中。
-
+% D2（轮询CQ）：Guest应用轮询CQ来获取对应的工作完成通知。如果使用事件通知机制，guest中verbs库将等待vRNIC后端获取事件并返回给应用。
+D2 (Polling the CQ) : The application poll the CQ for the work completions. If event-based notification is used, the Verbs libraries will wait for the vRNIC backend to receive the event and return it to the application.
 
 % 4.4 mgmt center
 \subsection{Management Center}
