@@ -46,13 +46,13 @@ In containers, the application shares the host kernel with the vRNIC backend, on
 % 4.2  URN Core 设计
 \subsection{URN Core}
 
-% 为了对vRNIC进行统一管理，高效利用物理RDMA网卡，我们构建了一个统一的虚拟层URN core。URN core部署于集群的每台服务器上，【管理服务器的所有RDMA资源，对于来自虚拟机和容器的网卡资源申请，URN core会进行。1，发现和记录所有RDMA资源, 2，监控RDMA资源消耗，决策RDMA设备和资源分配（调度方式：动态轮询等等，调度目的：负载均衡、控制资源QoS），3,RDMA虚拟机容器的迁移信息】，用于实例化vRNIC和配置虚拟RDMA网络等。
-To manage vRNICs uniformly and exploit the physical RNIC, we built a unified virtualization layer, namely URN Core. URN Core is deployed on each server in the cluster for instantiating vRNICs and configuring the virtual RDMA network.
+% 为了对vRNIC进行统一管理，高效利用物理RDMA网卡，我们构建了一个统一的虚拟层URN core。URN core部署于集群的每台服务器上，监听虚拟机、容器以及原生的RDMA设备请求。之后，在URN core中实例化vRNIC和配置虚拟RDMA网络等。
+To manage vRNICs uniformly and exploit the physical RNIC, we built a unified virtualization layer, namely URN Core. URN Core is deployed on each server in the cluster, listening for the request of RDMA device from VMs, containers and the native. After that, the vRNICs are instantiated and configurated with virtual RDMA network in the URN core.
+%【 讨论：管理服务器的所有RDMA资源，对于来自虚拟机和容器的网卡资源申请，URN core会进行。1，发现和记录所有RDMA资源, 2，监控RDMA资源消耗，决策RDMA设备和资源分配（调度方式：动态轮询等等，调度目的：负载均衡、控制资源QoS），3,RDMA虚拟机容器的迁移信息】，
 
-% 4.2.0 QoS多个vRNIC， URN core如何响应VM和容器请求，先来先服务，可以设计为QoS
-
-% URN core 服务会监听该主机上所有虚拟机和容器的vRNIC请求，
-\subsubsection{URN Core Setup}
+% 4.2.1 URN Core 服务
+\subsubsection{URN Core Service}
+% 【这段只有中文】URN core 服务会在每台服务器上运行，统一监听该主机上所有虚拟机、容器和原生的获取RDMA设备的请求（如果原生的请求不进行统一处理，将会导致原生和虚拟化对RDMA设备接口资源的冲突，因此修改了主机打开设备的Verbs实现，将对应请求转发到URN core，由URN core统一分配RDMA设备接口）。一旦有新的获取RDMA设备请求到来，便会唤醒URN core服务监听的描述符。URN core将开启新线程处理请求，并在请求处理完后结束线程。对于虚拟机和容器的申请vRNIC请求，URN core采用的是先来先服务的策略。如果需要区分请求的优先级，URN core中可以定义对应的优先级队列，再根据优先级处理请求。
 
 % 4.2.1 实例化vRNIC 
 \subsubsection{instantiating vRNICs}
