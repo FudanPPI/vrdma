@@ -3,10 +3,10 @@
 \section{Design}
 
 % URN的设计目标是为提供一个统一的RDMA虚拟化框架，以适应混合虚拟化环境，同时实现统一的灵活的RDMA资源管理，并具备与原生RDMA接近的性能。此外，URN应尽可能确保最大的兼容性，对已有RDMA应用透明。
-The goals of URN are: 1) to provide a unified RDMA virtualization framework for the hybrid virtualization environment where VMs and containers may be deployed on the same host machine; 2) to provide a single point of RDMA resource management for all RDMA resource users; 3) to keep the performance overhead of the RDMA virtualization to the minimum. Besides, URN should bring minimum impact to existing RDMA software stack and be completely transparent to the RDMA application. 
+The goals of URN are: 1) to provide a unified RDMA virtualization framework for the hybrid virtualization environment where VMs and containers could be deployed on the same host machine and shared the RDMA resources; 2) to provide a single point of RDMA resource management for all RDMA resource users; 3) to keep the performance overhead of the RDMA virtualization to the minimum. Besides, URN should bring minimum impact to existing RDMA software stack and be completely transparent to the RDMA application. 
 
 %URN主要包含了vRNIC，URN core和mgmt center。vRNIC是对虚拟机和容器通用的虚拟RDMA网卡设备，URN core则是各主机服务器上的用于集中管理RDMA资源的虚拟化层, mgmt center可以跨多主机管理协调RDMA网络的控制策略。在本章，我们介绍了URN中的一些关键性设计工作。
-URN consists of 3 major parts, the vRNICs, the URN core and the management center. vRNIC is a virtual RDMA network device that looks like a real RDMA device inside VMs and containers. URN Core is a virtualization layer for centralized RDMA resource management on the host machine. And the management center is a centralized management entity in the data center keeps and coordinates management and control policies for the RDMA network.
+URN consists of 3 major parts, the vRNICs, the URN Core and the management center. vRNIC is a virtual RDMA network device that looks like a real RDMA device inside VMs and containers. URN Core is a virtualization layer for centralized RDMA resource management on the host machine. And the management center is a centralized management entity in the data center that keeps and coordinates management and control policies for the RDMA network.
 
 % 4.1  vRNIC设计
 \subsection{vRNIC}
@@ -18,7 +18,7 @@ The vRNIC is a virtual RDMA device that consists of a frontend and a backend. Th
 \subsubsection{vRNIC Backend}
 
 % vRNIC后端被放在主机用户空间，因为vRNIC后端在用户空间有诸多好处，例如，更小的攻击面，更高的管理灵活性，以及对内核API无依赖等，具体细节可以见2.1节。
-In URN design, the vRNIC backend is placed in the host user-space instead of the host kernel-space. This is because the device emulator in the user-space can be developed, deployed, managed more easily than that in the kernel-space. Also, its faults can be isolated from the OS kernel.
+In URN design, the vRNIC backend is placed in the host user-space instead of the host kernel-space. This is because the device emulator in the user-space can be developed, deployed, and managed more easily than that in the kernel-space. Also, its faults can be isolated from the OS kernel.
 
 % vRNIC作为一个虚拟RDMA设备，vRNIC后端需要维护关于RDMA网卡的硬件属性，与物理RDMA网卡对应，例如RDMA地址vGID，RDMA设备类型等。此外，在vRNIC的运行过程中，vRNIC后端中需要维护三方面的上下文：
 % 1，来自guest的虚拟RDMA上下文信息，主要记录了虚拟RDMA资源的信息；
@@ -47,7 +47,7 @@ In containers, the application shares the host kernel with the vRNIC backend, on
 \subsection{URN Core}
 
 % 为了对vRNIC进行统一管理，高效利用物理RDMA网卡，我们构建了一个统一的虚拟层URN core。URN core部署于集群的每台服务器上，监听虚拟机、容器以及原生的RDMA设备请求。之后，在URN core中实例化vRNIC和配置虚拟RDMA网络等。
-To manage vRNICs uniformly and exploit the physical RNIC, we built a unified virtualization layer, namely URN Core. URN Core is deployed on each server in the cluster, listening for the request of RDMA device from VMs, containers and the native. After that, the vRNICs are instantiated and configurated with virtual RDMA network in the URN core.
+To manage vRNICs uniformly and exploit the physical RNIC, we built a unified virtualization layer, namely URN Core. URN Core is deployed on each server in the cluster, listening to the request of RDMA device from VMs, containers and the RDMA applications in the host. After that, the vRNICs are instantiated and configured with virtual RDMA network in the URN core.
 %【 讨论：管理服务器的所有RDMA资源，对于来自虚拟机和容器的网卡资源申请，URN core会进行。1，发现和记录所有RDMA资源, 2，监控RDMA资源消耗，决策RDMA设备和资源分配（调度方式：动态轮询等等，调度目的：负载均衡、控制资源QoS），3,RDMA虚拟机容器的迁移信息】，
 
 % 4.2.1 URN Core 服务
@@ -57,19 +57,19 @@ To manage vRNICs uniformly and exploit the physical RNIC, we built a unified vir
 % 4.2.1 实例化vRNIC 
 \subsubsection{instantiating vRNICs}
 % URN core在收到guest中应用申请vRNIC的请求后，会实例化vRNIC。实例化vRNIC的主要工作包括： 初始化vRNIC属性、绑定vRNIC到物理网卡、构建vRNIC前后端消息通道以及隔离各vRNIC实例等。
-URN Core instantiates a vRNIC once receiving the request from the application in the guest. Instantiating vRNIC mainly includes: initializing vRNIC attributes, binding the vRNIC to the physical RNIC, building the message channel between the vRNIC frontend and backend, and isolating vRNIC instances.
+URN Core instantiates a vRNIC once receiving the request from the application in the guest. Instantiating vRNIC mainly includes 4 major work: 1) initializing vRNIC attributes, 2) binding the vRNIC to the physical RNIC, 3) building the message channel between the vRNIC frontend and backend, and 4) isolating the vRNIC instances.
 
 % 初始化vRNIC属性：为了模拟与硬件一致的功能接口，URN Core需要对vRNIC的不变属性进行初始化，包括RDMA地址vGID，设备号等等。对于RDMA地址vGID，URN core会随机生成IPv6格式的虚拟值，同时登记到mgmt center的数据库中。
-Initializing vRNIC attributes: To emulate the interface as physical RNIC, URN Core needs to initialize the invariant properties of vRNIC, including RDMA address vGID, device number, and so on. For RDMA addresses vGID, URN Core randomly generates the values in the IPv6 format and registers them into the database in the management center.
+1) Initializing vRNIC attributes: To emulate the interface as physical RNIC, URN Core needs to initialize the static properties of vRNIC, including RDMA address vGID, device number, and so on. For RDMA addresses vGID, URN Core randomly generates the values in the IPv6 format and registers them into the database in the management center.
 
 % 绑定vRNIC到物理网卡：vRNIC实例需要依靠物理网卡实现RDMA功能，因此，实例化vRNIC时需要将vRNIC实例与对应的物理RDMA网卡绑定。如果是多网卡设备或者多个网卡接口（如使用SR-IOV），还需确定从vRNIC到对应物理网卡接口的映射关系。
-Binding vRNIC to the physical RNIC: The vRNIC instance relies on the physical RNIC to implement RDMA. Therefore, it is necessary to bind the vRNIC instance to the physical RNIC when instantiating. If there are multiple physical RNICs or interfaces (such as SR-IOV), the mapping from the vRNIC to the RNIC interface needs to be determined.
+2) Binding vRNIC to the physical RNIC: The vRNIC instance relies on the physical RNIC to implement RDMA. Therefore, it is necessary to bind the vRNIC instance to the physical RNIC when instantiating. If there are multiple physical RNICs or interfaces (such as SR-IOV), the mapping from the vRNIC to the RNIC interface needs to be determined.
 
 % 构建vRNIC消息通道：URN Core需要构建vRNIC后端与vRNIC前端之间的消息通道。对于容器来说，容器与vRNIC后端共享某一IPC命名空间，即可完成vRNIC前端与后端之间的消息交互。对于虚拟机来说，由于vRNIC后端在主机用户空间，而hypervisor位于主机内核空间。为了避免guest的消息先拷贝到hypervisor层再到vRNIC后端，我们构建一块共享内存，以此作为消息通道。具体来说，虚拟机物理内存与vRNIC后端之间是共享的。guest中的任意RDMA消息，均可以直接由vRNIC后端获取，同时也减少了从guest到vRNIC后端的延迟。
-Build the vRNIC message channel: URN Core needs to build a message channel between the vRNIC backend and the frontend. For containers, the container can share an IPC namespace with the vRNIC backend to make the message interaction between the vRNIC frontend and the backend. For VMs, the vRNIC backend is in host user-space and the hypervisor is in host kernel-space. To avoid the messages being copied to the hypervisor and then copied to the vRNIC backend, we build a shared memory as the message channel. Specifically, the physical memory in the VM is shared with the vRNIC backend. Any RDMA messages in the guest can be fetched directly from the vRNIC backend, and the latency from the guest to the vRNIC backend is decreased.
+3) Building the vRNIC message channel: URN Core needs to build a message channel between the vRNIC backend and the frontend. For containers, the container can share an IPC namespace with the vRNIC backend to make the message interaction between the vRNIC frontend and the backend. For VMs, the vRNIC backend is in host user-space and the hypervisor is in host kernel-space. To avoid the messages being copied to the hypervisor and then copied to the vRNIC backend, we build a shared memory as the message channel. Specifically, the physical memory in the VM is shared with the vRNIC backend. Any RDMA messages in the guest can be fetched directly from the vRNIC backend, and the latency from the guest to the vRNIC backend is decreased.
 
 % vRNIC实例隔离：URN core需要确保各vRNIC之间的消息通道是隔离的。在云环境中，同一主机上可能部署多个虚拟机或容器，该主机的URN core需要实例化多个vRNIC后端，以满足不同的guest实例。因此，需要确保各vRNIC之间的消息通道是隔离的，尤其是容器，由于其隔离性不如虚拟机彻底。如果多个容器和主机共享同一文件命名空间或IPC空间，那么，很容易通过扫描获取到其他容器或虚拟机vRNIC的消息通道。URN core利用了文件命名空间的机制，文件命名空间中的文件对于其他命名空间是不可见的。URN core在实例化vRNIC时，将各vRNIC消息通道对应的文件位于不同的命名空间，从而实现了各vRNIC实例之间消息通道的隔离。
-RNIC instance isolation: URN Core needs to ensure that message channels between different vRNICs are isolated. In a cloud environment, multiple VMs or containers may be deployed on the same host, and the URN core of that host needs to instantiate multiple vRNICs for different guest instances. Therefore, you need to ensure that message channels between vRNICs are isolated, especially containers, which are not as completely isolated as VMs. If multiple containers and hosts share the same file namespace or IPC space, then it is easy to scan for vRNIC message channels to other containers or VMs. URN Core takes advantage of the mechanism of file namespaces, where files are not visible to other namespaces. When instantiating a vRNIC, URN Core places the corresponding files of each vRNIC message channel in different namespaces, to realize the isolation of message channels between each vRNIC instance.
+4) Isolating the vRNIC instances: URN Core needs to ensure that message channels between different vRNICs are isolated. In a cloud environment, multiple VMs or containers may be deployed on the same host, and the URN Core of that host needs to instantiate multiple vRNICs for different guest instances. Therefore, you need to ensure that message channels between vRNICs are isolated, especially containers, which are not as completely isolated as VMs. If multiple containers and hosts share the same file namespace or IPC space, then it is easy to scan for vRNIC message channels to other containers or VMs. URN Core takes advantage of the mechanism of file namespaces, where files are not visible to other namespaces. When instantiating a vRNIC, URN Core places the corresponding files of each vRNIC message channel in different namespaces, to realize the isolation of message channels between each vRNIC instance.
 
 % 4.2.2 配置虚拟RDMA网络
 \subsubsection{configuring the virtual RDMA network}
@@ -77,7 +77,6 @@ RNIC instance isolation: URN Core needs to ensure that message channels between 
 % URN core在实例化vRNIC后，需要对vRNIC的网络进行配置，包括虚拟RDMA地址配置以及虚拟RDMA路由配置。
 After the instantiation of the vRNIC, the URN core needs to configure the vRNIC's network, including virtual RDMA address configuration and virtual RDMA routing configuration.
 For virtual RDMA address configurations, the vGID assigned to the vRNIC by URN Core is a virtual value, independent of the physical RNIC, when it instantiates the vRNIC.
-
 % 对于虚拟RDMA地址配置，URN core 在实例化vRNIC时， 给vRNIC配置的vGID是虚拟值，与物理网卡无关。
 
 % 对于虚拟RDMA路由配置，每台主机的URN core中配置了虚拟RDMA网络路由规则。具体来说，URN core在实例化vRNIC时，还给每个vRNIC都配置了组ID，路由规则的定义形式为:{group ID1, group ID2, Policy}。例如，如图4所示，容器1和容器2的vrnic被配置到同一组中，因此允许创建RDMA连接。作为对比，容器1和虚拟机1属于不同的用户组，按路由规则无法建立RDMA连接。各虚拟实例之间建立RDMA连接的具体细节可以参考4.3.1。
