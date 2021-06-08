@@ -6,7 +6,7 @@
 The goals of URN are: 1) to provide a unified RDMA virtualization framework for the hybrid virtualization environment where VMs and containers could be deployed on the same host machine and shared the RDMA resources; 2) to provide a single point of RDMA resource management for all RDMA resource users; 3) to keep the performance overhead of the RDMA virtualization to the minimum. Besides, URN should bring minimum impact to existing RDMA software stack and be completely transparent to the RDMA application. 
 
 %URN主要包含了vRNIC，URN core和mgmt center。vRNIC是对虚拟机和容器通用的虚拟RDMA网卡设备，URN core则是各主机服务器上的用于集中管理RDMA资源的虚拟化层, mgmt center可以跨多主机管理协调RDMA网络的控制策略。在本章，我们介绍了URN中的一些关键性设计工作。
-URN consists of 3 major parts, the vRNICs, the URN Core and the management center. vRNIC is a virtual RDMA network device that looks like a real RDMA device inside VMs and containers. URN Core is a virtualization layer for centralized RDMA resource management on the host machine. And the management center is a centralized management entity in the data center that keeps and coordinates management and control policies for the RDMA network.
+URN consists of 3 major parts, the vRNICs, the URN Core and the management center. vRNIC is a virtual RDMA network device that looks like a real RDMA device inside VMs and containers. URN Core is a virtualization layer for centralized RDMA resource management on the host machine. And the management center is a centralized management entity in the data center that keeps and coordinates management and control policies for the RDMA network. In addition, we modified the existing RDMA software stack to support RDMA virtualization in user-space better.
 
 % 4.1  vRNIC设计
 \subsection{vRNIC}
@@ -52,7 +52,8 @@ To manage vRNICs uniformly and exploit the physical RNIC, we built a unified vir
 
 % 4.2.1 URN Core 服务
 \subsubsection{URN Core Service}
-% 【这段只有中文】URN core 服务会在每台服务器上运行，统一监听该主机上所有虚拟机、容器和原生的获取RDMA设备的请求（如果原生的请求不进行统一处理，将会导致原生和虚拟化对RDMA设备接口资源的冲突，因此修改了主机打开设备的Verbs实现，将对应请求转发到URN core，由URN core统一分配RDMA设备接口）。一旦有新的获取RDMA设备请求到来，便会唤醒URN core服务监听的描述符。
+% URN core 作为一个服务会在每台服务器上运行，统一监听虚拟机、容器和主机的获取RDMA设备的请求（如果原生的请求不进行统一处理，将会导致原生和虚拟化对RDMA设备接口的冲突，因此修改了主机获取设备Verbs ibv_get_device_list的实现，将对应请求转发到URN core，由URN core统一分配RDMA设备接口）。
+The URN core as a service which runs on each server and monitors the request of obtain RDMA devices from virtual machines, containers and host. (If the host requests are not processed uniformly, it will cause the RDMA devices interfaces conflict between host RDMA and virtualized. So the implementation of the Verbs ibv\_get\_device\_list is modified, the corresponding request is forwarded to the URN core, and the URN core uniformly allocates the RDMA device interface) .
 
 % 4.2.1 实例化vRNIC 
 \subsubsection{instantiating vRNICs}
@@ -91,6 +92,25 @@ In summary, the virtual network configuration in the URN Core is dynamical, so i
 	\includegraphics[width=1.0\linewidth]{images/route-config}
 	\caption{Group Configuration and Routing: The vRNICs of container 1 and container 2 are configured in one group. Thus, two containers can create RDMA connections. And VM 1 are not allowed to create RDMA connections to containers in this figure because it is not added into the group. }
 	\label{fig:route-config}
+\end{figure}
+
+% mgmt center
+\subsection{Management Center}
+
+% 在URN框架里，整个集群配备一个mgmt center，作为配置管理，存储各节点RDMA资源信息的中心。
+In URN, the cluster is equipped with one management center, which serves as configuration management and stores the information of RDMA resources for each node.
+
+% 通过mgmt center，管理者向各个节点的URN core下发各种策略，包括控制平面策略，如连接管理，防火墙等；和数据平面策略，如Qos、流量计费等。管理框架图如图5所示：策略由mgmt center下发到URN core，URN core通过agent接收策略后，其中，URN core将控制平面策略配置给管理的各vRNIC后端。对于数据平面策略，URN core将其发送给 Verbs库中的agent，然后在各虚拟机的RDMA应用本地执行。
+Through the management center, various policies is issued to the URN core for each node, including: control plane policies, such as connection management, firewall, etc; data plane policies, such as QoS, traffic metering, etc. The management framework is shown in Figure~\ref{fig:mgmt-center}: the policy is issued to the URN Core by the management center and the URN Core receives the policy through the agent. Then, the URN Core configures the control plane policy to each managed vRNIC backend. For the data plane policy, the URN Core sends it to the agent in the Verbs library, which is then executed locally in the application in each guest.
+
+%  连接管理、防火墙等控制平面策略主要基于RDMA连接进行，依靠QP等RDMA资源。由于包括QP在内的所有RDMA资源均已经映射在vRNIC后端中，因此，控制平面策略可以直接在vRNIC后端依靠映射的RDMA资源执行；数据平面策略也可以依靠轮询各vRNIC后端的映射好的RDMA资源来完成。然而，这样做将消耗额外的CPU资源而且可能不正确如果轮询效率不高。因此，本文将数据策略进一步从URN core下发到各guest的用户库，在各RDMA应用本地执行。注意，这些扩展需要所有客户机都信任库，并且这些修改应该包含在TCB(可信计算库)中。对照native的RDMA，其数据路径绕过了操作系统内核，物理网卡的数据管理及其有限，因此，其细粒度的数据管理同样需要在应用本地执行,并需要Verbs库的帮助。
+The control plane policies are mainly based on RDMA connections, which rely on RDMA resources such as QP. Since all RDMA resources, including QP, are mapped to the vRNIC backend, the control plane policies can be executed in the vRNIC backend against the mapped RDMA resources. The data plane policies such as QoS also can be completed by polling the mapped RDMA resources in the vRNIC backend. However, the polling occupies additional CPU and may not be correct if polling is slow. Therefore, the data plane policies are further issued from URN Core to each guest's user library, executed locally in each application. Note that these extensions require that the guest trusts its Verbs libraries, and that these changes should be included in the TCB(Trusted Computing Library). Compared with native RDMA, its data path bypasses the kernel, while the data management in physical RNIC is very limited. Therefore, the fine-grained data management of RDMA also needs to be executed locally in application with the help of the Verbs libraries.
+
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[width=1\linewidth]{images/mgmt-center.png}
+	\caption{The Architecture of URN Management}
+	\label{fig:mgmt-center}
 \end{figure}
 
 % 4.3 Verbs库和用户态驱动 
@@ -180,26 +200,8 @@ D1 (Send/Recv Data): In two-side operation, data in the local MR can be sent and
 % D2（轮询CQ）：Guest应用轮询CQ来获取对应的工作完成通知。如果使用事件通知机制，guest中verbs库将等待vRNIC后端获取事件并返回给应用。
 D2 (Polling the CQ): The application poll the CQ for the work completions. If event-based notification is used, the Verbs libraries will wait for the vRNIC backend to receive the event and return it to the application.
 
-% 4.5 mgmt center
-\subsection{Management Center}
 
-% 在URN框架里，整个集群配备一个mgmt center，作为配置管理，存储各节点RDMA资源信息的中心。
-In URN, the cluster is equipped with one management center, which serves as configuration management and stores the information of RDMA resources for each node.
-
-% 通过mgmt center，管理者向各个节点的URN core下发各种策略，包括控制平面策略，如连接管理，防火墙等；和数据平面策略，如Qos、流量计费等。管理框架图如图5所示：策略由mgmt center下发到URN core，URN core通过agent接收策略后，其中，URN core将控制平面策略配置给管理的各vRNIC后端。对于数据平面策略，URN core将其发送给 Verbs库中的agent，然后在各虚拟机的RDMA应用本地执行。
-Through the management center, various policies is issued to the URN core for each node, including: control plane policies, such as connection management, firewall, etc; data plane policies, such as QoS, traffic metering, etc. The management framework is shown in Figure~\ref{fig:mgmt-center}: the policy is issued to the URN Core by the management center and the URN Core receives the policy through the agent. Then, the URN Core configures the control plane policy to each managed vRNIC backend. For the data plane policy, the URN Core sends it to the agent in the Verbs library, which is then executed locally in the application in each guest.
-
-%  连接管理、防火墙等控制平面策略主要基于RDMA连接进行，依靠QP等RDMA资源。由于包括QP在内的所有RDMA资源均已经映射在vRNIC后端中，因此，控制平面策略可以直接在vRNIC后端依靠映射的RDMA资源执行；数据平面策略也可以依靠轮询各vRNIC后端的映射好的RDMA资源来完成。然而，这样做将消耗额外的CPU资源而且可能不正确如果轮询效率不高。因此，本文将数据策略进一步从URN core下发到各guest的用户库，在各RDMA应用本地执行。注意，这些扩展需要所有客户机都信任库，并且这些修改应该包含在TCB(可信计算库)中。对照native的RDMA，其数据路径绕过了操作系统内核，物理网卡的数据管理及其有限，因此，其细粒度的数据管理同样需要在应用本地执行,并需要Verbs库的帮助。
-The control plane policies are mainly based on RDMA connections, which rely on RDMA resources such as QP. Since all RDMA resources, including QP, are mapped to the vRNIC backend, the control plane policies can be executed in the vRNIC backend against the mapped RDMA resources. The data plane policies such as QoS also can be completed by polling the mapped RDMA resources in the vRNIC backend. However, the polling occupies additional CPU and may not be correct if polling is slow. Therefore, the data plane policies are further issued from URN Core to each guest's user library, executed locally in each application. Note that these extensions require that the guest trusts its Verbs libraries, and that these changes should be included in the TCB(Trusted Computing Library). Compared with native RDMA, its data path bypasses the kernel, while the data management in physical RNIC is very limited. Therefore, the fine-grained data management of RDMA also needs to be executed locally in application with the help of the Verbs libraries.
-
-\begin{figure}[!ht]
-	\centering
-	\includegraphics[width=1\linewidth]{images/urn-interface.png}
-	\caption{The Architecture of URN Management}
-	\label{fig:mgmt-center}
-\end{figure}
-
-% 4.6 discussion
+% discussion
 % 随着云计算环境的复杂化，不同的需求越来越多，对RDMA虚拟化提出了更多的要求。本节讨论了RDMA虚拟化面对下列需求可能的解决思路：
 \subsection{Discussion}
 As cloud computing environments become more complex, there are more and more  requirements to RDMA virtualization. In this section, we discuss some possible solutions for following demands:
