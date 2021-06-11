@@ -1,36 +1,38 @@
 \section{Implementation}
 %我们在Linux环境中实现了URN框架：
- We implement a prototype for URN in Linux environments, the specific kernel is CentOS 7.4.1708 (Linux 3.10.0-693.el7.x86\_64). The hypervisor of VM is KVM and the container engine is Docker. We use the hardware-independent verbs library version is libibverbs-41mlnx1. In specific, the RDMA device is Mellanox ConnectX-3 (56 Gb/sec) and corresponding hardware-specific library is libmlx4-41mlnx1. In this section, we introduce some representative implementation details:
+ We implement a prototype for URN in Linux environments. The hypervisor of VM is QEMU/KVM and the container engine is Docker. The vRNIC frontend for VMs and containers is implemented differently. The URN core (with vRNIC backends) includes about 2000 lines codes in the host user-space. And the management center is implemented through Zookeeper to the information for RDMA resources (such as RDMA address mapping, the numbers of VFs) and the policies (such as QP limit, QoS). In addition, we modified the Verbs library libibverbs-41mlnx1, the library about connection management librdma-cm, and the user-space RNIC driver libibverbs-41mlnx1. And we do some necessary work in host kernel, such as caching GPA into RNIC, mapping DoorBells. In this section, we introduce some representative implementation details:
  
- % 资源映射：根据资源所属于的物理地址空间，RDMA通信过程中主要有两类资源：内存资源（QP等），和设备资源（门铃寄存器）.
+ % 资源映射：根据资源所属于的物理地址空间，RDMA通信过程中主要有两类资源：内存资源（QP等），和设备资源（门铃）.
  \subsection{Resource Mapping on Control Path}
-According the physical address space, there are mainly two kinds of resources for RDMA: memory resources (e.g. QPs, MRs) and device resources (e.g. Doorbell registers). 
+According the physical address space, there are mainly two kinds of resources for RDMA: memory resources (e.g. QPs, MRs) and device resources (e.g. DoorBells). 
  
  % 对于内存资源: 在虚拟机中, 我们利用vhost-user的半虚拟化技术构建vRNIC后端，vRNIC后端可以与虚拟机共享整块内存。 在具体操作中，需要先借助vRNIC前端将GVA转换为GPA；然后，在vRNIC后端中，由于vRNIC后端已经和虚拟机共享整块内存，因此，GPA可以被线性转换为HVA。但是，从GVA到GPA的转换由于guest OS的内存管理， 可能存在非线性的不连续现象，进一步导致vRNIC后端中映射的HVA区域也是不连续的。此时，在后端可以利用mremap系统调用重新映射虚拟内存，以将对应的物理页面映射到连续的HVA区间.
- For memory resources: 
- in VM, we utilize the vhost-user para-virtualization to construct the vRNIC backends, and shared physical memory between the vRNIC backend and the guest. In specific, the GVA of RDMA resources is translated to GPA through the frontend in the guest kernel; then, in the vRNIC backend, the GPA can be linearly converted to HVA because the vRNIC backend already mapped the entire memory of guest. However, the conversion from GVA to GPA may have  discontinuities due to the memory management in the guest kernel, and this brings the discontinuities mapped address in vRNIC backends. To solve this problem, the ``mremap'' system call is adopted in the backend, and it can remap the physical memory pages to one continuous virtual memory region.
+ For memory resources (e.g. QP), the mapping in VMs is as shown in  \ref{fig:qp-map}. (0) We set the whole memory of the guest is shared in QEMU process, and the shared memory file path is registered in the vRNIC backend process. Because different processes can share the physical memory through the shared memory file. (1) The application in the guest allocate the QP buffer, and the buffer is using the shared memory in the host. The physical pages in the guest is pinned in the guest kernel. (2) The vRNIC backend receive the GPA of the QP buffer, and obtain the corresponding HVA through mapping the shared memory file. (3) The vRNIC backend allocate a contiguous virtual memory region, remap it to the shared memory through the obtained HVA in step 2, and use it as the QP buffer.
  
- 
- % 对于容器，可以直接通过共享内存来完成内存资源的映射，此时，不存在映射过程中的地址不连续问题。为了确保映射过程的隔离，当映射不同的RDMA资源时，容器和后端使用的共享文件路径是不同的。
- In containers, the resources can be mapped through the shared memory and  there are not discontinuous mapped address. To make the mapping isolated, when mapping different RDMA resources, the files for shared memory are different between the container and the vRNIC backend. 
- 
-  % 然而，libibverbs和libmlx4库中对RDMA虚拟化的支持不足，并未暴露RDMA资源的内存分配细节给guest应用或URN core管理程序。因此，为了支持上述的内存映射操作，我们修改了guest和URN core的libibverbs和libmlx4库，具体做法是在libmlx4库中增加了相关的API，供verbs库调用，仍然维持verbs库与RDMA应用程序之间的API不变。例如，容器 verbs库创建QP时通过内部的mlx4_alloc_shm_buf指定共享内存，然后将创建QP的参数及共享内存路径传递给后端，后端同样可以通过内部mlx4_alloc_shm_buf使用该共享内存创建QP资源，从而完成了QP的映射。最后，我们也建议新增的这些API能够被后面的verb及设备相关的用户库采纳，以完善对RDMA虚拟化的支持。
-  However, insufficient support for RDMA virtualization is in the libibverbs and libmlx4 libraries and these libraries do not expose the memory allocation details of the RDMA resources to the guest application or the URN core. So, we modified the LibibVerbs and Libmlx4 libraries for the guest applications and the URN core to support the above memory mapping operations. We have added related APIs in the libmlx4 libraries that can be called by the verbs libraries. The APIs between the verbs library and the RDMA application remain the same. For example, when creating a QP, the verbs library in the container specifies the shared memory using the internal API mlx4\_alloc\_shm\_buf, and then forwards the parameters for creating a QP and the path of shared memory to the backend. The backend can also use the same shared memory to create a QP resource through the internal API mlx4\_alloc\_shm\_buf. Thus, the QP is mapped. Finally, we recommend that these additional APIs be adopted by the verbs and device-specific libraries to benefit RDMA virtualization.
-  
- %对于设备资源（例如门铃），本文采用了另一种虚拟化技术vhost，与vhost-user的主要区别是vhost后端在主机内核空间。在本文中，vhost 后端作为一个helper模块位于主机内核空间，负责映射设备资源给guest中的应用。在虚拟机中, 地址翻译过程和上述一致，最终vhost后端通过MMIO将设备资源对应的物理页面重新映射到HVA。对于容器场景，本文设计了一个自定义的设备接口，用来将容器应用的虚拟地址传到vhost后端以完成映射, 
- For RDMA device resources: we utilize another para-virtualization, namely vhost. The main difference is that the backend of vhost is in host kernel space. In this paper, the vhost backend is as a helper module to mapping RDMA device resource to the application in the guest. 
- For VMs, the address translation is same as above, and the vhost backend finally remap physical pages for device resource (e.g. DoorBells) to the HVA through MMIO. For containers, we design a costumed device interface. And the virtual address of the container application are transport to the vhost backend for mapping. 
- 
- 
- % RDMA数据路径
- % 在原生RDMA中，应用需要往WQE结构体中写入本地或远端的内存地址，然后，网卡会根据MTT去找到对应的物理页面进行数据传输，MTT是在注册内存时形成的。然而，在URN中，内存注册由后端完成，因此MTT是HVA。如果guest的应用程序，直接往QP中写入GVA， 物理网卡无法找到对应的物理页面，会中断数据传输。因此，在数据路径中，需要往WQE中写入翻译的地址，才能确保正常的RDMA传输。
-\subsection{Memory Address Translation on Data Path}
-In RDMA verbs, applications needs to fillwith local or remote memory address to the work request in QPs. Then, the RNIC can find corresponding physical memory page through the MTT(Memory Translation Table), which is recorded when the memory is registered. However, in URN, the memories are registered into physical RNIC at host's vRNIC backends and the address recorded in MTT is also HVA. For applications in guest environments, if we directly fillwith GVA in QPs, the physical RNIC cannot find the corresponding physical pages and will abort this work request. Thus, the memory address translation for work request in data path is necessary. 
+ The mapping in containers is simple: The application in containers explicitly allocate the shared memory as the QP buffer in the modified Verbs libraries. Note that each QP, QP or MR uses a unique shared memory file. The vRNIC backend directly use the mapped region from the corresponding shared memory file.
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[width=1\linewidth]{images/qp-map.png}
+	\caption{QP Mapping}
+	\label{fig:qp-map}
+\end{figure}
 
+ 
 
-% 内存地址转换的主要挑战是如何最小化开销。回想一下，HVA和GVA的本地映射是在vRNIC后端维护的，所有映射（包括远程地址）都集中在每个服务器的URN核心中。如果数据操作都从URN core中获取映射关系，将会让RDMA性能明显下降。因此，内存地址转换应该在guest中执行，而不是在vRNIC后端执行。
-The main challenge of memory address translation is how to minimal the overhead. Recall the local mapping for HVA and GVA is maintained in the vRNIC backend, and all mapping (including remote address) is centralized in the URN core for each server. If the mapping are fetched in URN core for each data commands, RDMA performance will degrade significantly. Thus, the memory address translation should be executed in guest, instead of vRNIC backends. 
+ For RDMA device resources (e.g. DoorBells), the mapping in VMs is as shown in  \ref{fig:db-map}. (1) The application in the guest request the PFN(Physical Page Frame Number) handle of physical DoorBell to the vRNIC backend. Because the page tables is different between the QEMU process (the guest) and the vRNIC backend processes, and the authority to open physical RNIC is only allowed in the vRNIC backend process. (2) The vRNIC backend receive the request, open the physical RNIC to map the physical DoorBell, obtain the PFN handle through the helper module in the host kernel and response the handle to the application in the guest. (3) The vRNIC backend map the virtual DoorBell, forwards the GPA and PFN handles to the helper module in the host kernel. In the host kernel, the helper module translate the GPA to HVA, and remap the HVA to the PFN of physical DoorBell. The helper module is implemented based on the para-virtrualization vhost modules, which provide high I/O performance  between the guest and the host kernel.
+ 
+ In containers, the mapping of DoorBells is similar as the above. The only difference is that the application in the container directly forwards the virtual memory address to the helper module in the host kernel, through a simple costumed  character device driver. 
+ \begin{figure}[!ht]
+	\centering
+	\includegraphics[width=1\linewidth]{images/db-map.png}
+	\caption{DoorBells Mapping}
+	\label{fig:db-map}
+\end{figure}
+ 
 
-% 为了解决这一问题，在guest中维护了一个内存地址映射表。具体地说，该表位于硬件相关的库中。对于本地内存地址，映射可以在注册内存时填入表中。但是，对于远程内存地址，客户机对远端内存的注册是无感知的，需要通过URN core知晓远端注册内存的映射关系。幸运的是，RDMA工作请求具有很强的局部性，因为使用的地址经常出现在相同的注册内存区域中。因此，我们提出了缓存机制：对于第一次，vRNIC前端请求后端进行远程地址转换，然后该内存映射被维护在本地以便后续数据命令使用。因此，表中没有冗余的内存地址映射，只有在第一次数据命令时出现明显的延迟。这种机制在内存消耗和延迟之间进行了权衡。
-To solve the problem, a memory address mapping table is maintained in guest. In specific, the table locates in hardware-specific library. For local memory address, the mapping can be filled into tables when the memory is registered. However, for remote memory address, the guest is unaware of remote memory register and should request the URN core to get the mapping relationship. Fortunately, the RDMA work request has strong locality because the used addresses are often in the same registered memory region. Thus, we proposed the cache mechanism: for the first, the vRNIC frontend request the backend to get remote address translation, and then, the memory address mapping are maintained locally for subsequent data commands. Thus, there are no redundant memory address mapping in the table and only apparent latency in the first data commands. This mechanism make a trade-off between memory consumption and latency.
+\subsection{Register MR in the Host}
+When vRNIC backend receives the registering MR commands and registers the MR, it should use the GVA as the virtual address when caching the page table for physical RNIC. And the physical RNIC can directly access the physical pages through the GVA in the work request of the application, instead of translating the GVA to the HVA in the data path. 
+
+To implement it, we modified the OFED driver and the Verbs libray in the host: the OFED driver can receive the GVA parameter when register MR, and fillwith the cached page table with the GVA as the virtual memory address.
+
 

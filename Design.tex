@@ -169,11 +169,11 @@ Initialization stage is mainly about the initialization of resources, including 
 
 I1(vRNIC Device Opening): The application gets and opens the vRNIC device by calling the Verbs ibv\_get\_device\_list and ibv\_open\_device in turn. The calls will be intercepted to the vRNIC backend, which will open the physical RNIC that was bound to the vRNIC when instantiation.
 
-% I2（Guest应用注册MR）：在容器中，Verbs库中将MR buffer重新映射到某一共享内存，虚拟机无需此步骤， 因为在实例化vRNIC时已与vRNIC后端共享整个内存。vRNIC后端会使用对应的共享内存注册MR，并返回MR buffer 的 MR-key等信息。
-I2(MR Registration): In the container, the Verbs library remaps the MR buffer to a shared memory. This step is not required in the VM because the whole memory is already shared with the vRNIC backend when vRNIC instantiating. The vRNIC backend will use the corresponding shared memory to register MR, and return MR-key. 
+% I2（Guest应用注册MR）：在容器中，Verbs库中将MR buffer重新映射到某一共享内存，虚拟机无需此步骤， 因为当虚拟机启动时，整个虚拟机的内存已经被设置为共享的。vRNIC后端会获取对应的共享内存，并使用它来注册MR，并返回MR keys等信息。
+I2(MR Registration): In the container, the Verbs library remaps the MR buffer to a shared memory. This step is not required in the VM, because the whole memory in the guest is already set to be shared when the guest boots. The vRNIC backend will obtain the corresponding shared memory, use it to register MR and return the MR keys. 
 
-% I3（Guest应用创建QP/CQ）：在容器中，Verbs库使用共享内存分配QP/CQ buffer，虚拟机无需此步骤。vRNIC后端将创建QP/CQ时，使用对应的共享内存创建QP/CQ，并会返回QPN, CQN等元数据。 
-I3(QP/CQ creation): In the container, the Verbs library use the shared memory to allocate QP/CQ buffer. The virtual machine does not need this step. The vRNIC backend will use the corresponding shared memory to create QP/CQ and return the metadata such as QPN, CQN.
+% I3（Guest应用创建QP/CQ）：在容器中，Verbs库使用共享内存分配QP/CQ buffer，虚拟机无需此步骤。vRNIC后端将获取对应的共享内存，并分配它为QP/CQ的buffer，并会返回QPN, CQN等元数据。 
+I3(QP/CQ creation): In the container, the Verbs library use the shared memory to allocate QP/CQ buffer. The virtual machine does not need this step. The vRNIC backend will obtain the corresponding shared memory, allocate it for the QP/CQ buffer and return the metadata such as QPN, CQN.
 
 %4.4.2 连接阶段
 \subsubsection{Connection Phase}
