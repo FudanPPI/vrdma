@@ -2,7 +2,7 @@
 In this section, we first introduce the brief background, including RDMA and virtualization. 
 
 \subsection{RDMA}
-As popular high-performance network in data-centers, RDMA has hardware protocol stack and zero copy technology. With RDMA, applications can bypass the kernel to read and write remote memory data, without the participation of remote CPU. 
+As popular high-performance network in data-centers, RDMA has hardware protocol stack and zero copy technology. With RDMA, applications can bypass the kernel to read and write remote memory data, without the participation of remote CPU. Based on these features, RDMA has been adopted to various high-performance distributed systems~\cite{dragojevic2014farm}~\cite{wei2015fast}~\cite{lu2017octopus}, deep learning frameworks~\cite{abadi2016tensorflow}~\cite{chen2015mxnet}, and big data processing~\cite{spark-rdma}~\cite{hadoop-rdma}.   
 
 
 In the workflow of RDMA, the control path and the data path are separated. As shown in Figure~\ref{fig:rdma-feat}, in the control path, the application creates QP(Queue Pair), CQ (Completed Queue), registers MR (Memory Region) and other RDMA resources, and caches the meta-data to RNIC, such as queue ID, MR key, page tables; In the data path, the application can "press"  the DoorBell register to notify RNIC, then RNIC will read the work request in the QP, read/write the contents of the local/remote MR, and put the completed notifications into the CQ. The data transmission is executed in zero-copy manner and without the CPU. And the application can poll the CQ to get the notifications. Compared control path, data path bypasses the kernel to avoid context switch.
