@@ -1,7 +1,7 @@
 \section{Introduction}
-RDMA (remote direct memory access) is a high-performance network,  with high throughput, low latency and low CPU load. Thus, RDMA is widely adopted in data-centers for various fields, such as supercomputing, artificial intelligence, and big data processing. 
-
-Recently, migrating to cloud is a trend for lost of applications, such as deep learning training and big data processing. Resource provisioning are done in the form of VMs or containers in clouds. Moreover, hybrid virtual environments are common for clouds. In specific, VMs, containers or other form of virtualization (e.g. containers in VMs) can be found in the same datacenter or even on the same host machine. For hybrid virtual environments in clouds,  to exploit RDMA resources, RDMA virtualization needs to meets four following goals:
+RDMA (Remote Direct Memory Access) is a technique that allows zero-copy data transmission directly from the application memory of one machine to the application memory of another machine over network. With commercial hardware support \cite{roce, iwarp, infiniband}, the transmission operation does not require the participation of the CPU or the operating systems. This technique enables low latency and high performance data exchange and is widely adopted in applications such as supercomputing, deep learning and big data processing.
+With virtualization technology widely deployed in the cloud, RDMA is also virtualized for virtual machines \cite{pfefferle2015hybrid, he2020masq} and for containers \cite{kim2019freeflow}. However, existing virtualization technique does not address the hybrid virtual environments where VMs, containers and other form of virtualization (e.g. container inside VMs) co-exist in the same data center or even on the same server.
+For hybrid virtual environments, a unified RDMA virtualization technique needs to meets four requirements:
 
 \begin{itemize}
 	\item {\verb|Unification|}: Only single RDMA virtualization framework needs to be deployed in hybrid virtual environments and it provides centralized management. If not, there may cause the low resource utilization or higher management complexity.
