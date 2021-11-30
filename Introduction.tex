@@ -2,40 +2,42 @@
 RDMA (Remote Direct Memory Access) is a technique that allows zero-copy data transmission directly from the application memory of one machine to the application memory of another machine over network. With commercial hardware support \cite{roce, iwarp, infiniband}, the transmission operation does not require the participation of the CPU or the operating systems. This technique enables low latency and high performance data exchange between machines and is widely adopted in applications such as supercomputing, deep learning and big data processing.
 
 Nowadays data centers are usually virtualized in the form of virtual machines or containers. As both form has its merits, there is a trend to run virtual machines side-by-side with containers \cite{rethinkingvirtualization}.
-RDMA is virtualized for virtual machines \cite{pfefferle2015hybrid, he2020masq} and for containers \cite{kim2019freeflow}.
-However, existing RDMA virtualization techniques do not address the hybrid virtualization stack where VMs, containers and other form of virtualization (e.g. container inside VMs \cite{containeronvm}) co-exist in the same data center or even on the same machine.
 
-For a hybrid virtualization environment, unified RDMA virtualization technique is required which should address the following four requirements:
+RDMA is either virtualized for virtual machines like HyV \cite{pfefferle2015hybrid} and MasQ \cite{he2020masq} and for containers like FreeFlow \cite{kim2019freeflow}, or dedicately assigned to virtual machines or containers using direct-passthrough technique \cite{sr-iov}.
+
+For a hybrid virtualization environment, RDMA should be virtualized with the following four considerations:
 
 \begin{itemize}
 	\item {\verb|Unification|}: RDMA resources should be managed by one unified RDMA virtualization framework no matter the resources are used by virtual machines or containers. If the RDMA resources are managed by more than one entities, they have to be partitioned. This limits the resource sharing and it's hard to establish RDMA channels between virtual machines and containers.
 	\item {\verb|High performance|}: Performance of virtual RDMA should be close to native RDMA in terms of throughput, latency, or CPU load. Meanwhile it should have scalability under large-scale clusters.
 	\item {\verb|Compatibility|}: RDMA virtualization framework should be clean and stable for different environments, and has minimal dependence for other software on the virtualization stack, e.g. RDMA kernel drivers.
-	\item {\verb|High manageability|}: It should provide basic management capabilities in the cloud environment, such as performance isolation, virtual network management and portability.
+	\item {\verb|High manageability|}: It should provide basic management capabilities in the cloud environment, such as resource sharing, performance isolation, virtual network management and portability.
 \end{itemize}
 
-None of the existing solutions can achieve these goals at the same time. These solutions include software-based and hardware-based solutions.
+However, existing RDMA virtualization techniques do not address the hybrid virtualization stack where VMs, containers and other form of virtualization (e.g. container inside VMs \cite{containeronvm}) co-exist in the same data center or even on the same machine.
 
-The software-based solutions are mainly about HyV~\cite{pfefferle2015hybrid}, FreeFlow~\cite{kim2019freeflow} or MasQ~\cite{he2020masq}. FreeFlow is  designed for containers and HyV/MasQ are proposed for virtual machines. All of them are designed for specific virtual environments. Moreover, in FreeFlow, there are apparent overhead in RDMA network because all RDMA commands do not bypass the router and kernel; for HyV/MasQ, their virtual layers are in kernel-space that brings new problems: the kernel's attack surface is larger due to lots of inserted code in kernel, management development is inflexible in kernel programming, and the inserted modules are dependent on hardware-specific RDMA kernel drivers.
+FreeFlow \cite{kim2019freeflow} do not archive the maximum performance as the RDMA operations do not bypass the router and the OS kernel.
 
-The hardware-based solution is based on PCI pass-through for less overhead, like SR-IOV~\cite{sr-iov}. For hardware-based solutions (e.g. SR-IOV), RDMA device resources are directly allocated to virtual machines or containers. Thus, the device utilization is static and inefficient. Moreover, RDMA networks in clouds are still managed by physical switches or routers. Thus, virtual network management is not scalable and portable in large-scale clouds.
+In HyV \cite{pfefferle2015hybrid} and MasQ \cite{he2020masq}, the virtualization layer is in kernel-space that brings larger attact surface for the OS kernel. And the virtualization layer is dependent on hardware-specific RDMA kernel drivers whose interface is less stable.
 
-To address these problems, we propose a unified RDMA virtualization framework for hybrid virtual environment in clouds, namely URN (Unified RDMA Network), also with the design goals of flexible management and high-performance. URN consists mainly of multiple vRNICs (virtual RDMA Network Interface Controller), the URN core in each server and the management center in the cluster.
+For direct-passthrough solutions like SR-IOV \cite{sr-iov}, one RDMA resource is dedicately assigned to a specific virtual machine or a container. The resource allocation is static and the utilization is inefficient. Moreover, physical switches or routers need to be configured according to policies of virtualized RDMA network. This brings complexity in network management.
 
-As the virtual device for guest, each vRNIC consists of backend and frontend. The backend is a virtualized device in user-space with basic RDMA attributes, such as QPs (Queue Pairs) and MRs(Memory Regions). Thus, vRNIC is compatible for different RDMA kernel drivers. The frontend is the virtual device interface in the guest for upper Verbs library. Moreover, to optimize the performance, RDMA resources are mapped between guests (VMs or containers) and backends. 
+To address these four requirements, we propose a unified RDMA virtualization framework for hybrid virtualization environment in data centers, namely uniRDMA (unified virtual RDMA). The uniRDMA framework consists of a uniRDMA core and multiple vRNICs (virtual RDMA Network Interface Controller) on each server, and a centralized management node.
 
-The URN core is designed to manage the virtual and physical RDMA resources for the host, including instantiating vRNIC backends, managing virtual RDMA network configurations and policies. URN core also interact with physical RNIC through Verbs libraries. 
+Each vRNIC consists of a frontend and a backend. The frontend is an agent that looks like a NIC device in the guest space and talks to the backend. The backend implements a device model of a virtual RMDA NIC (vRNIC) with basic RDMA attributes, such as QPs (Queue Pairs) and MRs (Memory Regions). The vRNIC device model can interface with different RDMA kernel drivers through a standard library interface (Verb? cite). To archive the maximum performance, the memory that stores RDMA metadata is mapped by both the frontend and the backend. 
 
-With the help of management center, control policies can be defined and influence each guest, e.g. QoS, ACL. 
+The uniRDMA core is designed to manage both the virtual and physical RDMA resources for the host, including instantiating vRNIC backends, managing virtual RDMA network configurations and policies. uniRDMA core also interact with physical RNIC through Verbs libraries (cite?).
 
-Finally, we implement the prototype and evaluate it in different aspects, such as throughput, latency, scalability, with and real-word applications. From the result, URN's performance is close to native RDMA in hybrid virtual environment and the overhead is less than 5\% to hardware-based virtualization. URN also has high scalability and adapts to real-world RDMA applications in hybrid cloud environments. The main contributions in this paper are as follows:
+With the help of the management node, control policies like ACL can be defined and executed by all the guests.
+
+We implemented the uniRDMA system and evaluatee its throughput, latency and scalability with real-word applications. The results show the performance of uniRDMA  in hybrid virtualization environment is close to native RDMA. The overhead is less than 5\% compared to direct-passthrough-based virtualization technique. uniRDMA has high scalability and adapts to real-world RDMA applications in hybrid virtualization environments. The main contributions of uniRDMA are:
 
 \begin{itemize}
-\item We proposed vRNIC, which is a para-virtualization RDMA device in host user-space for high flexibility and hardware independence. vRNIC is unified for both VMs and containers with specific driver. Meanwhile, the performance is optimized by mapping vRNIC to physical RNIC same as native RDMA.
-
-\item We proposed a management layers for vRNICs, which is responsible for vRNICs' instantition and mapping to physical RNIC. Also, virtual RDMA network are configured in the virtual layer.
-
-\item URN, is implemented and evaluated. The results proved that URN maintains high performance close to native RDMA.
+	\item We proposed vRNIC, which is a para-virtualization RDMA device in host user-space for high flexibility and hardware independence. vRNIC is unified for both VMs and containers with specific driver. Meanwhile, the performance is optimized by mapping vRNIC to physical RNIC same as native RDMA.
+	
+	\item We proposed a virtualization layer for vRNICs, which is responsible for vRNICs' instantition and mapping to physical RNIC. Also, virtual RDMA network are configured in the virtualization layer.
+	
+	\item A uniRDMA system is implemented and evaluated. The results show that uniRDMA maintains high performance that is close to native RDMA.
 \end{itemize}
 
-The paper is organized as follows. Section 2 describes the background of URN designs. Section 4 describes the vRNIC design in URN, and Section 5 introduces the design of virtual layer. Then, Section 6 reports the experimental results. Section 7 introduces related work. Finally, Section 8 concludes our work.
+The paper is organized as follows. Section 2 describes the background of RDMA and its virtualization. Section 3 describes the architectural overview. Section 4 describes the vRNIC design. Section 5 introduces the design of virtualization layer. Section 6 shows the evalution results of uniRDMA system. Section 7 discusses the related work. Section 8 concludes the work.
