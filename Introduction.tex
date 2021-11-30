@@ -24,9 +24,9 @@ For direct-passthrough solutions like SR-IOV \cite{sr-iov}, one RDMA resource is
 
 To address these four requirements, we propose a unified RDMA virtualization framework for hybrid virtualization environment in data centers, namely uniRDMA (unified virtual RDMA). The uniRDMA framework consists of a uniRDMA core and multiple vRNICs (virtual RDMA Network Interface Controller) on each server, and a centralized management node.
 
-Each vRNIC consists of a frontend and a backend. The frontend is an agent that looks like a NIC device in the guest space and talks to the backend. The backend implements a device model of a virtual RMDA NIC (vRNIC) with basic RDMA attributes, such as QPs (Queue Pairs) and MRs (Memory Regions). The vRNIC device model can interface with different RDMA kernel drivers through a standard library interface (Verb? cite). To archive the maximum performance, the memory that stores RDMA metadata is mapped by both the frontend and the backend. 
+Each vRNIC consists of a frontend and a backend. The frontend is an agent that looks like a NIC device in the guest space and talks to the backend. The backend implements a device model of a virtual RMDA NIC (vRNIC) with basic RDMA attributes, such as QPs (Queue Pairs) and MRs (Memory Regions). The vRNIC device model can interface with different RDMA kernel drivers through a standard library interface \cite{verbs}. To archive the maximum performance, the memory that stores RDMA metadata is mapped by both the frontend and the backend. 
 
-The uniRDMA core is designed to manage both the virtual and physical RDMA resources for the host, including instantiating vRNIC backends, managing virtual RDMA network configurations and policies. uniRDMA core also interact with physical RNIC through Verbs libraries (cite?).
+The uniRDMA core is designed to manage both the virtual and physical RDMA resources for the host, including instantiating vRNIC backends, managing virtual RDMA network configurations and policies. uniRDMA core also interact with physical RNIC through Verbs libraries \cite{verbs}.
 
 With the help of the management node, control policies like ACL can be defined and executed by all the guests.
 
