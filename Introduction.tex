@@ -1,15 +1,13 @@
 \section{Introduction}
-RDMA (Remote Direct Memory Access) is a technique that allows zero-copy data transmission directly from the application memory of one machine to the application memory of another machine over network. With commercial hardware support \cite{roce, iwarp, infiniband}, the transmission operation does not require the participation of the CPU or the operating systems. This technique enables low latency and high performance data exchange between machines and is widely adopted in applications such as supercomputing, deep learning and big data processing.
+RDMA~(Remote Direct Memory Access) is a technique that allows zero-copy data transmission directly from the application memory of one machine to the application memory of another machine over network. With commercial hardware support~\cite{roce, iwarp, infiniband}, the transmission operation does not require the participation of the CPU or the operating system~(OS). This technique enables low latency and high performance data exchange between machines and is widely adopted in applications such as supercomputing, deep learning and big data processing.
 
-Nowadays data centers are usually virtualized in the form of virtual machines or containers. As both form has its merits, there is a trend to run virtual machines side-by-side with containers \cite{rethinkingvirtualization}.
-
-RDMA is either virtualized for virtual machines like HyV \cite{pfefferle2015hybrid} and MasQ \cite{he2020masq} and for containers like FreeFlow \cite{kim2019freeflow}, or dedicately assigned to virtual machines or containers using direct-passthrough technique \cite{sr-iov}.
+Nowadays data centers are usually virtualized in the form of virtual machines~(VMs) or containers. As both form has its merits, there is a trend to run virtual machines side-by-side with containers~\cite{rethinkingvirtualization}. RDMA is either virtualized for VMs like HyV~\cite{pfefferle2015hybrid} and MasQ~\cite{he2020masq} and for containers like FreeFlow \cite{kim2019freeflow}, or dedicately assigned to virtual machines or containers using direct-passthrough technique~\cite{sr-iov}.
 
 For a hybrid virtualization environment, RDMA should be virtualized with the following four considerations:
 
 \begin{itemize}
-	\item {\verb|Unification|}: RDMA resources should be managed by one unified RDMA virtualization framework no matter the resources are used by virtual machines or containers. If the RDMA resources are managed by more than one entities, they have to be partitioned. This limits the resource sharing and it's hard to establish RDMA channels between virtual machines and containers.
-	\item {\verb|High performance|}: Performance of virtual RDMA should be close to native RDMA in terms of throughput, latency, or CPU load. Meanwhile it should have scalability under large-scale clusters.
+	\item {\verb|Unification|}: RDMA resources should be managed by one unified RDMA virtualization framework no matter the resources are used by VMs or containers. If the RDMA resources are managed by more than one entities, they have to be partitioned. This limits the resource sharing and it's hard to establish RDMA channels between VMs and containers.
+	\item {\verb|High performance|}: Performance of virtual RDMA should be close to that of native RDMA in terms of throughput, latency, or CPU load. Meanwhile it should have scalability under large-scale clusters.
 	\item {\verb|Compatibility|}: RDMA virtualization framework should be clean and stable for different environments, and has minimal dependence for other software on the virtualization stack, e.g. RDMA kernel drivers.
 	\item {\verb|High manageability|}: It should provide basic management capabilities in the cloud environment, such as resource sharing, performance isolation, virtual network management and portability.
 \end{itemize}
