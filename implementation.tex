@@ -1,15 +1,17 @@
-\section{Implementation}
-%我们在Linux环境中实现了\sys框架：
- We implement a prototype for \sys in Linux environments. The hypervisor of VM is QEMU/KVM and the container engine is Docker. The vRNIC frontend for VMs and containers is implemented differently. The \sys core (with vRNIC backends) includes about 2000 lines codes in the host user-space. And the management center is implemented through Zookeeper to the information for RDMA resources (such as RDMA address mapping, the numbers of VFs) and the policies (such as QP limit, QoS). In addition, we modified the Verbs library libibverbs-41mlnx1, the library about connection management librdma-cm, and the user-space RNIC driver libibverbs-41mlnx1. And we do some necessary work in host kernel, such as caching GPA into RNIC, mapping DoorBells. In this section, we introduce some representative implementation details:
- 
- % 资源映射：根据资源所属于的物理地址空间，RDMA通信过程中主要有两类资源：内存资源（QP等），和设备资源（门铃）.
- \subsection{Resource Mapping}
+\section{Implementation} \label{impl}
+We implement the \sys system in Linux environment. The hypervisor of VM is QEMU/KVM and the container engine is Docker. The vRNIC frontend for VMs and containers is implemented differently. The \sys core (with vRNIC backends) includes about 2000 lines codes in the host user-space. And the management center is implemented through Zookeeper to the information for RDMA resources (such as RDMA address mapping, the numbers of VFs) and the policies (such as QP limit, QoS). In addition, we modified the Verbs library libibverbs-41mlnx1, the library about connection management librdma-cm, and the user-space RNIC driver libibverbs-41mlnx1. And we do some necessary work in host kernel, such as caching GPA into RNIC, mapping DoorBells. In this section, we introduce some representative implementation details:
+
+% 资源映射：根据资源所属于的物理地址空间，RDMA通信过程中主要有两类资源：内存资源（QP等），和设备资源（门铃）.
+\subsection{Resource Mapping}
+
 According the physical address space, there are mainly two kinds of resources for RDMA: memory resources (e.g. QPs, MRs) and device resources (e.g. DoorBells). 
- 
- % 对于内存资源: 在虚拟机中, 我们利用vhost-user的半虚拟化技术构建vRNIC后端，vRNIC后端可以与虚拟机共享整块内存。 在具体操作中，需要先借助vRNIC前端将GVA转换为GPA；然后，在vRNIC后端中，由于vRNIC后端已经和虚拟机共享整块内存，因此，GPA可以被线性转换为HVA。但是，从GVA到GPA的转换由于guest OS的内存管理， 可能存在非线性的不连续现象，进一步导致vRNIC后端中映射的HVA区域也是不连续的。此时，在后端可以利用mremap系统调用重新映射虚拟内存，以将对应的物理页面映射到连续的HVA区间.
- For memory resources (e.g. QP), the mapping in VMs is as shown in Figure \ref{fig:qp-map}. We set the whole memory of the guest is shared in QEMU process, and the shared memory file path is registered in the vRNIC backend process. Because different processes can share the physical memory through the shared memory file. (1) The application in the guest allocate the QP buffer, and the buffer is using the shared memory in the host. The physical pages in the guest is pinned in the guest kernel. (2) The vRNIC backend receive the GPAs of the QP buffer. Note that the GPAs may not be contiguous. If we directly map the shared memory file through dis-contiguous GPAs (offsets), the obtained HVA also be dis-contiguous and cannot be used as the QP buffer. Thus, the vRNIC backend remap the corresponding shared memory to a new contiguous virtual memory region, and use it as the QP buffer.
- 
- The mapping in containers is simple: The application in containers explicitly allocate the shared memory as the QP buffer in the modified Verbs libraries. Note that each QP, QP or MR uses a unique shared memory file. The vRNIC backend directly use the mapped region from the corresponding shared memory file.
+
+% 对于内存资源: 在虚拟机中, 我们利用vhost-user的半虚拟化技术构建vRNIC后端，vRNIC后端可以与虚拟机共享整块内存。 在具体操作中，需要先借助vRNIC前端将GVA转换为GPA；然后，在vRNIC后端中，由于vRNIC后端已经和虚拟机共享整块内存，因此，GPA可以被线性转换为HVA。但是，从GVA到GPA的转换由于guest OS的内存管理， 可能存在非线性的不连续现象，进一步导致vRNIC后端中映射的HVA区域也是不连续的。此时，在后端可以利用mremap系统调用重新映射虚拟内存，以将对应的物理页面映射到连续的HVA区间.
+
+For memory resources (e.g. QP), the mapping in VMs is as shown in Figure \ref{fig:qp-map}. We set the whole memory of the guest is shared in QEMU process, and the shared memory file path is registered in the vRNIC backend process. Because different processes can share the physical memory through the shared memory file. (1) The application in the guest allocate the QP buffer, and the buffer is using the shared memory in the host. The physical pages in the guest is pinned in the guest kernel. (2) The vRNIC backend receive the GPAs of the QP buffer. Note that the GPAs may not be contiguous. If we directly map the shared memory file through dis-contiguous GPAs (offsets), the obtained HVA also be dis-contiguous and cannot be used as the QP buffer. Thus, the vRNIC backend remap the corresponding shared memory to a new contiguous virtual memory region, and use it as the QP buffer.
+
+The mapping in containers is simple: The application in containers explicitly allocate the shared memory as the QP buffer in the modified Verbs libraries. Note that each QP, QP or MR uses a unique shared memory file. The vRNIC backend directly use the mapped region from the corresponding shared memory file.
+
 \begin{figure}[!ht]
 	\centering
 	\includegraphics[width=1\linewidth]{images/qp-map.png}
@@ -17,22 +19,19 @@ According the physical address space, there are mainly two kinds of resources fo
 	\label{fig:qp-map}
 \end{figure}
 
- 
+For RDMA device resources (e.g. DoorBells), the mapping in VMs is as shown in  Figure \ref{fig:db-map}. (1) The application in the guest request the DB-HPA handle to the vRNIC backend. There are two reasons to do it: first, the page tables is different between the QEMU process (the guest) and the vRNIC backend processes, and the mapping from QEMU-HVA to DB-HPA must be done in QEMU process; second, the physical RDMA context is centrally maintained in the vRNIC backend, including the DB. (2) The application vRNIC backend receive the request and map the physical DoorBell. (3) The vRNIC backend obtain the DB-HPA handle through the helper module in the host kernel and return the handle to the application in the guest. (4) The vRNIC backend map a virtual DoorBell, forwards the GPA and DB-HPA handle to the helper module in the host kernel, and the helper module translate the GPA to QEMU-HVA. (5) The helper module remaps the QEMU-HVA to the DB-HPA. The helper module is implemented based on the para-virtrualization vhost modules, which provide high I/O performance  between the guest and the host kernel.
 
- For RDMA device resources (e.g. DoorBells), the mapping in VMs is as shown in  Figure \ref{fig:db-map}. (1) The application in the guest request the DB-HPA handle to the vRNIC backend. There are two reasons to do it: first, the page tables is different between the QEMU process (the guest) and the vRNIC backend processes, and the mapping from QEMU-HVA to DB-HPA must be done in QEMU process; second, the physical RDMA context is centrally maintained in the vRNIC backend, including the DB. (2) The application vRNIC backend receive the request and map the physical DoorBell. (3) The vRNIC backend obtain the DB-HPA handle through the helper module in the host kernel and return the handle to the application in the guest. (4) The vRNIC backend map a virtual DoorBell, forwards the GPA and DB-HPA handle to the helper module in the host kernel, and the helper module translate the GPA to QEMU-HVA. (5) The helper module remaps the QEMU-HVA to the DB-HPA. The helper module is implemented based on the para-virtrualization vhost modules, which provide high I/O performance  between the guest and the host kernel.
- 
- In containers, the mapping of DoorBells is similar as the above. The only difference is that the application in the container directly forwards the virtual memory address to the helper module in the host kernel, through a simple costumed  character device driver. 
- \begin{figure}[!ht]
+In containers, the mapping of DoorBells is similar as the above. The only difference is that the application in the container directly forwards the virtual memory address to the helper module in the host kernel, through a simple costumed  character device driver. 
+
+\begin{figure}[!ht]
 	\centering
 	\includegraphics[width=1\linewidth]{images/db-map.png}
 	\caption{DoorBells Mapping}
 	\label{fig:db-map}
 \end{figure}
- 
 
 \subsection{Register MR in the Host}
+
 When vRNIC backend receives the registering MR commands and registers the MR, it should use the GVA as the virtual address when caching the page table for physical RNIC. And the physical RNIC can directly access the physical pages through the GVA in the work request of the application, instead of translating the GVA to the HVA in the data path. 
 
 To implement it, we modified the OFED driver and the Verbs library in the host: the OFED driver can receive the GVA parameter when register MR, and fillwith the cached page table with the GVA as the virtual memory address.
-
-
