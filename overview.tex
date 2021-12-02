@@ -4,17 +4,11 @@
 %先介绍各个模块的作用，及相互关系
 %RNIC在之前介绍一下缩写
 
-The architecture of \sys is shown in Figure~\ref{fig:framework-overview}. \sys consists of the vRNIC (virtual RDMA Network Interface Controller), the \sys core and the centralized management node. The vRNIC is a para-virtualized device model, which includes a pair of frontend and backend modules.
+The architecture of \sys is shown in Figure~\ref{fig:framework-overview}.
+\sys consists of the vRNIC (virtual RDMA Network Interface Controller), the \sys core and the centralized management node. The vRNIC is a para-virtualized device model, which includes a pair of frontend and backend modules.
 The \sys core is designed to manage both the virtual and physical RDMA resources for the host.
 The management node keeps and coordinates the control policies like ACL and QoS for the servers on the RDMA network.
-In addition, some modifications are required for the Verbs library in the host OS and in the container to adapt to the uniRMDA.
-
-\begin{figure}[!ht]
-	\centering
-	\includegraphics[width=1\linewidth]{images/framework-overview.png}
-	\caption{Architecture Overview of \sys. The light grey boxes are modules in \sys framework. The dark grey boxes are the memory shared by both the application and the \sys core. The shared memory can also be directly accessed by the RNIC.}
-	\label{fig:framework-overview}
-\end{figure}
+In addition, some modifications are required for the Verbs library in the host OS and in the container to adapt to the \sys.
 
 %(1) vRNIC Backend(BE): BE位于host的用户空间，是vRNIC的虚拟设备后端。BE虚拟化了所有的RDMA网卡属性，例如QP。BE通过\sys Core进行实例化，并通过修改过的Verbs库与RDMA物理网卡交互，维持RDMA上下文并提供给FE。在RDMA控制路径，BE和通常半虚拟化一致，执行FE转发的操作并返回给FE。在数据路径，应用直接在guest用户空间使用已经与BE映射的RDMA资源。
 
@@ -24,6 +18,7 @@ In addition, some modifications are required for the Verbs library in the host O
 	\item b) attributes and contexts known by the virtual RDMA device in the guest environment;
 	\item c) the mappings between virtual and physical attributes and contexts.
 \end{itemize}
+
 vRNIC Backends are instantiated by the \sys core. They interact with physical RNIC through unmodified Verbs libraries in the host environment. vRNIC Backend acts like an RDMA application in the host environment and delegates all the requests from vRNIC Frontend on the control path. On the data path, the key RDMA resources of the user applications in the guest environment, e.g. QPs and MRs, are directly mapped to the physical RDMA device. During actual data transmission both vRNIC Frontend and Backend are bypassed on the data path.
 
 % (2) vRNIC Frontend(FE): FE位于guest，是一个虚拟的RDMA网卡接口提供给上层verbs。Guest应用可以通过verbs库直接使用FE。在虚拟机里，FE在guest内核，通过与原RDMA内核驱动一致的接口与verbs库交互；在容器里，FE是一个用户库，容器应用使用修改的verbs库时链接FE，并通过定制化的接口与FE交互，该过程无需再陷入到主机内核。

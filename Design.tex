@@ -1,12 +1,27 @@
 \section{Design} \label{design}
 
-% \sys的设计目标是为提供一个统一的RDMA虚拟化框架，以适应混合虚拟化环境，同时实现统一的灵活的RDMA资源管理，并具备与原生RDMA接近的性能。此外，\sys应尽可能确保最大的兼容性，对已有RDMA应用透明。
+%\sys的设计目标是为提供一个统一的RDMA虚拟化框架，以适应混合虚拟化环境，同时实现统一的灵活的RDMA资源管理，并具备与原生RDMA接近的性能。此外，\sys应尽可能确保最大的兼容性，对已有RDMA应用透明。
 
-The design goals of \sys are: 1) to provide a unified RDMA virtualization framework for the hybrid virtualization environment where VMs and containers could be deployed on the same host machine and shared the RDMA resources; 2) to provide a single point of RDMA resource management for all RDMA resource users; 3) to keep the performance overhead of the RDMA virtualization to the minimum. Besides, \sys should bring minimum impact to existing RDMA software stack and be completely transparent to the RDMA application. 
+The design goals of \sys are: 
+\begin{itemize}
+	\item to provide a unified RDMA virtualization framework for the hybrid virtualization environment where VMs and containers co-exist on the same machine or in the same data center. Data center owners do not have to maintain two RDMA virtualization stacks. And a server can flexibly choose to host VMs or containers or both, without considering which RDMA virtualization stack is installed.
+	\item to provide a single point of RDMA resource management for all RDMA resource users so that the resources can be optimally scheduled.
+	\item to keep the performance overhead of the RDMA virtualization to the minimum.
+	\item \sys should bring minimum impact to existing RDMA software stack and be completely transparent to the RDMA application.
+\end{itemize}
 
 %\sys主要包含了vRNIC，\sys core和mgmt center。vRNIC是对虚拟机和容器通用的虚拟RDMA网卡设备，\sys core则是各主机服务器上的用于集中管理RDMA资源的虚拟化层, mgmt center可以跨多主机管理协调RDMA网络的控制策略。在本章，我们介绍了\sys中的一些关键性设计工作。
 
-\sys consists of 3 parts, the vRNICs, the \sys Core and the management node. vRNIC is a virtual RDMA network device that looks like a real RDMA device inside VMs and containers. \sys Core is a virtualization layer for centralized RDMA resource management on the host machine. And the management center is a centralized management entity in the data center that keeps and coordinates management and control policies for the RDMA network. In addition, we modified the existing RDMA software stack to support RDMA virtualization in user-space better.
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[width=1\linewidth]{images/framework-overview.png}
+	\caption{Architecture Overview of \sys. The light grey boxes are modules in \sys framework. The dark grey boxes are the memory shared by both the application and the \sys core. The shared memory can also be directly accessed by the RNIC.}
+	\label{fig:framework-overview}
+\end{figure}
+
+The architecture of \sys is shown in Figure~\ref{fig:framework-overview}.
+\sys consists of three parts, the vRNICs, the \sys Core and the management node. vRNIC is a virtual RDMA network device that looks like a real RDMA device inside VMs and containers. \sys Core is a virtualization layer for centralized RDMA resource management on the host machine. And the management node is a centralized management entity in the data center that keeps and coordinates management and control policies for the RDMA network.
+In addition, some modifications are made to the Verbs library and Device userlib in the user-space of the host and the guest to adapt to the \sys.
 
 \subsection{vRNIC}
 
@@ -28,7 +43,9 @@ In \sys design, the vRNIC backend is placed in the host user-space instead of th
 As a virtual RNIC device emulator, the vRNIC backend needs to maintain the same set of hardware properties that the physical RNIC has, such as the RDMA address GID and the RDMA device vendor. In addition, three kinds of contexts need to be maintained in the vRNIC backend at runtime:
 (1) Information of the runtime RDMA resources created and used on the emulated RDMA device, such as the memory address of the virtual MR/QP;
 (2) Information of the runtime RDMA resources actually created and used on the physical RNIC, such as the memory address of the real MR/QP;
-(3) The mapping between the virtual RDMA context and the physical RDMA context.
+(3) The mapping between virtual RDMA context and physical RDMA context.
+
+vRNIC Backends are instantiated by the \sys core. They interact with physical RNIC through unmodified Verbs libraries in the host environment. vRNIC Backend acts like an RDMA application in the host environment and delegates all the requests from vRNIC Frontend on the control path. On the data path, the key RDMA resources of the user applications in the guest environment, e.g. QPs and MRs, are directly mapped to the physical RDMA device. During actual data transmission both vRNIC Frontend and Backend are bypassed on the data path.
 
 % 如果guest中所有RDMA操作均转发到vRNIC后端执行，将会引入额外上下文切换及数据拷贝，例如，MR中的数据内容或QP中的工作请求等，从而导致RDMA性能下降。考虑到控制路径仅涉及到初始化和连接建立的过程，其开销是一次性的，而数据路径是影响RDMA性能的关键。因此，为了提高RDMA网络性能，guest中RDMA资源与vRNIC后端完成了映射,数据路径直接使用映射的RDMA资源，其命令未转发到vRNIC后端。具体来说，vRNIC后端与guest共享了一些内存区域，vRNIC后端使用该共享内存创建RDMA资源并映射给上层的guest应用，包括MR、QP、CQ和DoorBell等。然后，guest应用基于这些映射的RDMA资源执行数据路径的操作，这些操作会被RDMA物理网卡执行，不用经过vRNIC后端和虚拟机内核。因此，避免了额外的数据拷贝和进程切换，从而实现了与原生RDMA相当的性能。
 
@@ -37,6 +54,8 @@ When forwarding RDMA requests from the vRNIC frontend to the vRNIC backend, it c
 The design of the vRNIC Backend is the same for VMs and containers.
 
 \subsubsection{vRNIC Frontend}
+
+vRNIC Frontend is located in the guest environment acting as the NIC interface. Applications in the guest environment can use the NIC interface through Verbs library. For VMs, the frontend virtual device is in guest kernel space and is designed to expose interfaces the same way as the RDMA device driver to the upper unmodified Verbs library. For containers, the frontend module is provided as a library that is linked to the applications aloneside with Verbs library.
 
 % 在虚拟机或容器中，vRNIC前端都是连接虚拟机或容器应用到vRNIC后端，但是它们的设计上有差别。 
 % 在虚拟机场景中，vRNIC后端模拟了一个外部设备，由虚拟机OS中的vRNIC前端驱动。原生RDMA内核驱动包括与设备无关的OFED模块和设备相关的模块，OFED模块接收verbs操作并转化为内核层级的RDMA 命令；设备相关模块注册具体接口到OFED，并通过物理RNIC执行这些调用。对应的，在虚拟机中为了使用vRNIC，一个自定义的设备相关的驱动模块被构建在虚拟机内核，用来提供与原生类似的设备相关接口并注册它们到OFED模块。OFED中的RDMA命令将通过这些设备相关接口，被转发到vRNIC前端模块，再从前端转发到vRNIC后端去执行。因此，原生的RDMA应用无需修改便可运行在虚拟机中，而且虚拟机内核仍然可以使用RDMA (and RDMA can be used in the guest kernel)。
@@ -48,6 +67,8 @@ they are further forwarded to the vRNIC backend to be executed. As a result, RDM
 In containers, the application shares the host kernel with the vRNIC backend, only in different namespace. To use vRNIC in the containers, the Verbs library interfaces that interact with the RDMA kernel driver are replaced with the vRNIC frontend interface. The Verbs operations are hijacked to the vRNIC frontend and further forwarded to the vRNIC backend.
 
 \subsection{\sys Core}
+
+There is one \sys core instance in each host's user space. The \sys core is designed to manage the virtual and physical RDMA resources for the host, including instantiating vRNIC backends, managing virtual RDMA network configurations and policies. The \sys core also interact with physical RNIC through Verbs libraries.
 
 % 为了对vRNIC进行统一管理，高效利用物理RDMA网卡，我们构建了一个统一的虚拟层\sys core。\sys core部署于集群的每台服务器上，监听虚拟机、容器以及原生的RDMA设备请求。之后，在\sys core中实例化vRNIC和配置虚拟RDMA网络等。
 
@@ -106,6 +127,8 @@ In summary, the virtual network configuration in the \sys Core is dynamical, so 
 \end{figure}
 
 \subsection{Management Node}
+
+There is one centralized management node in the cluster. With the help of management node, control policies can be defined and executed on each guest, e.g. QoS, ACL.
 
 % 在\sys框架里，整个集群配备一个mgmt center，作为配置管理，存储各节点RDMA资源信息的中心。
 
@@ -227,6 +250,9 @@ D2 (Polling the CQ): The application poll the CQ for the work completions. If ev
 % discussion
 % 随着云计算环境的复杂化，不同的需求越来越多，对RDMA虚拟化提出了更多的要求。本节讨论了RDMA虚拟化面对下列需求可能的解决思路：
 \subsection{Discussion}
+
+In addition, we modified the Verbs library in the container so that the RDMA Verbs requests made to the kernel drivers can be redirected to the vRNIC Frontends. Note that Verbs APIs in the guest environment are not modified so that \sys is transparent to the guest RDMA applications. A few APIs in the Verbs library in the host user space are modified to support specifying a given memory address to be registered to the physical RNIC devices as key resource memory such as QP and MR. Currently, vanilla Verbs APIs don't allow applications to specify the address of resource memory region. But this capability is essential for \sys to establish a zero-copy data path in the virtual environment.
+
 
 As cloud computing environments become more complex, there are more and more  requirements to RDMA virtualization. In this section, we discuss some possible solutions for following demands:
 

@@ -1,4 +1,4 @@
-\section{Related Work}
+\section{Related Work} \label{relatedwork}
 
 Traditional TCP/IP: TCP/IP is the basic network for each tenant in data centers. Several software solutions were proposed for traditional network virtualization. For both VMs and containers, virtual network interface cards (vRNICs) are one solution, e.g. virtio-net~\cite{virtio-russell2008}, vhost-net~\cite{vhost-net},  vhost-user-net~\cite{vhost-user-net} for VMs and veth~\cite{veth} for containers. These vRNICs are implemented in VM's or container's different space (i.e. kernel space and user space). Software-based switch, also knowed as virtual switch, in the local host brides the vNIC to physical NIC. Virtual switch can run in user space (e.g. Snabb Switch~\cite{snabb}), kernel space(e.g. Linux bridge~\cite{linux-bridge}), or both(e.g. Open vSwitch~\cite{ovs-2015}). 
 
