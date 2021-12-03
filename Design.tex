@@ -46,7 +46,7 @@ As a virtual RNIC device emulator, the vRNIC backend needs to maintain the same 
 (2) Information of the runtime RDMA resources actually created and used on the physical RNIC, such as the memory address of the real MR/QP;
 (3) The mapping between virtual RDMA context and physical RDMA context.
 
-vRNIC Backends are instantiated by the \sys core. They interact with physical RNIC through unmodified Verbs libraries in the host environment. vRNIC Backend acts like an RDMA application in the host environment and delegates all the requests from vRNIC Frontend on the control path. On the data path, the key RDMA resources of the user applications in the guest environment, e.g. QPs and MRs, are directly mapped to the physical RDMA device. During actual data transmission both vRNIC Frontend and Backend are bypassed on the data path.
+vRNIC backends are instantiated by the \sys core. They interact with physical RNIC through unmodified verbs libraries in the host environment. vRNIC backend acts like an RDMA application in the host environment and delegates all the requests from vRNIC frontend on the control path. On the data path, the key RDMA resources of the user applications in the guest environment, e.g. QPs and MRs, are directly mapped to the physical RDMA device. During actual data transmission both vRNIC frontend and backend are bypassed on the data path.
 
 % 如果guest中所有RDMA操作均转发到vRNIC后端执行，将会引入额外上下文切换及数据拷贝，例如，MR中的数据内容或QP中的工作请求等，从而导致RDMA性能下降。考虑到控制路径仅涉及到初始化和连接建立的过程，其开销是一次性的，而数据路径是影响RDMA性能的关键。因此，为了提高RDMA网络性能，guest中RDMA资源与vRNIC后端完成了映射,数据路径直接使用映射的RDMA资源，其命令未转发到vRNIC后端。具体来说，vRNIC后端与guest共享了一些内存区域，vRNIC后端使用该共享内存创建RDMA资源并映射给上层的guest应用，包括MR、QP、CQ和DoorBell等。然后，guest应用基于这些映射的RDMA资源执行数据路径的操作，这些操作会被RDMA物理网卡执行，不用经过vRNIC后端和虚拟机内核。因此，避免了额外的数据拷贝和进程切换，从而实现了与原生RDMA相当的性能。
 
