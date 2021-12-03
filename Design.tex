@@ -44,38 +44,37 @@ In \sys design, the vRNIC backend is placed in the host user-space instead of th
 % 2，由物理网卡创建的RDMA上下文，包含各RDMA资源，由vRNIC后端通过调用verbs库创建和维护；
 % 3，虚拟RDMA上下文到物理RDMA上下文之间的对应关系。对应关系是一对一的，因为一对一是RDMA性能隔离的基础。
 
-As a virtual RNIC device emulator, the vRNIC backend needs to maintain the same set of hardware properties that the physical RNIC has, such as the RDMA address GID and the RDMA device vendor. In addition, three kinds of contexts need to be maintained in the vRNIC backend at runtime:
-(1) Information of the runtime RDMA resources created and used on the emulated RDMA device, such as the memory address of the virtual MR/QP;
+As a virtual RNIC device, the vRNIC backend needs to maintain the same set of hardware properties that the physical RNIC has, such as the RDMA address GID and the RDMA device vendor. In addition, three kinds of contexts need to be maintained in the vRNIC backend at runtime:
+(1) Information of the runtime virtual RDMA resources, such as the memory address of the virtual MR/QP;
 (2) Information of the runtime RDMA resources actually created and used on the physical RNIC, such as the memory address of the real MR/QP;
 (3) The mapping between virtual RDMA context and physical RDMA context.
 
-vRNIC backends are instantiated by the \sys core. They interact with physical RNIC through unmodified verbs libraries in the host environment. vRNIC backend acts like an RDMA application in the host environment and delegates all the requests from vRNIC frontend on the control path. On the data path, the key RDMA resources of the guest applications, e.g., QPs and MRs, are directly mapped to the physical RDMA device. During actual data transmission, both vRNIC frontend and backend are bypassed on the data path.
+vRNIC backends are instantiated by the \sys core. They interact with physical RNIC through unmodified verbs libraries in the host environment. vRNIC backend acts like an RDMA application in the host environment and delegates all the requests from vRNIC frontend on the control path. On the data path, the RDMA resources of the guest applications, e.g., QPs and MRs, are directly mapped to the physical RDMA device. During actual data transmission, both vRNIC frontend and backend are bypassed on the data path.
 
 % 如果guest中所有RDMA操作均转发到vRNIC后端执行，将会引入额外上下文切换及数据拷贝，例如，MR中的数据内容或QP中的工作请求等，从而导致RDMA性能下降。考虑到控制路径仅涉及到初始化和连接建立的过程，其开销是一次性的，而数据路径是影响RDMA性能的关键。因此，为了提高RDMA网络性能，guest中RDMA资源与vRNIC后端完成了映射,数据路径直接使用映射的RDMA资源，其命令未转发到vRNIC后端。具体来说，vRNIC后端与guest共享了一些内存区域，vRNIC后端使用该共享内存创建RDMA资源并映射给上层的guest应用，包括MR、QP、CQ和DoorBell等。然后，guest应用基于这些映射的RDMA资源执行数据路径的操作，这些操作会被RDMA物理网卡执行，不用经过vRNIC后端和虚拟机内核。因此，避免了额外的数据拷贝和进程切换，从而实现了与原生RDMA相当的性能。
 
 When forwarding RDMA requests from a vRNIC frontend to its backend, it causes context switching and data copy between the guest and the host. For example, when sending a data package, the data content in MR and the work request in QP need to be forwarded to the backend. This incurs performance degradation, especially on the data path. In order to achieve maximum performance, the RDMA resources are mapped in the shared memory region of the vRNIC backend and the RDMA application in the guest. On the data path, both the transmitted data and the sending/receiving requests are directly accessible to both the vRNIC backend and the RDMA applications, without an extra copy operation. Specifically, the vRNIC backend allocates RDMA resources in the shared memory region and the guest application maps to the same memory region in its own address space. The RDMA resources include MR, QP, CQ, and Doorbell. The guest application puts data and requests in the shared RDMA memory region. The physical RNIC sees the data transmission requests in the shared memory region and performs the actual work without involving the vRNIC backend and the guest OS kernel.
 
-The design of the vRNIC Backend is the same for VMs and containers.
+The design of the vRNIC backend is the same for VMs and containers.
 
 \subsubsection{\textbf{vRNIC Frontend}}
 
 \
 \noindent
 
-vRNIC Frontend is located in the guest environment acting as the NIC interface. Applications in the guest environment can use the NIC interface through Verbs library. For VMs, the frontend virtual device is in guest kernel space and is designed to expose interfaces the same way as the RDMA device driver to the upper unmodified Verbs library. For containers, the frontend module is provided as a library that is linked to the applications aloneside with Verbs library.
+vRNIC frontend is located in the guest environment acting as the NIC interface. Applications in the guest environment can use the NIC interface through verbs library. For VMs, the frontend virtual device is in guest kernel space and is designed to expose interfaces the same way as the RDMA device driver to the upper unmodified verbs library. For containers, the frontend module is provided as a library that is linked to the applications alongside with verbs library.
 
 % 在虚拟机或容器中，vRNIC前端都是连接虚拟机或容器应用到vRNIC后端，但是它们的设计上有差别。 
 % 在虚拟机场景中，vRNIC后端模拟了一个外部设备，由虚拟机OS中的vRNIC前端驱动。原生RDMA内核驱动包括与设备无关的OFED模块和设备相关的模块，OFED模块接收verbs操作并转化为内核层级的RDMA 命令；设备相关模块注册具体接口到OFED，并通过物理RNIC执行这些调用。对应的，在虚拟机中为了使用vRNIC，一个自定义的设备相关的驱动模块被构建在虚拟机内核，用来提供与原生类似的设备相关接口并注册它们到OFED模块。OFED中的RDMA命令将通过这些设备相关接口，被转发到vRNIC前端模块，再从前端转发到vRNIC后端去执行。因此，原生的RDMA应用无需修改便可运行在虚拟机中，而且虚拟机内核仍然可以使用RDMA (and RDMA can be used in the guest kernel)。
 % 在容器场景中，应用和vRNIC后端共享主机内核，仅位于不同的命名空间。为了在容器中使用vRNIC，容器的verbs库中与内核RDMA驱动交互的接口，被替换为vRNIC前端接口。Verbs操作被劫持到vRNIC前端,并被转发到vRNIC后端。
 
-In both VMs and containers, the vRNIC frontend connects the application in the guest to the vRNIC backend, but the designs are different. In VMs, the vRNIC backend emulates as an external device, driven by the vRNIC frontend in the guest kernel. The native RDMA kernel driver includes device-independent modules (OFED) and device-specific provider (?). OFED accepts the Verbs operations and the provider (?) is registered into OFED and executes these RDMA commands via physical RNIC. Correspondingly, to forward RDMA commands from OFED to the vRNIC backend, a thin virtual provider is registered into OFED. RDMA commands in the OFED will be forwarded to the vRNIC frontend via the registered device-specific interfaces; from there
-they are further forwarded to the vRNIC backend to be executed. As a result, RDMA applications can run in the VM without modification. 
+In both VMs and containers, the vRNIC frontend connects the application in the guest to the vRNIC backend, but the designs are different. In VMs, the vRNIC backend emulates as an external device, driven by the vRNIC frontend in the guest kernel. The native RDMA kernel driver includes device-independent modules (OFED) and device-specific provider. OFED accepts the Verbs operations and the provider is registered into OFED and executes these RDMA commands via physical RNIC. Correspondingly, to forward RDMA commands from OFED to the vRNIC backend, a thin virtual provider is registered into OFED. RDMA commands in the OFED will be forwarded to the vRNIC frontend via the registered device-specific interfaces; from there, they are further forwarded to the vRNIC backend to be executed. As a result, RDMA applications can run in the VM without modification. 
 
 In containers, the application shares the host kernel with the vRNIC backend, only in different namespace. To use vRNIC in the containers, the Verbs library interfaces that interact with the RDMA kernel driver are replaced with the vRNIC frontend interface. The Verbs operations are hijacked to the vRNIC frontend and further forwarded to the vRNIC backend.
 
 \subsection{\sys Core}
 
-There is one \sys core instance in each host's user space. The \sys core is designed to manage the virtual and physical RDMA resources for the host, including instantiating vRNIC backends, managing virtual RDMA network configurations and policies. The \sys core also interact with physical RNIC through Verbs libraries.
+There is one \sys core instance in each host's user space. The \sys core is designed to manage the virtual and physical RDMA resources for the host, including instantiating vRNIC backends, managing virtual RDMA network configurations and policies. The \sys core also interact with physical RNIC through verbs libraries.
 
 % 为了对vRNIC进行统一管理，高效利用物理RDMA网卡，我们构建了一个统一的虚拟层\sys core。\sys core部署于集群的每台服务器上，监听虚拟机、容器以及原生的RDMA设备请求。之后，在\sys core中实例化vRNIC和配置虚拟RDMA网络等。
 
