@@ -4,10 +4,10 @@
 
 The design goals of \sys are: 
 \begin{itemize}
-	\item to provide a unified RDMA virtualization framework for the hybrid virtualization environment where VMs and containers co-exist on the same machine or in the same data center. Data center owners do not have to maintain two RDMA virtualization stacks. And a server can flexibly choose to host VMs or containers or both, without considering which RDMA virtualization stack is installed.
-	\item to provide a single point of RDMA resource management for all RDMA resource users so that the resources can be optimally scheduled.
-	\item to keep the performance overhead of the RDMA virtualization to the minimum.
-	\item \sys should bring minimum impact to existing RDMA software stack and be completely transparent to the RDMA application.
+	\item To provide a unified RDMA virtualization framework for the hybrid virtualization environment where VMs and containers co-exist on the same machine or in the same data center. Data center owners do not have to maintain two RDMA virtualization stacks. And a server can flexibly choose to host VMs or containers or both, without considering which RDMA virtualization stack is installed.
+	\item To provide a single point of RDMA resource management for all RDMA resource users so that the resources can be optimally scheduled.
+	\item To keep the performance overhead of the RDMA virtualization to the minimum.
+	\item It should bring minimum impact to existing RDMA software stack and be completely transparent to the RDMA application.
 \end{itemize}
 
 %\sys主要包含了vRNIC，\sys core和mgmt center。vRNIC是对虚拟机和容器通用的虚拟RDMA网卡设备，\sys core则是各主机服务器上的用于集中管理RDMA资源的虚拟化层, mgmt center可以跨多主机管理协调RDMA网络的控制策略。在本章，我们介绍了\sys中的一些关键性设计工作。
@@ -15,13 +15,13 @@ The design goals of \sys are:
 \begin{figure}[!ht]
 	\centering
 	\includegraphics[width=1\linewidth]{images/framework-overview.png}
-	\caption{Architecture Overview of \sys. The light grey boxes are modules in \sys framework. The dark grey boxes are the memory shared by both the application and the \sys core. The shared memory can also be directly accessed by the RNIC.}
+	\caption{Architecture overview of \sys. The light grey boxes are modules in \sys framework. The dark grey boxes are the memory shared by both the application and the \sys core. The shared memory can also be directly accessed by the RNIC.}
 	\label{fig:framework-overview}
 \end{figure}
 
 The architecture of \sys is shown in Figure~\ref{fig:framework-overview}.
 \sys consists of three parts, the vRNICs, the \sys Core and the management node. vRNIC is a virtual RDMA network device that looks like a real RDMA device inside VMs and containers. \sys Core is a virtualization layer for centralized RDMA resource management on the host machine. And the management node is a centralized management entity in the data center that keeps and coordinates management and control policies for the RDMA network.
-In addition, some modifications are made to the Verbs library and Device userlib in the user-space of the host and the guest to adapt to the \sys.
+In addition, some modifications are made to the Verbs library and device userlib in the user-space of the host and the guest to adapt to \sys.
 
 \subsection{vRNIC}
 
@@ -31,6 +31,7 @@ The vRNIC is a virtual RDMA device that consists of a frontend and a backend. Th
 
 \subsubsection{vRNIC Backend}
 
+%\newline
 % vRNIC后端被放在主机用户空间，因为vRNIC后端在用户空间有诸多好处，例如，更小的攻击面，更高的管理灵活性，以及对内核API无依赖等，具体细节可以见2.1节。
 
 In \sys design, the vRNIC backend is placed in the host user-space instead of the host kernel-space. This is because the device emulator in the user-space can be developed, deployed, and managed more easily than that in the kernel-space. Also, its faults can be isolated from the OS kernel.
