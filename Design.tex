@@ -4,10 +4,10 @@
 
 The design goals of \sys are: 
 \begin{itemize}
-	\item to provide a unified RDMA virtualization framework for the hybrid virtualization environment where VMs and containers co-exist on the same machine or in the same data center. Data center owners do not have to maintain two RDMA virtualization stacks. And a server can flexibly choose to host VMs or containers or both, without considering which RDMA virtualization stack is installed.
-	\item to provide a single point of RDMA resource management for all RDMA resource users so that the resources can be optimally scheduled.
-	\item to keep the performance overhead of the RDMA virtualization to the minimum.
-	\item \sys should bring minimum impact to existing RDMA software stack and be completely transparent to the RDMA application.
+	\item To provide a unified RDMA virtualization framework for the hybrid virtualization environment where VMs and containers co-exist on the same machine or in the same data center. Data center owners do not have to maintain two RDMA virtualization stacks. And a server can flexibly choose to host VMs or containers or both, without considering which RDMA virtualization stack is installed.
+	\item To provide a single point of RDMA resource management for all RDMA resource users so that the resources can be optimally scheduled.
+	\item To keep the performance overhead of the RDMA virtualization to the minimum.
+	\item It should bring minimum impact to existing RDMA software stack and be completely transparent to the RDMA application.
 \end{itemize}
 
 %\sys主要包含了vRNIC，\sys core和mgmt center。vRNIC是对虚拟机和容器通用的虚拟RDMA网卡设备，\sys core则是各主机服务器上的用于集中管理RDMA资源的虚拟化层, mgmt center可以跨多主机管理协调RDMA网络的控制策略。在本章，我们介绍了\sys中的一些关键性设计工作。
@@ -15,7 +15,7 @@ The design goals of \sys are:
 \begin{figure}[!ht]
 	\centering
 	\includegraphics[width=1\linewidth]{images/framework-overview.png}
-	\caption{Architecture Overview of \sys. The light grey boxes are modules in \sys framework. The dark grey boxes are the memory shared by both the application and the \sys core. The shared memory can also be directly accessed by the RNIC.}
+	\caption{Architecture overview of \sys. The light grey boxes are modules in \sys framework. The dark grey boxes are the memory shared by both the application and the \sys core. The shared memory can also be directly accessed by the RNIC.}
 	\label{fig:framework-overview}
 \end{figure}
 
