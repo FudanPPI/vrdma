@@ -88,9 +88,7 @@ There is one \sys core instance in each host's user space. The \sys core is desi
 
 % \sys core 作为一个服务会在每台服务器上运行，统一监听虚拟机、容器和主机的获取RDMA设备的请求（如果原生的请求不进行统一处理，将会导致原生和虚拟化对RDMA设备接口的冲突，因此修改了主机获取设备Verbs ibv_get_device_list的实现，将对应请求转发到\sys core，由\sys core统一分配RDMA设备接口）。
 
-To manage vRNICs uniformly and exploit the physical RNIC, we built a unified virtualization layer, namely \sys Core. 
-
-\sys Core is deployed on each server as a service in the cluster, listening to the request of RDMA device from VMs, containers and the RDMA applications in the host. If the host requests are not processed uniformly, it will cause the RDMA devices interfaces conflict between host RDMA and virtualized. So the implementation of the Verbs ibv\_get\_device\_list is modified, the corresponding request is forwarded to the \sys core, and the \sys core uniformly allocates the RDMA device interface. After that, the vRNICs are instantiated and configured with virtual RDMA network in the \sys core.
+To manage vRNICs uniformly and exploit the physical RNIC, we built a unified virtualization layer, namely \sys Core. \sys Core is deployed on each server as a service in the cluster, listening to the request of RDMA device from VMs, containers and the RDMA applications in the host. (Note that if the host requests are not processed uniformly, it will cause the RDMA devices interfaces conflict between host RDMA and virtualized. So the implementation of the Verbs ibv\_get\_device\_list is modified, the corresponding request is forwarded to the \sys core, and the \sys core uniformly allocates the RDMA device interface.) After that, the vRNICs are instantiated and configured with virtual RDMA network in the \sys core.
 
 
 %The \sys core as a service which runs on each server and monitors the request of obtain RDMA devices from VMs, containers and host. (If the host requests are not processed uniformly, it will cause the RDMA devices interfaces conflict between host RDMA and virtualized. So the implementation of the verbs ibv\_get\_device\_list is modified, the corresponding request is forwarded to the \sys core, and the \sys core uniformly allocates the RDMA device interface) .
