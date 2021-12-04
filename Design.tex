@@ -83,7 +83,7 @@ Each machine is designed to have one \sys Core instance in its host user space. 
 
 % \sys Core 作为一个服务会在每台服务器上运行，统一监听虚拟机、容器和主机的获取RDMA设备的请求（如果原生的请求不进行统一处理，将会导致原生和虚拟化对RDMA设备接口的冲突，因此修改了主机获取设备Verbs ibv_get_device_list的实现，将对应请求转发到\sys Core，由\sys Core统一分配RDMA设备接口）。
 
-The \sys Core is deployed on each server listening to the request of RDMA device from VMs, containers and the RDMA applications in the host environment. To overtake the management work of all RDMA resources, the implementation of the Verbs ibv\_get\_device\_list is modified so that the corresponding request is forwarded to the \sys Core. The vRNICs are instantiated and configured by the \sys Core.
+The \sys Core is deployed on each server listening to the request of RDMA device from VMs, containers and the RDMA applications in the host environment. To overtake the management work of all RDMA resources, the implementation of the Verbs \texttt{ibv\_get\_device\_list} is modified so that the corresponding request is forwarded to the \sys Core. The vRNICs are instantiated and configured by the \sys Core.
 
 %The \sys Core as a service which runs on each server and monitors the request of obtain RDMA devices from VMs, containers and host. (If the host requests are not processed uniformly, it will cause the RDMA devices interfaces conflict between host RDMA and virtualized. So the implementation of the verbs ibv\_get\_device\_list is modified, the corresponding request is forwarded to the \sys Core, and the \sys Core uniformly allocates the RDMA device interface) .
 
@@ -107,7 +107,7 @@ Instantiating vRNIC mainly includes 3 steps: 1) initializing vRNIC attributes; 2
 
 3) Building the vRNIC message channel: \sys Core needs to build a message channel between the vRNIC backend and the frontend.
 For containers, the container can share an IPC namespace with the vRNIC backend as the message channel.
-For VMs, to avoid the two-hops memory copy from the vRNIC frontend in the guest to the hypervisor and then to the vRNIC backend, we use the shared memory as the message channel. Specifically, the physical memory in the VM is shared with the vRNIC backend. Any RDMA messages in the guest can be directly accessed from the vRNIC backend.
+For VMs, to avoid the two-hops memory copy from the vRNIC frontend in the guest to the hypervisor and then to the vRNIC backend, we use the shared memory as the message channel. Specifically, the physical memory in the VM is shared with the vRNIC backend. RDMA messages in the guest can be directly accessed from the vRNIC backend.
 
 \subsubsection{\textbf{Configuring the Virtual RDMA Network}}
 \
@@ -120,34 +120,33 @@ For virtual RDMA address configurations, the vGID assigned to the vRNIC by \sys 
 
 % 对于虚拟RDMA路由配置，每台主机的\sys Core中配置了虚拟RDMA网络路由规则。具体来说，\sys Core在实例化vRNIC时，还给每个vRNIC都配置了组ID，路由规则的定义形式为:{group ID1, group ID2, Policy}。例如，如图4所示，容器1和容器2的vrnic被配置到同一组中，因此允许创建RDMA连接。作为对比，容器1和虚拟机1属于不同的用户组，按路由规则无法建立RDMA连接。各虚拟实例之间建立RDMA连接的具体细节可以参考4.3.1。
 
-For virtual RDMA routing configurations, virtual RDMA network routing rules are configured in the \sys Core at each host. In specific, \sys Core also configures the group ID for each vRNIC when it instantiates the vRNIC. Routing rules are defined as {group ID1, group ID2, Policy}. For example, as shown in Figure \ref{fig:route-config}, the vRNIC of container 1 and container 2 are configured into the same group, thus allowing RDMA connections to be created. In contrast, container 1 and VM 1 belong to different user groups and cannot establish an RDMA connection according to routing rules. See 4.3.1 for details on establishing RDMA connections between virtual instances.
+For virtual RDMA routing configurations, virtual RDMA network routing rules are configured in the \sys Core at each host. In specific, \sys Core also configures the group ID for each vRNIC when it instantiates the vRNIC. Routing rules are defined as {group ID1, group ID2, Policy}. For example, as shown in Figure \ref{fig:route-config}, the vRNIC of container 1 and container 2 are configured into the same group, thus allowing RDMA connections to be created. In contrast, container 1 and VM 1 belong to different user groups and cannot establish an RDMA connection according to routing rules.
 
 % RDMA与传统TCP/IP不同，RDMA还支持单边操作。在guest应用的RDMA单边操作中，RDMA的工作请求中包含了远端的GVA及key，远端MR内存地址同样需要在RDMA用户态驱动中转换为远端vRNIC后端的HVA。为了便于远端地址的转换，我们在\sys Core中建立了一个分布式的Key-Value数据库，存储各节点注册MR的映射关系{key，gva, hva}。在guest应用执行单边操作时，将向\sys Core 中的分布式KV数据库查询，以获取远端MR的HVA，缓存到本地并在写入工作请求以前。
 
-Unlike traditional TCP/IP network, RDMA networks also support one-side operations. The remote GVA and key is included in the one-side work request, and the GVA also needs to be translate to the remote HVA in the RDMA user-space. To facilitate the remote memory address translation, we set up a distributed key-value database in the \sys Core to store the mapping of registered MR {MR-KEY, GVA, HVA} for each host. When the application in the guest performs a one-side operation, it will query the distributed key-value database in the \sys Core for the remote HVA of MR, and caches it locally before writing the work request.
+Unlike traditional TCP/IP network, RDMA networks also support one-sided operations. The remote Guest Virtual Address (GVA) and key is included in the one-sided work request, and the GVA also needs to be translate to the remote Host Virtual Address (HVA) by the RDMA application. To facilitate the remote memory address translation, we set up a distributed key-value database in the \sys Core to store the mapping between GVA and HVA for each registered MR using tuple {Host, MR-KEY, GVA, HVA}. When the application in the guest performs a one-sided operation, it will query the distributed key-value database in the \sys Core for the remote HVA of the MR, and caches it locally.
 
 % 总之，\sys Core中的虚拟网络配置是动态调整的，因此，容器和虚拟机迁移后无需更改物理网卡及交换机等硬件的网络配置，实现便携的虚拟机或容器迁移。基于\sys Core中的虚拟路由规则，可以支持云环境中的多租户隔离。而各\sys Core存储的MR地址映射关系，对单边操作给予了支持。
 
-In summary, the virtual network configuration in the \sys Core is dynamical, so it is unnecessary to change the network configuration of hardware such as the physical RNICs and switches to enable portable VM or container migration. Based on virtual routing rules in the \sys Core, multi-tenant isolation in a cloud environment can be supported. The MR memory mapping is recorded at each \sys Core to support one-sided operations.
+%In summary, the virtual network configuration in the \sys Core is dynamic, so it is unnecessary to change the network configuration of hardware such as the physical RNICs and switches to enable portable VM or container migration. Based on virtual routing rules in the \sys Core, multi-tenant isolation in a cloud environment can be supported. The MR memory mapping is recorded at each \sys Core to support one-sided operations.
 
 \begin{figure}[!ht]
 	\centering
 	\includegraphics[width=1.0\linewidth]{images/route-config}
-	\caption{Group Configuration and Routing: The vRNICs of container 1 and container 2 are configured in one group. Thus, two containers can create RDMA connections. And VM 1 are not allowed to create RDMA connections to containers in this figure because it is not added into the group. }
+	\caption{RDMA group configuration and routing. The vRNICs of container 1 and container 2 are configured in the same group. Thus, the two containers are allowed to create RDMA connections. VM 1 is not in the same group of the containers. So it is not allowed to create RDMA connections to the containers.}
 	\label{fig:route-config}
 \end{figure}
 
 \subsection{Management Node}
 
-There is one centralized management node in the cluster. With the help of management node, control policies can be defined and executed on each guest, e.g. QoS, ACL.
+In \sys there is one centralized management node in the cluster that manages the control policies of the entire RDMA network, e.g. QoS and ACL.
 
 % 在\sys框架里，整个集群配备一个mgmt center，作为配置管理，存储各节点RDMA资源信息的中心。
-
-In \sys, the cluster is equipped with one management center, which serves as configuration management and stores the information of RDMA resources for each node.
+%In \sys, the cluster is equipped with one management node, which serves as configuration management and stores the information of RDMA resources for each node.
 
 % 通过mgmt center，管理者向各个节点的\sys Core下发各种策略，包括控制平面策略，如连接管理，防火墙等；和数据平面策略，如Qos、流量计费等。管理框架图如图5所示：策略由mgmt center下发到\sys Core，\sys Core通过agent接收策略后，其中，\sys Core将控制平面策略配置给管理的各vRNIC后端。对于数据平面策略，\sys Core将其发送给 Verbs库中的agent，然后在各虚拟机的RDMA应用本地执行。
 
-Through the management center, various policies is issued to the \sys Core for each node, including: control plane policies, such as connection management, firewall, etc; data plane policies, such as QoS, traffic metering, etc. The management framework is shown in Figure~\ref{fig:mgmt-center}: the policy is issued to the \sys Core by the management center and the \sys Core receives the policy through the agent. Then, the \sys Core configures the control plane policy to each managed vRNIC backend. For the data plane policy, the \sys Core sends it to the agent in the Verbs library, which is then executed locally in the application in each guest.
+Through the management node, various policies is issued to the \sys Core for each node, including: control plane policies, such as connection management, firewall, etc; data plane policies, such as QoS, traffic metering, etc. The management framework is shown in Figure~\ref{fig:mgmt-center}: the policy is issued to the \sys Core by the management node and the \sys Core receives the policy through the agent. Then, the \sys Core configures the control plane policy to each managed vRNIC backend. For the data plane policy, the \sys Core sends it to the agent in the Verbs library, which is then executed locally in the application in each guest.
 
 %  连接管理、防火墙等控制平面策略主要基于RDMA连接进行，依靠QP等RDMA资源。由于包括QP在内的所有RDMA资源均已经映射在vRNIC后端中，因此，控制平面策略可以直接在vRNIC后端依靠映射的RDMA资源执行；数据平面策略也可以依靠轮询各vRNIC后端的映射好的RDMA资源来完成。然而，这样做将消耗额外的CPU资源而且可能不正确如果轮询效率不高。因此，本文将数据策略进一步从\sys Core下发到各guest的用户库，在各RDMA应用本地执行。注意，这些扩展需要所有客户机都信任库，并且这些修改应该包含在TCB(可信计算库)中。对照native的RDMA，其数据路径绕过了操作系统内核，物理网卡的数据管理及其有限，因此，其细粒度的数据管理同样需要在应用本地执行,并需要Verbs库的帮助。
 
@@ -275,7 +274,7 @@ As cloud computing environments become more complex, there are more and more  re
 
 %（1）虚拟机迁移： 容器或虚拟机迁移在云中有很多好处，例如资源利用和故障转移。迁移分为脱机迁移和动态迁移。在脱机迁移中，虚拟机或容器关机后，迁移到远端后重新启动。因为\sys Core维护了网络地址的映射关系，该关系可以直接发送给迁移后节点的\sys Core，无需修改guest 中RDMA应用内部的网络地址。对于动态迁移，一般都需要借助AccelNet方案【引用】，应用释放RDMA资源，使用TCP/IP网络完成迁移，然后显式地重新建立RDMA连接。对于这种方式，我们也可以无缝支持。
 
-Virtual Instances Migration:  Migration of containers or VMs has many benefits in clouds, e.g. resource utilization and fail-over. With the virtual RDMA network, \sys can support offline migration without reconfiguring the physical RDMA network for applications. In specific, after rebooting the migrated virtual instance, the application can rebuild the RDMA connection through the same network address. The only work is modifying the address mapping in \sys Core. Currently, for live migrations, it is still hard because memory regions in RDMA application may be uncertain under bypassing or one-side communication. And the problem is unrelated to \sys.
+Virtual Instances Migration:  Migration of containers or VMs has many benefits in clouds, e.g. resource utilization and fail-over. With the virtual RDMA network, \sys can support offline migration without reconfiguring the physical RDMA network for applications. In specific, after rebooting the migrated virtual instance, the application can rebuild the RDMA connection through the same network address. The only work is modifying the address mapping in \sys Core. Currently, for live migrations, it is still hard because memory regions in RDMA application may be uncertain under bypassing or one-sided communication. And the problem is unrelated to \sys.
 
 % （2）RDMA软件栈对虚拟化的扩展：在RDMA虚拟化中，QP/CQ等RDMA资源需要进行映射，避免额外的数据拷贝及切换开销。现有的RDMA软件栈没有对RDMA资源映射的支持。为此，我们提出了下述建议，以加强现有RDMA软件栈对RDMA虚拟化的支持。基于这些建议，虚拟机或容器应用和虚拟层在用户空间便可以完成便捷、高效地完成MR、QP/CQ等资源的映射。具体建议如下：
 
