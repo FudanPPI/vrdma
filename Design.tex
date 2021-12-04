@@ -274,39 +274,3 @@ D1 (Send/Recv Data): For two-sided operations, data in the local MR can be sent 
 % D2（轮询CQ）：Guest应用轮询CQ来获取对应的工作完成通知。如果使用事件通知机制，guest中verbs库将等待vRNIC后端获取事件并返回给应用。
 
 D2 (Polling the CQ): The application polls the CQ for the work completion. If event-based notification is used, the Verbs library will wait for the vRNIC backend to receive the event and return it to the application.
-
-% discussion
-% 随着云计算环境的复杂化，不同的需求越来越多，对RDMA虚拟化提出了更多的要求。本节讨论了RDMA虚拟化面对下列需求可能的解决思路：
-\subsection{Discussion}
-
-%As cloud computing environments become more complex, there are more and more requirements to RDMA virtualization. In this section, we discuss some possible solutions for following demands:
-
-%（1）虚拟机迁移： 容器或虚拟机迁移在云中有很多好处，例如资源利用和故障转移。迁移分为脱机迁移和动态迁移。在脱机迁移中，虚拟机或容器关机后，迁移到远端后重新启动。因为\sys Core维护了网络地址的映射关系，该关系可以直接发送给迁移后节点的\sys Core，无需修改guest 中RDMA应用内部的网络地址。对于动态迁移，一般都需要借助AccelNet方案【引用】，应用释放RDMA资源，使用TCP/IP网络完成迁移，然后显式地重新建立RDMA连接。对于这种方式，我们也可以无缝支持。
-
-%Virtual Instances Migration: The migration of the containers and VMs has many benefits in clouds, e.g. resource utilization and fail-over. With the virtual RDMA network, \sys can support offline migration without reconfiguring the physical RDMA network for applications. In specific, after rebooting the migrated virtual instance, the application can rebuild the RDMA connection using the same network address. The only work is to modify the address mapping in \sys Core. For live migration, currently it is still not solved because changes in memory of the virtual instance needs to tracked during live migration. This is usually done by tracking the dirty-bit in the page tables. RDMA operations bypass the tracking mechanism and break the live migration process.
-
-% （2）RDMA软件栈对虚拟化的扩展：在RDMA虚拟化中，QP/CQ等RDMA资源需要进行映射，避免额外的数据拷贝及切换开销。现有的RDMA软件栈没有对RDMA资源映射的支持。为此，我们提出了下述建议，以加强现有RDMA软件栈对RDMA虚拟化的支持。基于这些建议，虚拟机或容器应用和虚拟层在用户空间便可以完成便捷、高效地完成MR、QP/CQ等资源的映射。具体建议如下：
-
-%In \sys, we have to modified the Verbs library in the containers so that the RDMA Verbs requests made to the kernel drivers can be redirected to the vRNIC frontends.
-%Note that Verbs APIs in the guest environment are not modified so that \sys is transparent to the guest RDMA applications.
-
-In \sys, a few APIs in the Verbs library in the host user space are modified to support specifying a given memory address to be registered to the physical RNIC devices as key resource memory such as QP and MR. Currently, vanilla Verbs APIs don't allow applications to specify the address of resource memory region. But this capability is essential for \sys to establish a zero-copy data path.
-In order to make these modifications a formal solution and the Verbs library to better support the virtualized RDMA stack, we propose the following modifications to extend the existing Verbs library.
-
-% (1) 对于QP/CQ: 对于容器应用，在用户态驱动调用mlx4_alloc_buf分配QP/CQ的buffer时， 建议在其中增加使用共享内存的选择。对于虚拟层，在分配qp/cq资源buffer时，建议在用户态驱动调用新的API alloc_assigned_buf代替原有的mlx4_alloc_buf。这个新增的API，将为QP/CQ资源分配指定内存地址的buffer, 其中的地址参数由映射共享内存得到。
-
-\subsubsection{For QP/CQ}
-For the Verbs library used in the containers: When \texttt{mlx4\_alloc\_buf} API is called to allocate QP/CQ buffer, it is recommended to add an option to use shared memory in the parameters, instead of using normal memory.
-
-For the Verbs library used in the host: When vRNIC backend creating QP/CQ, a new API \texttt{alloc\_assigned\_buf} is suggested that instead of existing \texttt{mlx4\_alloc\_buf} API. This new API will use the memory address specified in the parameters to be used as the QP/CQ buffers, instead of allocating a new memory.
-
-% (2) 对于MR: 对于容器应用，我们建议应用使用共享内存注册MR。如果已有的应用未使用共享内存注册MR，在Verbs库ibv_reg_mr中，建议增加重新映射MR buffer到共享内存的选项。对于虚拟层，为了让虚拟机RDMA应用的数据路径与原生一致，需要将虚拟机MR的页表缓存到物理网卡中，以支持虚拟机RDMA应用的数据路径。为此，我们建议虚拟层Verbs中增加一个ibv_reg_guest_mr API. 该API比原生的注册MR函数ibv_reg_mr多一个参数，GVA，用以将GVA传递到RDMA内核OFED模块。同时，原生OFED模块也需进行适配性的改动，以通过GVA参数，将虚拟机MR的页表缓存到物理网卡。 经过以上扩展，数据路径上，虚拟机应用可以直接使用本地地址GVA，无需转换为虚拟层MR的地址HVA，也不用缓存本地/远端MR GVA和HVA之间的映射关系。
-
-\subsubsection{For MR}
-For the Verbs library used in the containers: We recommend that applications register MR in the shared memory region. For existing applications who does not use shared memory for MR, we recommend to add an option for remapping the MR buffer to shared memory in the Verbs API \texttt{ibv\_reg\_mr}.
-
-For the Verbs library used in the host: It is desired to register the GVA and HPA of the MR to the physical RNIC, so that when the RDMA application specifies the virtual address of a data, the physical RNIC can lookup the physical address and send the data.
-The existing \texttt{ibv\_reg\_mr} has a parameter specify the virtual address of the MR. Then the RDMA kernel driver will lookup the corresponding physical address by walking the page table of the current process.
-In \sys, the current process that calls the \texttt{ibv\_reg\_mr} API is the vRNIC backend. It uses a different page table than the RDMA application in the VM or container. So the vRNIC backend is not able to tell the RNIC what HPA should be used for the MR.
-We suggest to add an \texttt{ibv\_reg\_guest\_mr} API to the Verbs library. This new API has an additional parameter "GVA" than the existing API \texttt{ibv\_reg\_mr}. As the vRNIC backend also maps the MR in its memory space, it knowns the HVA of the MR. When calling the \texttt{ibv\_reg\_guest\_mr} API, both the GVA and HVA are passed as parameters. After receiving the GVA and HVA, the RDMA kernel driver needs to lookup the HPA using HVA by walking the page tables. Then it can register the MR to the physical RNIC using the {GVA, HPA} pair, instead of {HVA, HPA}.
-With this extension, the applications in the guest can use its GVA directly on the data path.
