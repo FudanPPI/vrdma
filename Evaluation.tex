@@ -21,7 +21,7 @@ Based on the RDMA benchmark test tool perftest~\cite{perftest}, we evaluated the
 \
 \noindent
 
-The results of two-sided operation are shown in Figure~\ref{fig:send-bw}, and the one of one-sided operation are shown in Figure~\ref{fig:write-bw}. As the data show, no matter for VMs or containers, the throughput of \sys is similar to SR-IOV and close to native RDMA.
+The results of two-sided operation are shown in Figure~\ref{fig:send-bw}, and the one of one-sided operation are shown in Figure~\ref{fig:write-bw}. For one-sided operation \sys in virtual machine has readched to 0.87x and 0.94x of native RDMA and SR-IOV. The container scenario gets 0.84x and 0.91x lower throughput than native RDMA and SR-IOV. For two-sided operation, The virtual machine scenario has 0.86x and 0.89x lower throughput than native RDMA and SR-IOV. In the container scenario, the throughput are 0.85x and 0.91x that of the native RDMA and SR-IOV.
 
 \begin{figure}[!ht]
 	\centering
@@ -47,7 +47,7 @@ When the message gradually increases, such as reaching 64KB, the throughput of e
 \
 \noindent
 
-The results of two-sided operation are shown in Figure~\ref{fig:send-lat}, and the one of one-sided operation are shown in Figure~\ref{fig:write-lat}. Whether \sys is in a virtual machine or in a container scenario, the latency of its two-sided and one-sided operations is similar as SR-IOV and close to native RDMA.
+The results of two-sided operation are shown in Figure~\ref{fig:send-lat}, and the one of one-sided operation are shown in Figure~\ref{fig:write-lat}. For one-sided operation, the latency of virtual machine is 1.33x higher than native RDMA and 1.17x higher than SR-IOV. The latency of container is 1.20x and 1.05x higher than native RDMA and SR-IOV respectively. For two-sided operation, \sys in virtual machine leads to 1.38x and 1.12x higher latency compared with native RDMA and SR-IOV. A container scenario offers 1.31X and 1.07x higher latency than native RDMA and SR-IOV. 
 
 Compared with FreeFlow, when the message is small, the latency of \sys has reached 40\%~60\% of FreeFlow because of FreeFlow's forwarding latency. Also, when the message gradually increases, such as reaching 64KB, the latency of each framework tends to be consistent. Because the main latency has been caused by RNIC data processing.
 
