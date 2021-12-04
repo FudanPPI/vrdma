@@ -161,18 +161,18 @@ Note that this design require \sys to trust the Verbs library in the guest envir
 	\label{fig:mgmt-center}
 \end{figure}
 
-\subsection{Verbs Library and User-space Driver}
+\subsection{Verbs and User-space Device Library}
 
 %% 两小节： 控制路径和数据路径
 %% 给图
 % Verbs库为RDMA应用提供了统一的Verbs接口，在控制路径上，Verbs库接受RDMA应用的Verbs命令并与RDMA内核驱动进行交互，在数据路径上，Verbs库调用设备相关用户态驱动，绕过了操作系统内核。为了让虚拟机或容器中的应用使用vRNIC，同时确保\sys对应用的透明性，Verbs库及其相关驱动需要适配vRNIC架构并提供与原生一致的Verbs接口。如图所示，针对控制路径和数据路径，在verbs库和用户驱动中有一些关键的修改工作。
 
-The Verbs library provides the unified Verbs interface for RDMA applications. In the control path, the Verbs library forwards Verbs from RDMA applications to the RDMA kernel driver. In the data path, the Verbs library calls the device-specific user-space driver, which bypasses the kernel. To make \sys transparent to applications, the Verbs library and driver to be adapted to the vRNIC while keeping the same Verbs interface as native RDMA. As shown in Figure~\ref{fig:verbs-driver}, there are key modifications in the Verbs library and user-space driver for both control path and data path.
+The Verbs library provides the abstracted interfaces for RDMA applications. On the control path, the Verbs library forwards Verbs from RDMA applications to the RDMA kernel driver. On the data path, the Verbs library calls the device-specific user-space library, which bypasses the OS kernel. To make \sys transparent to applications, the Verbs library and the device library are adapted to the vRNIC while keeping the same Verbs interface as native RDMA. As shown in Figure~\ref{fig:verbs-driver}, there are key modifications in the Verbs library and user-space device library for both control path and data path.
 
 \begin{figure*}[!ht]
 	\centering
 	\includegraphics[width=0.8\linewidth]{images/verbs-driver}
-	\caption{Major modifications in the Verbs library and User-space Driver for Containers and VMs}
+	\caption{Modifications in the Verbs library and user-space device library for containers and VMs}
 	\label{fig:verbs-driver}
 \end{figure*}
 
@@ -181,7 +181,8 @@ The Verbs library provides the unified Verbs interface for RDMA applications. In
 %（2）针对QP/CQ：原生RDMA中QP/CQ内存的分配是在用户态驱动中进行的，也不是共享内存。在容器的用户态驱动中分配共享内存作为QP/CQ buffer，如图4-a-3所示。对应的共享内存信息会随Verbs命令和参数传递到vRNIC后端。
 % vRNIC后端在创建QP/CQ时，将分配这一共享内存作为QP/CQ的buffer，如图4-a-4所示。
 
-In the control path, there are different modifications between VMs and containers. In the container, to forward the Verbs calls to the vRNIC backend, the interface to the RDMA kernel driver in the Verbs library is replaced to the vRNIC frontend's, as shown in Figure~\ref{fig:verbs-driver} (a)-1. In addition, to achieve the shared memory mapping about RDMA resource between the application and the vRNIC backend, including MR, QP/CQ and Doorbell, there are more modifications in the Verbs library and user-space driver as follows:
+On the control path, the modifications are different for containers and VMs.
+For the container, to forward the Verbs calls to the vRNIC backend, the interface to the RDMA kernel driver in the Verbs library is replaced by the vRNIC frontend's, as shown in Figure~\ref{fig:verbs-driver} (a)-1. In addition, to achieve the shared memory mapping of RDMA resource between the application and the vRNIC backend including MR, QP/CQ and Doorbell, there are more modifications in the Verbs library and user-space device library as follows:
 
 (1) MR: In native RDMA, the MR buffer is assigned by the application and is generally private. The container's Verbs library will remap the GVA (guest virtual memory address) of the MR buffer to the shared physical memory, as shown in Figure~\ref{fig:verbs-driver} (a)-2. And the shared memory path and the GVA will be forwarded to the vRNIC backend along with the Verbs call and parameters. The vRNIC backend can get the shared memory to register the MR, forward the GVA to the RDMA kernel driver and there the GVA is cached for the physical RNIC.
 
@@ -193,17 +194,19 @@ In the control path, there are different modifications between VMs and container
 
 % 在虚拟机中，vRNIC在实例化时已经共享了虚拟机的整块物理内存空间。即使虚拟机应用使用默认的方式分配MR、QP或CQ等RDMA资源的内存，无需修改，vRNIC后端可以获取对应的共享内存块。具体地，通过虚拟机内核的vRNIC前端驱动中，将这些buffer的GPA（虚拟机物理内存信息）随RDMA命令和参数转发给vRNIC后端，vRNIC后端可以将GPA翻译为HVA，并使用这些共享内存块作为RDMA资源MR，QP或CQ的buffer，如图4-b-4所示。
 
-In the VM, the whole physical memory of the VM is already shared with the vRNIC backend when the vRNIC instantiating. Though the application allocates the buffers MR, QP/CQ without modification, the vRNIC backend still can get the corresponding shared memory piece. In specific, through the vRNIC frontend in the guest kernel, the GPA (guest physical memory addresses of these buffers can be forwarded to the vRNIC backend along with the Verbs calls and parameters, and the vRNIC backend can translate the GPA to the HVA (host virtual memory address) and use the shared memory pieces as the buffers of MR, QP/CQ resources, as shown in Figure~\ref{fig:verbs-driver} (b)-4.
+%这是KVM实现的个例
+For the VMs, the whole physical memory of the VM is already shared with the vRNIC backend when the vRNIC instantiating.
+Though the application allocates the buffers MR, QP/CQ without modification, the vRNIC backend can still get the corresponding shared memory. In specific, through the vRNIC frontend in the guest kernel space, the GPA (Guest Physical Addresses) of these memory buffers can be forwarded to the vRNIC backend along with the Verbs calls and parameters, and the vRNIC backend can translate the GPA to the HVA (Host Virtual Address) and use the shared memory as the buffers of MR, QP/CQ resources, as shown in Figure~\ref{fig:verbs-driver} (b)-4.
 
 % 基于上述修改，在数据路径上，无论是虚拟机还是容器，数据Verbs操作不需要转发到vRNIC后端,可以直接在guest用户空间，和原生RDMA一样避免了径额外的的拷贝或切换开销。
 
-Based on the above modifications, for both VMs and containers,  the data Verbs operations are not forwarded to the vRNIC backend, and can executed directly in the guest user-space, which avoids the overhead of additional data copy or context switching as native RDMA.
+Based on these modifications, for both VMs and containers, the data Verbs operations are not forwarded to the vRNIC backend, and can be executed directly in the guest user-space, which avoids the overhead of additional data copy or context switching.
 
 \subsection{Virtual RDMA Workflow}
 
 % 图4说明了虚拟RDMA的详细工作过程。虚拟RDMA的工作流程涉及guest中的应用、verbs库以及主机的vRNIC后端交互。整个工作流程依次分为初始化阶段、连接阶段和数据阶段。其中，初始化阶段分别包括设备打开和RDMA资源创建，连接阶段中RDMA应用通过QP与远端建立连接。数据阶段中RDMA应用执行数据路径的操作。
 
-Figure~\ref{fig:rdma-path} illustrate the detailed workflow of virtual RDMA. The workflow of the virtual RDMA involves the application, the Verbs libraries (including the user-space driver) in the guest, and the vRNIC backend in the host. In sequence, the whole workflow can be divided into initialization phase, connection phase and data phase. The initialization phase includes device opening and RDMA resource initialization. In the connection phase, the RDMA application establishes a connection with the remote through QP. In the data phase, the RDMA application performs the operations in the data path.
+Figure~\ref{fig:rdma-path} illustrates the detailed workflow of virtual RDMA. The workflow of the virtual RDMA involves the application, the Verbs library (including the user-space device library) in the guest environment, and the vRNIC backend in the host environment. In order, the whole workflow can be divided into initialization phase, connection phase and data phase. The initialization phase includes device opening and RDMA resource initialization. In the connection phase, the RDMA application establishes a connection with the remote entity through QP. In the data phase, the RDMA application performs the operations on the data path.
 
 \begin{figure}[!ht]
 	\centering
