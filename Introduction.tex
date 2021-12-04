@@ -25,7 +25,7 @@ The \sys~core is designed to manage both the virtual and physical RDMA resources
 
 The management node keeps and coordinates the control policies like ACL and QoS for individual servers.
 
-We implemented the \sys system and evaluatee its throughput, latency and scalability with real-word applications. The results show the performance of \sys~in hybrid virtualization environment is close to that of native RDMA~(less than 5\% overhead). Moreover \sys has high scalability and adapts to real-world RDMA applications in hybrid virtualization environments. The main contributions of \sys are:
+We implemented the \sys system and evaluatee its throughput, latency and scalability with real-word applications. The results show the performance of \sys~in hybrid virtualization environment is close to native RDMA and SR-IOV~(less than 15\% overhead and 5\% overhead). Moreover \sys has high scalability and adapts to real-world RDMA applications in hybrid virtualization environments. The main contributions of \sys are:
 
 \begin{itemize}
 	\item We proposed vRNIC, which is a para-virtualization RDMA device in host user-space for high flexibility and hardware independence. vRNIC is unified for both VMs and containers with specific driver. Meanwhile, the performance is optimized by mapping vRNIC to physical RNIC same as native RDMA.

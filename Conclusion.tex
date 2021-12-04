@@ -1,4 +1,4 @@
 \section{Conclusion} \label{conclusion}
 In this paper, we design a unified RDMA virtualization stack, namely \sys, which provides virtualized RDMA network for both VMs and containers on the same machine.
 Through single point of management, RDMA resources could be flexibly allocated to VMs and containers. With the support of \sys, one server machine could choose to host both virtualization form.
-In \sys, the vRNIC device model are implmented to support both VMs and containers. The \sys core manages the vRNIC and physical RDMA resources And the management node manages the control and data plane policies across the RDMA network. The experimental results show that the performance of \sys is within 5\% overhead compared to the native RDMA.
+In \sys, the vRNIC device model are implmented to support both VMs and containers. The \sys core manages the vRNIC and physical RDMA resources And the management node manages the control and data plane policies across the RDMA network. The experimental results show that the performance of \sys is within 15\% overhead compared to native RDMA and 5\% overhead compared to SR-IOV.
