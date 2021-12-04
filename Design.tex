@@ -47,7 +47,7 @@ The vRNIC backend acts like an RDMA application in the host environment and inte
 
 % 如果guest中所有RDMA操作均转发到vRNIC后端执行，将会引入额外上下文切换及数据拷贝，例如，MR中的数据内容或QP中的工作请求等，从而导致RDMA性能下降。考虑到控制路径仅涉及到初始化和连接建立的过程，其开销是一次性的，而数据路径是影响RDMA性能的关键。因此，为了提高RDMA网络性能，guest中RDMA资源与vRNIC后端完成了映射,数据路径直接使用映射的RDMA资源，其命令未转发到vRNIC后端。具体来说，vRNIC后端与guest共享了一些内存区域，vRNIC后端使用该共享内存创建RDMA资源并映射给上层的guest应用，包括MR、QP、CQ和DoorBell等。然后，guest应用基于这些映射的RDMA资源执行数据路径的操作，这些操作会被RDMA物理网卡执行，不用经过vRNIC后端和虚拟机内核。因此，避免了额外的数据拷贝和进程切换，从而实现了与原生RDMA相当的性能。
 
-%精简一下
+%精简一下,看下有没有和后面的workflow部分重复
 When forwarding RDMA requests from a vRNIC frontend to its backend, it causes context switching and data copy between the guest and the host. For example, when sending a data package, the data content in MR and the work request in QP need to be forwarded to the backend. This incurs performance degradation, especially on the data path. In order to achieve maximum performance, the RDMA resources are mapped in the shared memory region of the vRNIC backend and the RDMA application in the guest. On the data path, both the transmitted data and the sending/receiving requests are directly accessible to both the vRNIC backend and the RDMA applications, without an extra copy operation. Specifically, the vRNIC backend allocates RDMA resources in the shared memory region and the RDMA application in the guest environment maps to the same memory region in its own address space. The RDMA resources include MR, QP, CQ, and Doorbell. The RDMA application puts data and requests in the shared RDMA memory region. The physical RNIC sees the data transmission requests in the shared memory region and performs the actual work without involving the vRNIC backend and the guest OS kernel.
 
 The design of the vRNIC backend is the same for VMs and containers.
@@ -67,17 +67,15 @@ For both VMs and containers, the vRNIC frontend in the guest connects to the vRN
 
 For VMs, the native RDMA software stack is kept including the Verbs and device-specific library in the user space, and the OFED and hardware-specific driver in the kernel space. But this time, the hardware-specific device driver is connected to the VRNIC frontend instead of a physical RNIC. As shown in Figure~\ref{fig:framework-overview}, the hardware-specific device driver is replaced by a \sys version of thin device driver that is registered to OFED core. In this way, RDMA requests in the VM are re-routed to the vRNIC.
 
-For containers, the container applications share the host OS kernel with the vRNIC backend, only in different namespace. To use vRNIC, the Verbs library interfaces that interact with the RDMA kernel driver are replaced with the vRNIC frontend interface. The Verbs operations are hijacked to the vRNIC frontend and further forwarded to the vRNIC backend.
+For containers, as shown in Figure~\ref{fig:framework-overview} the Verbs library is hijacked to interact with the vRNIC frontend instead of the physical RNIC by replacing the file descriptor of physical RNIC with the ones of vRNIC frontend \cite{kim2019freeflow}.
 
 In both VMs and containers, the changes in RDMA software stack are totally transparent to RDMA applications.
 
 \subsection{\sys Core}
 
-There is one \sys core instance in each host's user space. The \sys core is designed to manage the virtual and physical RDMA resources for the host, including instantiating vRNIC backends, managing virtual RDMA network configurations and policies. The \sys core also interact with physical RNIC through verbs libraries.
+Each machine is designed to have one \sys core instance in its host user space. The \sys core is designed to manage both the virtual and physical RDMA resources for the host. It instantiates vRNIC backends, manages virtual RDMA network configurations and policies, and interact with physical RNIC through the Verbs library.
 
 % 为了对vRNIC进行统一管理，高效利用物理RDMA网卡，我们构建了一个统一的虚拟层\sys core。\sys core部署于集群的每台服务器上，监听虚拟机、容器以及原生的RDMA设备请求。之后，在\sys core中实例化vRNIC和配置虚拟RDMA网络等。
-
-
 
 %【 讨论：管理服务器的所有RDMA资源，对于来自虚拟机和容器的网卡资源申请，\sys core会进行。1，发现和记录所有RDMA资源, 2，监控RDMA资源消耗，决策RDMA设备和资源分配（调度方式：动态轮询等等，调度目的：负载均衡、控制资源QoS），3,RDMA虚拟机容器的迁移信息】
 
