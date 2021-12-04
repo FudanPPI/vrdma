@@ -167,7 +167,8 @@ Note that this design require \sys to trust the Verbs library in the guest envir
 %% 给图
 % Verbs库为RDMA应用提供了统一的Verbs接口，在控制路径上，Verbs库接受RDMA应用的Verbs命令并与RDMA内核驱动进行交互，在数据路径上，Verbs库调用设备相关用户态驱动，绕过了操作系统内核。为了让虚拟机或容器中的应用使用vRNIC，同时确保\sys对应用的透明性，Verbs库及其相关驱动需要适配vRNIC架构并提供与原生一致的Verbs接口。如图所示，针对控制路径和数据路径，在verbs库和用户驱动中有一些关键的修改工作。
 
-The Verbs library provides the abstracted interfaces for RDMA applications. On the control path, the Verbs library forwards Verbs from RDMA applications to the RDMA kernel driver. On the data path, the Verbs library calls the device-specific user-space library, which bypasses the OS kernel. To make \sys transparent to applications, the Verbs library and the device library are adapted to the vRNIC while keeping the same Verbs interface as native RDMA. As shown in Figure~\ref{fig:verbs-driver}, there are key modifications in the Verbs library and user-space device library for both control path and data path.
+The Verbs library provides the abstracted interface for the RDMA applications. In \sys, this interface is kept intact.
+The Verbs library and the device library are modified so that they are redicted to use the vRNIC instead of the physical RNIC. As shown in Figure~\ref{fig:verbs-driver}, there are several modifications to the Verbs library and user-space device library on both control path and data path.
 
 \begin{figure*}[!ht]
 	\centering
@@ -182,15 +183,18 @@ The Verbs library provides the abstracted interfaces for RDMA applications. On t
 % vRNIC后端在创建QP/CQ时，将分配这一共享内存作为QP/CQ的buffer，如图4-a-4所示。
 
 On the control path, the modifications are different for containers and VMs.
-For the container, to forward the Verbs calls to the vRNIC backend, the interface to the RDMA kernel driver in the Verbs library is replaced by the vRNIC frontend's, as shown in Figure~\ref{fig:verbs-driver} (a)-1. In addition, to achieve the shared memory mapping of RDMA resource between the application and the vRNIC backend including MR, QP/CQ and Doorbell, there are more modifications in the Verbs library and user-space device library as follows:
+For the containers, to forward the Verbs calls to the vRNIC backend, the Verbs library is hijacked to use the file descriptor of the vRNIC backend instead of the original RNIC file descriptor, as shown in Figure~\ref{fig:verbs-driver} (a)-1. In order to achieve high performance, the memory of the RDMA resources are mapped by both the application and the vRNIC backend (including MR, QP/CQ and Doorbell). Modifications are introduced in the Verbs library and user-space device library as follows:
 
-(1) MR: In native RDMA, the MR buffer is assigned by the application and is generally private. The container's Verbs library will remap the GVA (guest virtual memory address) of the MR buffer to the shared physical memory, as shown in Figure~\ref{fig:verbs-driver} (a)-2. And the shared memory path and the GVA will be forwarded to the vRNIC backend along with the Verbs call and parameters. The vRNIC backend can get the shared memory to register the MR, forward the GVA to the RDMA kernel driver and there the GVA is cached for the physical RNIC.
+(1) MR: In native RDMA, the MR buffer is assigned by the application and is private.
+In \sys, the container's Verbs library will remap the GVA (Guest Virtual Address) of the MR buffer to the shared physical memory, as shown in Figure~\ref{fig:verbs-driver} (a)-2. And the GVA of the shared memory will be forwarded to the vRNIC backend. The vRNIC backend register the MR using the GVA by calling the RDMA kernel driver (OFED).
 
-(2) QP/CQ: In native RDMA, the QP/CQ buffer is allocated in user-space driver and not shared. In the container's user-space driver, the shared memory is allocated as QP/CQ buffer, as shown in Figure~\ref{fig:verbs-driver} (a)-3. The shared memory information will be also forwarded to the vRNIC backend along with the Verbs call and parameters. When the vRNIC backend creates QP/CQ, it will assign this shared memory as QP/CQ buffer, as shown in Figure~\ref{fig:verbs-driver} (a)-4.
+(2) QP/CQ: In native RDMA, the QP/CQ buffer is allocated by user-space Verbs library and is private.
+In \sys, the container's user-space Verbs library allocates QP/CQ buffer in the shared memory region, as shown in Figure~\ref{fig:verbs-driver} (a)-3. The GVA of the shared memory will be forwarded to the vRNIC backend. When the vRNIC backend creates QP/CQ, it will register the QP/CQ using the GVA of the shared memory, as shown in Figure~\ref{fig:verbs-driver} (a)-4.
 
 %（3）针对DoorBell：在原生RDMA中，verbs库打开RDMA设备接口，经RDMA内核驱动映射门铃到应用程序。在\sys中，Verbs库打开虚拟的设备接口，并通过vRNIC后端和内核辅助模块来映射门铃。具体细节在第5节介绍。
 
-(3) DoorBell: In native RDMA, the RDMA device is opened in the Verbs library and DoorBell is mapped to the applications through the RDMA kernel driver. In \sys, the container's Verbs library opens the virtual device interface and maps the DoorBell through the vRNIC backend and a costumed kernel module. The details will be introduced in Section 5.
+(3) DoorBell: In native RDMA, the RDMA device is opened in the Verbs library and DoorBell is mapped to the applications through the RDMA kernel driver.
+In \sys, the container's Verbs library opens the virtual device interface and maps the DoorBell through the vRNIC backend. The details will be introduced in Section \ref{impl}.
 
 % 在虚拟机中，vRNIC在实例化时已经共享了虚拟机的整块物理内存空间。即使虚拟机应用使用默认的方式分配MR、QP或CQ等RDMA资源的内存，无需修改，vRNIC后端可以获取对应的共享内存块。具体地，通过虚拟机内核的vRNIC前端驱动中，将这些buffer的GPA（虚拟机物理内存信息）随RDMA命令和参数转发给vRNIC后端，vRNIC后端可以将GPA翻译为HVA，并使用这些共享内存块作为RDMA资源MR，QP或CQ的buffer，如图4-b-4所示。
 
