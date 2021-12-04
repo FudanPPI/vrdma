@@ -101,7 +101,7 @@ Instantiating vRNIC mainly includes 3 steps: 1) initializing vRNIC attributes; 2
 
 % 绑定vRNIC到物理网卡：vRNIC实例需要依靠物理网卡实现RDMA功能，因此，实例化vRNIC时需要将vRNIC实例与对应的物理RDMA网卡绑定。如果是多网卡设备或者多个网卡接口（如使用SR-IOV），还需确定从vRNIC到对应物理网卡接口的映射关系。
 
-2) Binding vRNIC to the physical RNIC: \sys Core bind the vRNIC instance to the physical RNIC when instantiating. If there are multiple physical RNICs or interfaces (such as SR-IOV), the mapping from the vRNIC to the RNIC interface needs to be determined.
+2) Binding vRNIC to the physical RNIC: \sys Core bind the vRNIC instance to the physical RNIC when instantiating. If there are multiple physical RNICs or RNIC interfaces (e.g., Virtual Functions), the \sys Core needs to have a resource allocation algorithm, taking into consideration of the network topology and network load balance.
 
 % 构建vRNIC消息通道：\sys Core需要构建vRNIC后端与vRNIC前端之间的消息通道。对于容器来说，容器与vRNIC后端共享某一IPC命名空间，即可完成vRNIC前端与后端之间的消息交互。对于虚拟机来说，由于vRNIC后端在主机用户空间，而hypervisor位于主机内核空间。为了避免guest的消息先拷贝到hypervisor层再到vRNIC后端，我们构建一块共享内存，以此作为消息通道。具体来说，虚拟机物理内存与vRNIC后端之间是共享的。guest中的任意RDMA消息，均可以直接由vRNIC后端获取，同时也减少了从guest到vRNIC后端的延迟。
 
@@ -114,13 +114,13 @@ For VMs, to avoid the two-hops memory copy from the vRNIC frontend in the guest 
 \noindent
 
 % \sys Core在实例化vRNIC后，需要对vRNIC的网络进行配置，包括虚拟RDMA地址配置以及虚拟RDMA路由配置。
-After the instantiation of the vRNIC, the \sys Core needs to configure the vRNIC's network, including virtual RDMA address configuration and virtual RDMA routing configuration.
-For virtual RDMA address configurations, the vGID assigned to the vRNIC by \sys Core is a virtual value, independent of the physical RNIC, when it instantiates the vRNIC.
+After the instantiation of the vRNIC, the \sys Core needs to configure the vRNIC's network, including virtual RDMA address and virtual RDMA routing.
+For virtual RDMA address configurations, the vGID assigned to the vRNIC by \sys Core is a logical value, independent of the physical RNIC, when it instantiates the vRNIC.
 % 对于虚拟RDMA地址配置，\sys Core 在实例化vRNIC时， 给vRNIC配置的vGID是虚拟值，与物理网卡无关。
 
 % 对于虚拟RDMA路由配置，每台主机的\sys Core中配置了虚拟RDMA网络路由规则。具体来说，\sys Core在实例化vRNIC时，还给每个vRNIC都配置了组ID，路由规则的定义形式为:{group ID1, group ID2, Policy}。例如，如图4所示，容器1和容器2的vrnic被配置到同一组中，因此允许创建RDMA连接。作为对比，容器1和虚拟机1属于不同的用户组，按路由规则无法建立RDMA连接。各虚拟实例之间建立RDMA连接的具体细节可以参考4.3.1。
 
-For virtual RDMA routing configurations, virtual RDMA network routing rules are configured in the \sys Core at each host. In particular, \sys Core also configures the group ID for each vRNIC when it instantiates the vRNIC. Routing rules are defined as {group ID1, group ID2, Policy}. For example, as shown in Figure 4, the vRNIC of container 1 and container 2 are configured into the same group, thus allowing RDMA connections to be created. As a contrast, container 1 and VM 1 belong to different user groups and cannot establish an RDMA connection according to routing rules. See 4.3.1 for details on establishing RDMA connections between virtual instances.
+For virtual RDMA routing configurations, virtual RDMA network routing rules are configured in the \sys Core at each host. In specific, \sys Core also configures the group ID for each vRNIC when it instantiates the vRNIC. Routing rules are defined as {group ID1, group ID2, Policy}. For example, as shown in Figure \ref{fig:route-config}, the vRNIC of container 1 and container 2 are configured into the same group, thus allowing RDMA connections to be created. In contrast, container 1 and VM 1 belong to different user groups and cannot establish an RDMA connection according to routing rules. See 4.3.1 for details on establishing RDMA connections between virtual instances.
 
 % RDMA与传统TCP/IP不同，RDMA还支持单边操作。在guest应用的RDMA单边操作中，RDMA的工作请求中包含了远端的GVA及key，远端MR内存地址同样需要在RDMA用户态驱动中转换为远端vRNIC后端的HVA。为了便于远端地址的转换，我们在\sys Core中建立了一个分布式的Key-Value数据库，存储各节点注册MR的映射关系{key，gva, hva}。在guest应用执行单边操作时，将向\sys Core 中的分布式KV数据库查询，以获取远端MR的HVA，缓存到本地并在写入工作请求以前。
 
