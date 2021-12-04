@@ -98,11 +98,11 @@ To manage vRNICs uniformly and exploit the physical RNIC, we built a unified vir
 
 % \sys core在收到guest中应用申请vRNIC的请求后，会实例化vRNIC。实例化vRNIC的主要工作包括： 初始化vRNIC属性、绑定vRNIC到物理网卡、构建vRNIC前后端消息通道以及隔离各vRNIC实例等。
 
-\sys Core instantiates a vRNIC  once receiving the request from the application in the guest. Instantiating vRNIC mainly includes 4 major work: 1) initializing vRNIC attributes, 2) binding the vRNIC to the physical RNIC, and 3) building the message channel between the vRNIC frontend and backend.
+\sys Core instantiates a vRNIC  once receiving the request from the guest application. Instantiating vRNIC mainly includes 3 major work: 1) initializing vRNIC attributes, 2) binding the vRNIC to the physical RNIC, and 3) building the message channel between the vRNIC frontend and backend.
 
 % 初始化vRNIC属性：为了模拟与硬件一致的功能接口，\sys Core需要对vRNIC的不变属性进行初始化，包括RDMA地址vGID，设备号等等。对于RDMA地址vGID，\sys core会随机生成IPv6格式的虚拟值，同时登记到mgmt center的数据库中。
 
-1) Initializing vRNIC attributes: To emulate the interface as physical RNIC, \sys Core needs to initialize the static properties of vRNIC, including RDMA address vGID, device number, and so on. For RDMA addresses vGID, \sys Core randomly generates the values in the IPv6 format and registers them into the database in the management center.
+1) Initializing vRNIC attributes: To emulate the interface as a physical RNIC, \sys Core needs to initialize the static properties of vRNIC, including RDMA address vGID, device number, and so on. For RDMA addresses vGID, \sys Core randomly generates the values in the IPv6 format and registers them into the database in the management center.
 
 % 绑定vRNIC到物理网卡：vRNIC实例需要依靠物理网卡实现RDMA功能，因此，实例化vRNIC时需要将vRNIC实例与对应的物理RDMA网卡绑定。如果是多网卡设备或者多个网卡接口（如使用SR-IOV），还需确定从vRNIC到对应物理网卡接口的映射关系。
 
@@ -110,7 +110,7 @@ To manage vRNICs uniformly and exploit the physical RNIC, we built a unified vir
 
 % 构建vRNIC消息通道：\sys Core需要构建vRNIC后端与vRNIC前端之间的消息通道。对于容器来说，容器与vRNIC后端共享某一IPC命名空间，即可完成vRNIC前端与后端之间的消息交互。对于虚拟机来说，由于vRNIC后端在主机用户空间，而hypervisor位于主机内核空间。为了避免guest的消息先拷贝到hypervisor层再到vRNIC后端，我们构建一块共享内存，以此作为消息通道。具体来说，虚拟机物理内存与vRNIC后端之间是共享的。guest中的任意RDMA消息，均可以直接由vRNIC后端获取，同时也减少了从guest到vRNIC后端的延迟。
 
-3) Building the vRNIC message channel: \sys Core needs to build a message channel between the vRNIC backend and the frontend. For containers, the container can share an IPC namespace with the vRNIC backend to make the message interaction between the vRNIC frontend and the backend. For VMs, the vRNIC backend is in host user-space and the hypervisor is in host kernel-space. To avoid the messages being copied to the hypervisor and then copied to the vRNIC backend, we build a shared memory as the message channel. Specifically, the physical memory in the VM is shared with the vRNIC backend. Any RDMA messages in the guest can be fetched directly from the vRNIC backend, and the latency from the guest to the vRNIC backend is decreased.
+3) Building the vRNIC message channel: \sys Core needs to build a message channel between the vRNIC backend and the frontend. For containers, the container can share an IPC namespace with the vRNIC backend to make the interaction between the vRNIC frontend and the backend. For VMs, the vRNIC backend is in host user-space and the hypervisor is in host kernel-space. To avoid the messages being copied to the hypervisor and then copied to the vRNIC backend, we build a shared memory as the message channel. Specifically, the physical memory in the VM is shared with the vRNIC backend. Any RDMA messages in the guest can be fetched directly from the vRNIC backend, and the latency from the guest to the vRNIC backend is decreased.
 
 \subsubsection{\textbf{Configuring the Virtual RDMA Network}}
 \
