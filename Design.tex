@@ -199,12 +199,12 @@ In \sys, the container's Verbs library opens the virtual device interface and ma
 % 在虚拟机中，vRNIC在实例化时已经共享了虚拟机的整块物理内存空间。即使虚拟机应用使用默认的方式分配MR、QP或CQ等RDMA资源的内存，无需修改，vRNIC后端可以获取对应的共享内存块。具体地，通过虚拟机内核的vRNIC前端驱动中，将这些buffer的GPA（虚拟机物理内存信息）随RDMA命令和参数转发给vRNIC后端，vRNIC后端可以将GPA翻译为HVA，并使用这些共享内存块作为RDMA资源MR，QP或CQ的buffer，如图4-b-4所示。
 
 %这是KVM实现的个例
-For the VMs, the whole physical memory of the VM is already shared with the vRNIC backend when the vRNIC instantiating.
-Though the application allocates the buffers MR, QP/CQ without modification, the vRNIC backend can still get the corresponding shared memory. In specific, through the vRNIC frontend in the guest kernel space, the GPA (Guest Physical Addresses) of these memory buffers can be forwarded to the vRNIC backend along with the Verbs calls and parameters, and the vRNIC backend can translate the GPA to the HVA (Host Virtual Address) and use the shared memory as the buffers of MR, QP/CQ resources, as shown in Figure~\ref{fig:verbs-driver} (b)-4.
+For the VMs, \sys maps the whole physical memory of the VM to the memory space of the corresponding vRNIC backend.
+The RDMA applications in the VM allocate the memory for MR, QP and CQ. Then, through the vRNIC frontend, the GPA (Guest Physical Addresses) of these memory buffers can be forwarded to the vRNIC backend. The vRNIC backend can translate the GPA to the HVA (Host Virtual Address) in its own address space and gain the access to the memory of MR, QP and CQ, as shown in Figure~\ref{fig:verbs-driver} (b)-4.
 
 % 基于上述修改，在数据路径上，无论是虚拟机还是容器，数据Verbs操作不需要转发到vRNIC后端,可以直接在guest用户空间，和原生RDMA一样避免了径额外的的拷贝或切换开销。
 
-Based on these modifications, for both VMs and containers, the data Verbs operations are not forwarded to the vRNIC backend, and can be executed directly in the guest user-space, which avoids the overhead of additional data copy or context switching.
+Based on these modifications, for both VMs and containers on the data path, the direct data delivery channel is established between the RDMA application in the guest user-space and the physical RNIC. It avoids the overhead of data copy or context switches.
 
 \subsection{Virtual RDMA Workflow}
 
