@@ -1,7 +1,10 @@
 \section{Evaluation} \label{eval}
-In this section, we evaluate the \sys prototype on the physical RDMA platform. In addition to the basic network performance, such as throughput and latency, it also includes the real-world RDMA application. We expect to answer the following questions:
-(1) Can \sys's network performance in container and virtual machine be both close to native RDMA?
-(2) Can \sys be adapted to the real-world RDMA application in containers or virtual machines?
+In this section, we evaluate the performance of \sys based on the RDMA test tools and real applications. We expect to answer the following questions:
+
+\begin{itemize}
+\item How about the overhead of \sys compared to that of native RDMA for both VMs and containers?
+\item Can \sys be adapted to the real-world RDMA applications in both VMs or containers?
+\end{itemize}
 
 \subsection{Experiment Methodology}
 All experiments are carried out on two servers. The settings mainly include three parts: host server, container and virtual machine. 
