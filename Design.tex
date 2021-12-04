@@ -57,7 +57,7 @@ The design of the vRNIC backend is the same for VMs and containers.
 \
 \noindent
 
-The vRNIC frontend is located in the guest environment acting as the NIC interface. Applications in the guest environment can use the NIC interface through Verbs library. For VMs, the frontend virtual device is in guest kernel space and is designed to expose interfaces the same way as the RDMA device driver to the upper Verbs library. For containers, the frontend module is implemented as a library that is linked to the applications aloneside with Verbs library.
+The vRNIC frontend is located in the guest environment acting as the NIC interface. Applications in the guest environment can use the NIC interface through Verbs library. For VMs, the frontend virtual device is in guest kernel space and is designed to expose interfaces the same way as the RDMA NIC device to the upper kernel device drivers. For containers, the frontend module is implemented as a library that is linked to the applications aloneside with Verbs library.
 
 % 在虚拟机或容器中，vRNIC前端都是连接虚拟机或容器应用到vRNIC后端，但是它们的设计上有差别。 
 % 在虚拟机场景中，vRNIC后端模拟了一个外部设备，由虚拟机OS中的vRNIC前端驱动。原生RDMA内核驱动包括与设备无关的OFED模块和设备相关的模块，OFED模块接收verbs操作并转化为内核层级的RDMA 命令；设备相关模块注册具体接口到OFED，并通过物理RNIC执行这些调用。对应的，在虚拟机中为了使用vRNIC，一个自定义的设备相关的驱动模块被构建在虚拟机内核，用来提供与原生类似的设备相关接口并注册它们到OFED模块。OFED中的RDMA命令将通过这些设备相关接口，被转发到vRNIC前端模块，再从前端转发到vRNIC后端去执行。因此，原生的RDMA应用无需修改便可运行在虚拟机中，而且虚拟机内核仍然可以使用RDMA (and RDMA can be used in the guest kernel)。
