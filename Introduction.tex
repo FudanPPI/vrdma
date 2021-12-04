@@ -25,14 +25,14 @@ The \sys~core is designed to manage both the virtual and physical RDMA resources
 
 The management node keeps and coordinates the control policies like ACL and QoS for individual servers.
 
-We implemented the \sys system and evaluatee its throughput, latency and scalability with real-word applications. The results show the performance of \sys~in hybrid virtualization environment is close to native RDMA and SR-IOV~(less than 15\% overhead and 5\% overhead). Moreover \sys has high scalability and adapts to real-world RDMA applications in hybrid virtualization environments. The main contributions of \sys are:
+We implemented the \sys system and evaluatee its throughput, latency and scalability with real-word applications. The results show the performance of \sys~in hybrid virtualization environment is close to native RDMA and SR-IOV~(less than 15\% overhead to native RDMA and 5\% overhead to SR-IOV). Moreover \sys has high scalability and adapts to real-world RDMA applications in hybrid virtualization environments. The main contributions of \sys are:
 
 \begin{itemize}
 	\item We proposed vRNIC, which is a para-virtualization RDMA device in host user-space for high flexibility and hardware independence. vRNIC is unified for both VMs and containers with specific driver. Meanwhile, the performance is optimized by mapping vRNIC to physical RNIC same as native RDMA.
 	
 	\item We proposed a virtualization layer for vRNICs, which is responsible for vRNICs' instantition and mapping to physical RNIC. Also, virtual RDMA network are configured in the virtualization layer.
 	
-	\item A system, called \sys,~is implemented and evaluated. The results show that \sys maintains high performance that is close to native RDMA.
+	\item A system, called \sys,~is implemented and evaluated. The results show that \sys maintains high performance with less than 5\% overhead to SR-IOV.
 \end{itemize}
 
 The paper is organized as follows. Section \ref{background} describes the background of RDMA and its virtualization techniques. Section \ref{design} describes the vRNIC design. Section \ref{impl} introduces the design of virtualization layer. Section \ref{eval} shows the evalution results of \sys system. Section \ref{relatedwork} discusses the related work. Section \ref{conclusion} concludes the work.
