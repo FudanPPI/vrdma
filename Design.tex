@@ -212,7 +212,7 @@ Based on these modifications, for both VMs and containers on the data path, the 
 
 % 图4说明了虚拟RDMA的详细工作过程。虚拟RDMA的工作流程涉及guest中的应用、verbs库以及主机的vRNIC后端交互。整个工作流程依次分为初始化阶段、连接阶段和数据阶段。其中，初始化阶段分别包括设备打开和RDMA资源创建，连接阶段中RDMA应用通过QP与远端建立连接。数据阶段中RDMA应用执行数据路径的操作。
 
-Figure~\ref{fig:rdma-path} illustrates the detailed workflow of virtual RDMA. The workflow of the virtual RDMA involves the application, the Verbs library (including the user-space device library and the vRNIC frontend) in the guest environment, and the vRNIC backend in the host environment.
+Figure~\ref{fig:rdma-path} illustrates the detailed workflow of virtual RDMA. The workflow of the virtual RDMA involves the application, the Verbs library~(including the user-space device library and the vRNIC frontend) in the guest environment, and the vRNIC backend in the host environment.
 The whole workflow can be divided into the initialization phase, the connection phase and the data phase. The initialization phase includes device opening and RDMA resource initialization.
 In the connection phase, the RDMA application establishes a connection with the remote entity through QP.
 In the data phase, the RDMA application performs the data sending and receiving operations.
@@ -230,7 +230,7 @@ In the data phase, the RDMA application performs the data sending and receiving 
 \
 \noindent
 
-Initialization stage is mainly about the initialization of resources, including vRNIC device opening (I1), MR registration (I2) and QP/CQ creation (I3). The details are as follows:
+Initialization stage is mainly about the initialization of resources, including vRNIC device opening~(I1), MR registration~(I2) and QP/CQ creation~(I3). The details are as follows:
 
 % I1（Guest应用打开vRNIC设备）：Guest应用依次调用Verbs接口ibv_get_devicelist和ibv_open_device，获取并打开vRNIC设备。这些调用会被劫持到vRNIC后端，vRNIC后端将打开在vRNIC实例化时绑定的物理RDMA设备。
 
@@ -238,11 +238,11 @@ I1 (vRNIC Device Opening): The application gets and opens the vRNIC device by ca
 
 % I2（Guest应用注册MR）：在容器中，Verbs库中将MR buffer重新映射到某一共享内存，虚拟机无需此步骤， 因为当虚拟机启动时，整个虚拟机的内存已经被设置为共享的。vRNIC后端会获取对应的共享内存，并使用它来注册MR，并返回MR keys等信息。
 
-I2 (MR Registration): For the containers, the Verbs library remaps the MR buffer to a shared memory region. This step is not required for the VMs, because in \sys the whole physical memory of the VM is shared with the vRNIC backend. The vRNIC backend register the MR to the RNIC and get the MR keys returned by the \texttt{ibv\_reg\_mr}.
+I2 (MR Registration): For the containers, the Verbs library remaps the MR buffer to a shared memory region. This step is not required for the VMs, because the whole physical memory of the VM is shared with the vRNIC backend in \sys. The vRNIC backend register the MR to the RNIC and get the MR keys returned by the \texttt{ibv\_reg\_mr}.
 
 % I3（Guest应用创建QP/CQ）：在容器中，Verbs库使用共享内存分配QP/CQ buffer，虚拟机无需此步骤。vRNIC后端将获取对应的共享内存，并分配它为QP/CQ的buffer，并会返回QPN, CQN等元数据。 
 
-I3 (QP/CQ creation): For the containers, the Verbs library allocates QP/CQ buffers in the shared memory region. Similar to I2, for the VMs, the Verbs library allocates QP/CQ buffers in its original way. In \sys the whole physical memory of the VM is shared with the vRNIC backend, including the QP/CQ buffers. The vRNIC backend creates QP/CQ for the physical RNIC using the same QP/CQ memory allocated by the Verbs library in the guest.
+I3 (QP/CQ Creation): For the containers, the Verbs library allocates QP/CQ buffers in the shared memory region. Similar to I2, for the VMs, the Verbs library allocates QP/CQ buffers in its original way. In \sys, the whole physical memory of the VM is shared with the vRNIC backend, including the QP/CQ buffers. The vRNIC backend creates QP/CQ for the physical RNIC using the same QP/CQ memory allocated by the Verbs library in the guest.
 
 %4.4.2 连接阶段
 \subsubsection{\textbf{Connection Phase}}
@@ -250,13 +250,13 @@ I3 (QP/CQ creation): For the containers, the Verbs library allocates QP/CQ buffe
 \noindent
 % 连接阶段表示RDMA基于QP建立连接，依次包括查询GID（C1）、交换连接信息（C2）和基于QP建立连接（C3），具体细节如下：
 
-In the connection phase, the RDMA connection is established based on QP. It includes querying GID (C1), exchanging connection information (C2) and establishing connection (C3). The details are as follows:
+In the connection phase, the RDMA connection is established based on QP. It includes querying GID~(C1), exchanging connection information~(C2) and establishing connection~(C3). The details are as follows:
 
 % C1（获取GID）：Guest应用调用Verbs ibv_query_gid，请求获取vRNIC的vGID地址。vRNIC后端将获取绑定的物理RDMA网卡的GID，记录（vGID，GID）对应关系, 并返回vGID给应用。 
-C1 (Querying GID): The application calls Verbs API \texttt{ibv\_query\_gid} to get the vGID of the vRNIC. The vRNIC backend will query the GID of the corresponding physical RNIC, record the mapping tuple {vGID, GID} and return the vGID to the frontend.
+C1 (Querying GID): The application calls Verbs API \texttt{ibv\_query\_gid} to get the vGID of the vRNIC. The vRNIC backend will query the GID of the corresponding physical RNIC, record the mapping tuple \textit{\{vGID, GID\}} and return the vGID to the frontend.
 
 % C2（交换连接信息）：应用与远端交换建立连接所需的信息vGID，QPN和MR key等。 该步骤完全由应用独立完成。例如，应用中可以使用TCP/IP 或RDMA-CM来交换信息。
-C2 (Exchanging Connection Information): The applications exchanges the connection information such as vGID, QPN and MR-key with the remote entity. This step is done by the applications without the participation of \sys. For example, the application can use TCP/IP or RDMA-CM to exchange the information.
+C2 (Exchanging Connection Information): The applications exchanges the connection information, such as vGID, QPN and MR-key, with the remote entity. This step is done by the applications without the participation of \sys. For example, the application can use TCP/IP or RDMA-CM to exchange the information.
 
 % C3（连接建立）：应用调用verbs ibv_modify_qp 并将本地/远端的vGID、QPN等作为参数。该命令转发到vRNIC后端后，vRNIC后端会先根据\sys Core的路由表规则进行判断，如果允许，就会将本地/远端 vGID转换为对应的GID，再根据QPN，在两个vRNIC后端的QP间建立RDMA连接。
 C3 (Connection Establish): The application calls the Verb API \texttt{ibv\_modify\_qp} with the parameters, including local/remote vGID and local/remote QPN. The vRNIC backend will check the routing table from \sys Core. If allowed, the local/remote vGID will be converted to GID, and RDMA connection is established based on local/remote QP in two vRNIC backends through the QPN.
@@ -267,11 +267,11 @@ C3 (Connection Establish): The application calls the Verb API \texttt{ibv\_modif
 \
 \noindent
 
-The data phase is about how to send/receive the data in the local/remote MR buffers. It includes D1 (Send/Recv Data) and D2 (Poll the CQ). The details are as follows:
+The data phase is about how to send/receive the data in the local/remote MR buffers. It includes D1~(Send/Recv Data) and D2~(Poll the CQ). The details are as follows:
 
 % D1（收发数据）：在双边操作中，两端应用分别执行Verbs ibv_post_recv和ibv_post_send对本地MR中的数据进行收发。在单边操作中，仅执行ibv_post_send。
 
-D1 (Send/Recv Data): For two-sided operations, data in the local MR can be sent and received by executing Verbs APIs \texttt{ibv\_post\_recv} and \texttt{ibv\_post\_send}, respectively. For one-sided operations, only \texttt{ibv\_post\_send} is used.
+D1 (Send/Recv Data): For two-sided operations, the data in the local MR can be sent and received by executing Verbs APIs \texttt{ibv\_post\_recv} and \texttt{ibv\_post\_send}, respectively. For one-sided operations, only \texttt{ibv\_post\_send} is used.
 
 % D2（轮询CQ）：Guest应用轮询CQ来获取对应的工作完成通知。如果使用事件通知机制，guest中verbs库将等待vRNIC后端获取事件并返回给应用。
 
