@@ -4,7 +4,7 @@ The design goals of \sys are:
 1) to provide a unified RDMA virtualization framework for the hybrid virtualization environment where VMs and containers co-exist on the same machine or in the same data center. Data center owners do not have to maintain two RDMA virtualization stacks. And a server can flexibly choose to host VMs or containers or both, without considering which RDMA virtualization stack is installed.
 2) to provide a single point of RDMA resource management for all RDMA resource users so that the resources can be optimally scheduled.
 3) to keep the performance overhead of the RDMA virtualization to the minimum.
-4) It should bring minimum impact to existing RDMA software stack and be completely transparent to the RDMA application.
+4) It should bring minimum impact to existing RDMA software stack and be completely transparent to RDMA applications.
 
 \begin{figure}[!ht]
 	\centering
@@ -21,14 +21,14 @@ In addition, some modifications are made to the Verbs library and device userlib
 
 The vRNIC is a virtual RDMA device that consists of a frontend and a backend. The vRNIC backend is placed in the host space and emulates the behavior of an RDMA device. The vRNIC frontend is placed in the guest space that exposes RDMA device interfaces to the upper device drivers.
 On the control path, commands are forwarded from the vRNIC frontend to the vRNIC backend to be actually executed or emulated.
-On the data path, the key RDMA resources (e.g. QPs and MRs) are directly mapped by both the RDMA applications in the guest environemnt and the physical RDMA device. During actual data transmission both vRNIC frontend and backend are bypassed.
+On the data path, the key RDMA resources (e.g., QPs and MRs) are directly mapped by the RDMA applications in the guest environment to the physical RDMA device. During actual data transmission both vRNIC frontend and backend are bypassed.
 
 \subsubsection{\textbf{vRNIC Backend}}
 \
 \noindent
 
 %\newline
-The vRNIC backend is implemented as a user-space module in the host system, similar to vhost-user-net~\cite{vhost-user-net}. Compared to kernel-space, there are three advantages for a user-space backend: first, the attack surface is limited to user-space which is of lower risk; second, user mode programming is easier than kernel mode; third, user mode backend can utilize the Verbs API which is a stable abstraction layer.
+The vRNIC backend is implemented as a user-space module in the host system, similar to vhost-user-net~\cite{vhost-user-net}. Compared to kernel-space, there are three advantages for a user-space backend: first, the attack surface is limited to user-space with lower risk; second, user mode programming is easier than that of kernel mode; third, user mode backend can utilize the Verbs API, which is a stable abstraction layer.
 
 % vRNIC作为一个虚拟RDMA设备，vRNIC后端需要维护关于RDMA网卡的硬件属性，与物理RDMA网卡对应，例如RDMA地址vGID，RDMA设备类型等。此外，在vRNIC的运行过程中，vRNIC后端中需要维护三方面的上下文：
 % 1，来自guest的虚拟RDMA上下文信息，主要记录了虚拟RDMA资源的信息；
