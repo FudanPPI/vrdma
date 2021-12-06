@@ -101,7 +101,7 @@ Instantiating vRNIC mainly includes 3 steps: 1) initializing vRNIC attributes; 2
 
 % 绑定vRNIC到物理网卡：vRNIC实例需要依靠物理网卡实现RDMA功能，因此，实例化vRNIC时需要将vRNIC实例与对应的物理RDMA网卡绑定。如果是多网卡设备或者多个网卡接口（如使用SR-IOV），还需确定从vRNIC到对应物理网卡接口的映射关系。
 
-2) Binding vRNIC to the physical RNIC: \sys Core bind the vRNIC instance to the physical RNIC when instantiating. If there are multiple physical RNICs or RNIC interfaces (e.g., Virtual Functions), the \sys Core needs to have a resource allocation algorithm, taking into consideration of the network topology and network load balance.
+2) Binding vRNIC to the physical RNIC: \sys Core binds the vRNIC instance to the physical RNIC when instantiating. If there are multiple physical RNICs or RNIC interfaces~(e.g., Virtual Functions), the \sys Core needs to have a resource allocation algorithm, taking into consideration of the network topology and network load balance.
 
 % 构建vRNIC消息通道：\sys Core需要构建vRNIC后端与vRNIC前端之间的消息通道。对于容器来说，容器与vRNIC后端共享某一IPC命名空间，即可完成vRNIC前端与后端之间的消息交互。对于虚拟机来说，由于vRNIC后端在主机用户空间，而hypervisor位于主机内核空间。为了避免guest的消息先拷贝到hypervisor层再到vRNIC后端，我们构建一块共享内存，以此作为消息通道。具体来说，虚拟机物理内存与vRNIC后端之间是共享的。guest中的任意RDMA消息，均可以直接由vRNIC后端获取，同时也减少了从guest到vRNIC后端的延迟。
 
