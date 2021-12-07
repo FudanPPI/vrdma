@@ -59,19 +59,25 @@ For the containers, the mapping of DoorBells is similar as for the VMs. The only
 %In \sys, we have to modified the Verbs library in the containers so that the RDMA Verbs requests made to the kernel drivers can be redirected to the vRNIC frontends.
 %Note that Verbs APIs in the guest environment are not modified so that \sys is transparent to the guest RDMA applications.
 
-In \sys, a few APIs in the Verbs library in the host user space are modified to support specifying a given memory address to be registered to the physical RNIC devices as key resource memory such as QP and MR. Currently, vanilla Verbs APIs don't allow applications to specify the address of resource memory region. But this capability is essential for \sys to establish a zero-copy data path.
-In order to make these modifications a formal solution and the Verbs library to better support the virtualized RDMA stack, we propose the following modifications to extend the existing Verbs library.
+In \sys, a few APIs in the Verbs library in the host user space are modified to support specifying a given memory address to be registered to the physical RNIC devices as key resource memory, such as QP and MR. Currently, vanilla Verbs APIs don't allow applications to specify the address of resource memory region. But this capability is essential for \sys to establish a zero-copy data path.
+In order to achieve a formal solution and make the Verbs library to better support the virtualized RDMA stack, we propose the following modifications to extend the existing Verbs library.
 
 % (1) 对于QP/CQ: 对于容器应用，在用户态驱动调用mlx4_alloc_buf分配QP/CQ的buffer时， 建议在其中增加使用共享内存的选择。对于虚拟层，在分配qp/cq资源buffer时，建议在用户态驱动调用新的API alloc_assigned_buf代替原有的mlx4_alloc_buf。这个新增的API，将为QP/CQ资源分配指定内存地址的buffer, 其中的地址参数由映射共享内存得到。
 
-\subsubsection{For QP/CQ}
-For the Verbs library used in the containers: When \texttt{mlx4\_alloc\_buf} API is called to allocate QP/CQ buffer, it is recommended to add an option to use shared memory in the parameters, instead of using normal memory.
+\subsubsection{\textbf{For QP/CQ}}
+\
+\noindent
 
-For the Verbs library used in the host: When vRNIC backend creating QP/CQ, a new API \texttt{alloc\_assigned\_buf} is suggested that instead of existing \texttt{mlx4\_alloc\_buf} API. This new API will use the memory address specified in the parameters to be used as the QP/CQ buffers, instead of allocating a new memory.
+For the Verbs library used in the containers: When \texttt{mlx4\_alloc\_buf} API is called to allocate QP/CQ buffer, it is recommended to add an option to use shared memory in the parameters instead of using normal memory.
+
+For the Verbs library used in the host: When vRNIC backend creates QP/CQ, a new API \texttt{alloc\_assigned\_buf} is suggested that instead of existing \texttt{mlx4\_alloc\_buf} API. This new API will use the memory address specified in the parameters to be used as the QP/CQ buffers instead of allocating a new memory.
 
 % (2) 对于MR: 对于容器应用，我们建议应用使用共享内存注册MR。如果已有的应用未使用共享内存注册MR，在Verbs库ibv_reg_mr中，建议增加重新映射MR buffer到共享内存的选项。对于虚拟层，为了让虚拟机RDMA应用的数据路径与原生一致，需要将虚拟机MR的页表缓存到物理网卡中，以支持虚拟机RDMA应用的数据路径。为此，我们建议虚拟层Verbs中增加一个ibv_reg_guest_mr API. 该API比原生的注册MR函数ibv_reg_mr多一个参数，GVA，用以将GVA传递到RDMA内核OFED模块。同时，原生OFED模块也需进行适配性的改动，以通过GVA参数，将虚拟机MR的页表缓存到物理网卡。 经过以上扩展，数据路径上，虚拟机应用可以直接使用本地地址GVA，无需转换为虚拟层MR的地址HVA，也不用缓存本地/远端MR GVA和HVA之间的映射关系。
 
-\subsubsection{For MR}
+\subsubsection{\textbf{For MR}}
+\
+\noindent
+
 For the Verbs library used in the containers: We recommend that applications register MR in the shared memory region. For existing applications who does not use shared memory for MR, we recommend to add an option for remapping the MR buffer to shared memory in the Verbs API \texttt{ibv\_reg\_mr}.
 
 For the Verbs library used in the host: It is desired to register the GVA and HPA of the MR to the physical RNIC, so that when the RDMA application specifies the virtual address of a data, the physical RNIC can lookup the physical address and send the data.
