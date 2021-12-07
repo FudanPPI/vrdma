@@ -26,20 +26,23 @@ Based on the RDMA benchmark test tool perftest~\cite{perftest}, we evaluated the
 \
 \noindent
 
-The results of two-sided operation are shown in Figure~\ref{fig:send-bw}, and the one of one-sided operation are shown in Figure~\ref{fig:write-bw}. For one-sided operation \sys in virtual machine has readched 3.8$\%$ and 2.9$\%$ lower of native RDMA and SR-IOV. The container scenario gets 2.0$\%$ and 1.0$\%$ lower throughput than native RDMA and SR-IOV. For two-sided operation, The virtual machine scenario has 1.6$\%$ and 1.1$\%$ lower throughput than native RDMA and SR-IOV. In the container scenario, the throughput are 1.4$\%$ and 0.4$\%$ lower that of native RDMA and SR-IOV.
+As the data show in Figure~\ref{fig:write-bw} and Figure~\ref{fig:send-bw}, \sys can achieve comparable throughput compared with SR-IOV and native RDMA. For one-sided mode as the data in Figure~\ref{fig:write-bw} show, the average throughput of \sys VM has only 2.9$\%$ slowdown to that of SR-IOV and 3.8$\%$ slowdown to that of native RDMA. And the average throughput of \sys container has only 2.0$\%$ slowdown to that of native RDMA. For two-sided mode as the data in Figure~\ref{fig:send-bw} show, the average throughput of \sys VM has only 1.1$\%$ slowdown to that of SR-IOV and 1.6$\%$ slowdown to that of native RDMA. And the average throughput of \sys container has only 1.4$\%$ slowdown to that of native RDMA.
 
-\begin{figure}[!ht]
-	\centering
-	\includegraphics[width=1.0\linewidth]{images/send-bw.pdf}
-	\caption{The Throughout of RDMA Send and Recv}
-	\label{fig:send-bw}
-\end{figure}
+
 
 \begin{figure}[!ht]
 	\centering
 	\includegraphics[width=1.0\linewidth]{images/write-bw.pdf}
-	\caption{The Throughout of RDMA Write}
+	\caption{The throughout of one-sided mode.}
 	\label{fig:write-bw}
+\end{figure}
+
+
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[width=1.0\linewidth]{images/send-bw.pdf}
+	\caption{The throughout of two-sided mode.}
+	\label{fig:send-bw}
 \end{figure}
 
 Compared with FreeFlow, when the message is small, the throughput of \sys has reached 4-6 times that of FreeFlow. Because FreeFlow forwards all data commands to the software virtualization layer for processing. Therefore, the forward latency gradually accumulates and decrease the throughput significantly. However, \sys maps all RDMA resources to execute data commands in the user space of the container or virtual machine. Therefore, there is no latency for commands forwarding in data path.
