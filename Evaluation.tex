@@ -80,7 +80,7 @@ As the applications scalability and servers' hardware capabilities rise, multipl
 
 In this paper, we use aggregate throughput, which is the sum of the throughput of multiple parallel RDMA flows at the same time, to measure the scalability of \sys. The thoughput of a individual RDMA flow is fluctating at each moment and the instant RDMA throughput is difficult to align between multiple RDMA flows. Therefore, we collect and summarize the average throughput of each RDMA flow at a certain time segment to obtain the aggregate throughput.
 
-We used one-sided operation (``ib\_write\_bw'' in ~\cite{perftest}) with 2, 4, 8, 16, 32 and 64 virtual instance pairs which send data (65536 Bytes) continuously on two hosts. As shown in FigureXXX, in the VM-only scenario, container-only scenario and hybrid scenario \sys has a good scalibility, that is, the throughput in average is reduced by less than 1.4\% when the number of virtual instance pair is up to 64.
+We used one-sided operation (``ib\_write\_bw'' in ~\cite{perftest}) with 2, 4, 8, 16, 32 and 64 virtual instance pairs which send data (65536 Bytes) continuously on two hosts. As shown in FigureXXX, in the VM-only scenario, container-only scenario and hybrid scenario \sys has a good scalability, that is, the throughput in average is reduced by less than 1.4\% when the number of virtual instance pair is up to 64.
 
 The reason that the number of virtual instance pairs is up to 64 is that the maximum support VF for RNIC is 63, that is only up to 63 VMs are supported for RDMA virtualization.
 
