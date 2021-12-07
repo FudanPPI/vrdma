@@ -56,7 +56,7 @@ Compared with FreeFlow, when the message is small, the throughput of \sys has re
 \
 \noindent
 
-The results of two-sided operation are shown in Figure~\ref{fig:send-lat}, and the one of one-sided operation are shown in Figure~\ref{fig:write-lat}. \sys can achieve comparable letency compared with SR-IOV and native RDMA. When the message gradually increases, such as reaching 64KB, the latency of each framework tends to be consistent. Because the main latency has been caused by RNIC data processing.
+The results of two-sided operation are shown in Figure~\ref{fig:send-lat}, and the one of one-sided operation are shown in Figure~\ref{fig:write-lat}. \sys can achieve comparable letency compared with SR-IOV and native RDMA. The latency gradually increases as the forwarding message becomes larger because the main latency has been caused by RNIC data processing.
 
 For two-sided operation, the latency of virtual machine is 15\% higher than native RDMA and 5\% higher than SR-IOV. The latency of container is 15\% higher than native RDMA. For one-sided operation, \sys in virtual machine leads to 11\% and 6\% higher latency compared with native RDMA and SR-IOV. The container scenario offers 4\% higher latency than native RDMA. 
 
