@@ -18,35 +18,40 @@ Each host server is equipped with 4 Intel Xeon E7-4850 2.40GHz 16-core CPUs and 
 \subsection{Basic Evaluation}
 
 
-Throughput and latency are the key target of network performance. RDMA supports two different data transmission modes: one-sided and two-sided. Due to the difference performance between them, we evaluate them respectively.
+Throughput and latency are the key targets of network performance. RDMA supports two different data transmission modes: one-sided and two-sided. Due to the difference performance between them, we evaluate them respectively.
 
-Based on the RDMA benchmark test tool perftest~\cite{perftest}, we evaluated the performance~(throughput and latency) of native RDMA, hardware virtualization SR-IOV,  software virtualization~(FreeFlow) and \sys in VMs or containers. We don't compared the performance of \sys with that of MasQ because it is not open-sourced. For two-sided operations~(Send and Recv), we use ``ib\_send\_bw'' and ``ib\_send\_lat'' commands; for one-sided write operations, we use ``ib\_write\_bw'' and ``ib\_write\_lat'' commands; for one-sided read operation, we use ``ib\_read\_bw'' and ``ib\_read\_lat'' commands. The specific process is: after the RDMA connection is established between the client and the server, the message bytes are transmitted message. The message sizes are from 4B to 1MB. For each message size,  it is evaluated iteratively 1000 times and the average results are used for evaluation.  
+Based on the RDMA benchmark test tool perftest~\cite{perftest}, we evaluated the performance~(throughput and latency) of native RDMA, hardware virtualization SR-IOV,  software virtualization~(FreeFlow) and \sys in VMs or containers. We don't compared the performance of \sys with that of MasQ because it is not open-sourced. For one-sided write operations, we use ``ib\_write\_bw'' and ``ib\_write\_lat'' commands; for one-sided read operation, we use ``ib\_read\_bw'' and ``ib\_read\_lat'' commands. For two-sided operations~(Send and Recv), we use ``ib\_send\_bw'' and ``ib\_send\_lat'' commands. The specific process is: after the RDMA connection is established between the client and the server, the message bytes are transmitted. The message sizes are from 4B to 1MB. For each message size,  it is evaluated iteratively 1000 times and the average results are used for evaluation.  
 
 \subsubsection{\textbf{Throughput}}
 \
 \noindent
 
-The results of two-sided operation are shown in Figure~\ref{fig:send-bw}, and the one of one-sided operation are shown in Figure~\ref{fig:write-bw}. For one-sided operation \sys in virtual machine has readched 3.8$\%$ and 2.9$\%$ lower of native RDMA and SR-IOV. The container scenario gets 2.0$\%$ and 1.0$\%$ lower throughput than native RDMA and SR-IOV. For two-sided operation, The virtual machine scenario has 1.6$\%$ and 1.1$\%$ lower throughput than native RDMA and SR-IOV. In the container scenario, the throughput are 1.4$\%$ and 0.4$\%$ lower that of native RDMA and SR-IOV.
+As the data show in Figure~\ref{fig:write-bw} and Figure~\ref{fig:send-bw}, \sys can achieve comparable throughput compared with SR-IOV and native RDMA. When the message gradually increases, such as reaching 64KB, the throughput of each framework tends to be consistent. The reason is that the bandwidth is saturated, and the delay overhead of FreeFlow has been covered by waiting delay in RNIC.
 
-\begin{figure}[!ht]
-	\centering
-	\includegraphics[width=1.0\linewidth]{images/send-bw.pdf}
-	\caption{The Throughout of RDMA Send and Recv}
-	\label{fig:send-bw}
-\end{figure}
+For one-sided mode as the data in Figure~\ref{fig:write-bw} show, the average throughput of \sys VM has only 2.9$\%$ slowdown to that of SR-IOV and 3.8$\%$ slowdown to that of native RDMA. And the average throughput of \sys container has only 2.0$\%$ slowdown to that of native RDMA. For two-sided mode as the data in Figure~\ref{fig:send-bw} show, the average throughput of \sys VM has only 1.1$\%$ slowdown to that of SR-IOV and 1.6$\%$ slowdown to that of native RDMA. And the average throughput of \sys container has only 1.4$\%$ slowdown to that of native RDMA.
+
+
 
 \begin{figure}[!ht]
 	\centering
 	\includegraphics[width=1.0\linewidth]{images/write-bw.pdf}
-	\caption{The Throughout of RDMA Write}
+	\caption{The throughout of one-sided mode.}
 	\label{fig:write-bw}
+\end{figure}
+
+
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[width=1.0\linewidth]{images/send-bw.pdf}
+	\caption{The throughout of two-sided mode.}
+	\label{fig:send-bw}
 \end{figure}
 
 Compared with FreeFlow, when the message is small, the throughput of \sys has reached 4-6 times that of FreeFlow. Because FreeFlow forwards all data commands to the software virtualization layer for processing. Therefore, the forward latency gradually accumulates and decrease the throughput significantly. However, \sys maps all RDMA resources to execute data commands in the user space of the container or virtual machine. Therefore, there is no latency for commands forwarding in data path.
 
 
 
-When the message gradually increases, such as reaching 64KB, the throughput of each framework tends to be consistent. The reason is that the bandwidth is saturated, and the delay overhead of FreeFlow has been covered by waiting delay in RNIC.
+
 
 \subsubsection{\textbf{Latency}}
 \
