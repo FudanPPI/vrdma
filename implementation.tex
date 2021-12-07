@@ -1,19 +1,15 @@
 \section{Implementation} \label{impl}
-We implement the \sys system in Linux environment. The hypervisor of VM is QEMU/KVM and the container engine is Docker. The vRNIC frontends for VMs and containers are implemented differently. The \sys Core (with vRNIC backends) includes about 2000 lines of code.
-And in the management node, Zookeeper~\cite{zookeeper} is used to keep the information for RDMA resources (such as RDMA address mappings and the numbers of VFs) and the policies (such as QP limit and QoS).
-In addition, we modified the \textit{libibverbs-41mlnx1} Verbs library, the library \textit{librdma-cm} for connection management, and the \textit{libmlx4-41mlnx1} user-space RNIC driver.
+We implement the \sys system in Linux environment. The hypervisor of VM is QEMU/KVM and the container engine is Docker. The vRNIC frontends for VMs and containers are implemented differently. The \sys Core~(with vRNIC backends) includes about 2000 lines of code.
+And in the management node, Zookeeper~\cite{zookeeper} is used to keep the information for RDMA resources~(such as RDMA address mappings and the numbers of VFs) and the policies~(such as QP limit and QoS).
+In addition, we modified the \textit{libibverbs-41mlnx1} Verbs library, the \textit{librdma-cm} Verbs library for connection management, and the \textit{libmlx4-41mlnx1} user-space RNIC driver.
 And some minor modifications are made to the host OS kernel, such as caching GPA into RNIC and mapping DoorBells. In this section, some implementation details are introduced.
 
 % 资源映射：根据资源所属于的物理地址空间，RDMA通信过程中主要有两类资源：内存资源（QP等），和设备资源（门铃）.
 \subsection{Resource Mapping}
 
-There are mainly two kinds of resources for RDMA: memory resources (e.g., QPs, MRs) and device resources (e.g., DoorBells). 
+There are mainly two kinds of resources for RDMA: memory resources~(e.g., QPs, MRs) and device resources~(e.g., DoorBells). 
 
 % 对于内存资源: 在虚拟机中, 我们利用vhost-user的半虚拟化技术构建vRNIC后端，vRNIC后端可以与虚拟机共享整块内存。 在具体操作中，需要先借助vRNIC前端将GVA转换为GPA；然后，在vRNIC后端中，由于vRNIC后端已经和虚拟机共享整块内存，因此，GPA可以被线性转换为HVA。但是，从GVA到GPA的转换由于guest OS的内存管理， 可能存在非线性的不连续现象，进一步导致vRNIC后端中映射的HVA区域也是不连续的。此时，在后端可以利用mremap系统调用重新映射虚拟内存，以将对应的物理页面映射到连续的HVA区间.
-
-For memory resources, the mapping in VMs is shown in Figure \ref{fig:qp-map}. \sys maps the whole physical memory of the VM to the memory space of the corresponding vRNIC backend. Different processes can map to the same physical memory through the shared memory file handler. (1) The application in the guest allocates the QP buffer, and the buffer is using the shared memory in the host. The physical pages in the guest is pinned in the guest kernel. (2) The vRNIC backend receive the GPA of the QP buffer. Note that the GPA may not be contiguous. If we directly map the shared memory file through dis-contiguous GPA (offsets), the obtained HVA are also discontiguous and cannot be used as the QP buffer. Thus, the vRNIC backend remap the corresponding shared memory to a new contiguous virtual memory, and use it as the virtual address of the QP buffer.
-
-The mapping in containers is simple. The application in the container explicitly allocates the shared memory as the QP buffer in the \sys-modified Verbs library. The vRNIC backend directly use the memory region by mapping the corresponding shared memory file.
 
 \begin{figure}[!ht]
 	\centering
@@ -22,9 +18,12 @@ The mapping in containers is simple. The application in the container explicitly
 	\label{fig:qp-map}
 \end{figure}
 
-For RDMA device resources, the mapping in VMs is as shown in Figure \ref{fig:db-map}. (1) The application in the guest request the DB HPA handle to the vRNIC backend. (2) The application vRNIC backend receive the request and map the physical DoorBell. (3) The vRNIC backend obtain the DB HPA handle through the helper module in the host OS kernel and return the handle to the application in the guest. (4) The vRNIC backend map a virtual DoorBell, forwards the GPA and DB HPA handle to the helper module in the host OS kernel, and the helper module translate the GPA to VM HVA. (5) The helper module remaps the VM HVA to the DB HPA. The helper module is implemented based on the para-virtrualization vhost modules.
+For memory resources, the mapping in VMs is shown in Figure~\ref{fig:qp-map}. \sys maps the whole physical memory of the VM to the memory space of the corresponding vRNIC backend. Different processes can map to the same physical memory through the shared memory file handler. As shown in Figure~\ref{fig:qp-map}, the detailed steps are as follows: (1) The application in the guest allocates the QP buffer, and the buffer is using the shared memory in the host. The physical pages in the guest is pinned in the guest kernel. (2) The vRNIC backend receives the GPA of the QP buffer. Note that the GPA may not be contiguous. If we directly map the shared memory file through dis-contiguous GPA (offsets), the obtained HVA are also discontiguous and cannot be used as the QP buffer. Thus, the vRNIC backend remap the corresponding shared memory to a new contiguous virtual memory, and use it as the virtual address of the QP buffer.
 
-For the containers, the mapping of DoorBells is similar as for the VMs. The only difference is that the application in the container directly forwards the virtual memory address to the helper module in the host OS kernel, through a simple costumed device driver interface.
+
+
+The mapping in containers is simple. The application in the container explicitly allocates the shared memory as the QP buffer in the \sys-modified Verbs library. The vRNIC backend directly use the memory region by mapping the corresponding shared memory file.
+
 
 \begin{figure}[!ht]
 	\centering
@@ -32,6 +31,11 @@ For the containers, the mapping of DoorBells is similar as for the VMs. The only
 	\caption{DoorBell mapping}
 	\label{fig:db-map}
 \end{figure}
+
+For RDMA device resources, the mapping in VMs is as shown in Figure \ref{fig:db-map}. The detailed steps are as follows: (1) The application in the guest requests the DB HPA handle to the vRNIC backend. (2) The vRNIC backend receives the request and maps the physical DoorBell. (3) The vRNIC backend obtains the DB HPA handler through the helper module in the host OS kernel and returns the handle to the application in the guest. (4) The vRNIC backend maps a virtual DoorBell, forwards the GPA and DB HPA handler to the helper module in the host OS kernel, and the helper module translates the GPA to VM HVA. (5) The helper module remaps the VM HVA to the DB HPA. The helper module is implemented based on the para-virtrualization vhost modules.
+
+For the containers, the mapping of DoorBells is similar as for the VMs. The only difference is that the application in the container directly forwards the virtual memory address to the helper module in the host OS kernel, through a simple customized device driver interface.
+
 
 %\subsection{Register MR in the Host}
 
