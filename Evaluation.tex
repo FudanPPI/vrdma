@@ -26,7 +26,9 @@ Based on the RDMA benchmark test tool perftest~\cite{perftest}, we evaluated the
 \
 \noindent
 
-As the data show in Figure~\ref{fig:write-bw} and Figure~\ref{fig:send-bw}, \sys can achieve comparable throughput compared with SR-IOV and native RDMA. For one-sided mode as the data in Figure~\ref{fig:write-bw} show, the average throughput of \sys VM has only 2.9$\%$ slowdown to that of SR-IOV and 3.8$\%$ slowdown to that of native RDMA. And the average throughput of \sys container has only 2.0$\%$ slowdown to that of native RDMA. For two-sided mode as the data in Figure~\ref{fig:send-bw} show, the average throughput of \sys VM has only 1.1$\%$ slowdown to that of SR-IOV and 1.6$\%$ slowdown to that of native RDMA. And the average throughput of \sys container has only 1.4$\%$ slowdown to that of native RDMA.
+As the data show in Figure~\ref{fig:write-bw} and Figure~\ref{fig:send-bw}, \sys can achieve comparable throughput compared with SR-IOV and native RDMA. When the message gradually increases, such as reaching 64KB, the throughput of each framework tends to be consistent. The reason is that the bandwidth is saturated, and the delay overhead of FreeFlow has been covered by waiting delay in RNIC.
+
+For one-sided mode as the data in Figure~\ref{fig:write-bw} show, the average throughput of \sys VM has only 2.9$\%$ slowdown to that of SR-IOV and 3.8$\%$ slowdown to that of native RDMA. And the average throughput of \sys container has only 2.0$\%$ slowdown to that of native RDMA. For two-sided mode as the data in Figure~\ref{fig:send-bw} show, the average throughput of \sys VM has only 1.1$\%$ slowdown to that of SR-IOV and 1.6$\%$ slowdown to that of native RDMA. And the average throughput of \sys container has only 1.4$\%$ slowdown to that of native RDMA.
 
 
 
@@ -49,7 +51,7 @@ Compared with FreeFlow, when the message is small, the throughput of \sys has re
 
 
 
-When the message gradually increases, such as reaching 64KB, the throughput of each framework tends to be consistent. The reason is that the bandwidth is saturated, and the delay overhead of FreeFlow has been covered by waiting delay in RNIC.
+
 
 \subsubsection{\textbf{Latency}}
 \
