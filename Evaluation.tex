@@ -52,7 +52,7 @@ When the message gradually increases, such as reaching 64KB, the throughput of e
 \
 \noindent
 
-The results of two-sided operation are shown in Figure~\ref{fig:send-lat}, and the one of one-sided operation are shown in Figure~\ref{fig:write-lat}. For two-sided operation, the latency of virtual machine is 15$\%$ higher than native RDMA and 5$\%$ higher than SR-IOV. The latency of container is 15$\%$ and 6$\%$ higher than native RDMA and SR-IOV respectively. For one-sided operation, \sys in virtual machine leads to 11$\%$ and 6$\%$ higher latency compared with native RDMA and SR-IOV. A container scenario offers 4$\%$ and 1$\%$ higher latency than native RDMA and SR-IOV. 
+The results of two-sided operation are shown in Figure~\ref{fig:send-lat}, and the one of one-sided operation are shown in Figure~\ref{fig:write-lat}. For two-sided operation, the latency of virtual machine is 15$\%$ higher than native RDMA and 5$\%$ higher than SR-IOV. The latency of container is 15$\%$ and 6$\%$ higher than native RDMA and SR-IOV respectively. For one-sided operation, \sys in virtual machine leads to 11$\%$ and 6$\%$ higher latency compared with native RDMA and SR-IOV. The container scenario offers 4$\%$ and 1$\%$ higher latency than native RDMA and SR-IOV. 
 
 Compared with FreeFlow, when the message is small, the latency of \sys has reached 40\% to 60\% of FreeFlow because of FreeFlow's forwarding latency. Also, when the message gradually increases, such as reaching 64KB, the latency of each framework tends to be consistent. Because the main latency has been caused by RNIC data processing.
 
@@ -69,6 +69,18 @@ Compared with FreeFlow, when the message is small, the latency of \sys has reach
 	\caption{The Latencty of RDMA Write}
 	\label{fig:write-lat}
 \end{figure}
+
+\subsection{Scalability}
+\
+\noindent
+
+As the applications scalability and servers' hardware capabilities rise, multiple VM and container istances are deployed on a same host. VMs and containers have orders of magnitude far beyond the number of hosts, leaving a great challenge to RDMA virtualization. 
+
+In this paper, we use aggregate throughput, which is the sum of the throughput of multiple parallel RDMA flows at the same time, to measure the scalability of \sys. The thoughput of a individual RDMA flow is fluctating at each moment and the instant RDMA throughput is difficult to align between multiple RDMA flows. Therefore, we collect and summarize the average throughput of each RDMA flow at a certain time segment to obtain the aggregate throughput.
+
+We used one-sided operation (``ib\_write\_bw'' in ~\cite{perftest}) with 2, 4, 8, 16, 32 and 64 virtual instance pairs which send data (65536 Bytes) continuously on two hosts. As shown in FigureXXX, in the VM-only scenario, container-only scenario and hybrid scenario \sys has a good scalibility, that is, the throughput in average is reduced by less than 1.4\% when the number of virtual instance pair is up to 64.
+
+The reason that the number of virtual instance pairs is up to 64 is that the maximum support VF for RNIC is 63, that is only up to 63 VMs are supported for RDMA virtualization.
 
 \subsection{Real-world Applications}
 \
@@ -88,4 +100,4 @@ maximum throughput on \sys and native is 11.6 Miops. And in the virtual machines
 	\label{fig:rpc}
 \end{figure}
 
-\subsection{Scalability}
+
