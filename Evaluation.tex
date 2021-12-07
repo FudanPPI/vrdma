@@ -56,13 +56,6 @@ Compared with FreeFlow, when the message is small, the throughput of \sys has re
 \
 \noindent
 
-The results of two-sided operation are shown in Figure~\ref{fig:send-lat}, and the one of one-sided operation are shown in Figure~\ref{fig:write-lat}. \sys can achieve comparable letency compared with SR-IOV and native RDMA. The latency gradually increases as the forwarding message becomes larger because the main latency has been caused by RNIC data processing.
-
-For two-sided operation, the latency of virtual machine is 15\% higher than native RDMA and 5\% higher than SR-IOV. The latency of container is 15\% higher than native RDMA. For one-sided operation, \sys in virtual machine leads to 11\% and 6\% higher latency compared with native RDMA and SR-IOV. The container scenario offers 4\% higher latency than native RDMA. 
-
-Compared with FreeFlow, when the message is small, the latency of \sys has reached 40\% to 60\% of FreeFlow because the overhead of forwarding data path commands to the virtual layer becomes the main latency. \sys removes this problem by removing context switching and copy between virtual instances and the virtual layer.
-
-
 \begin{figure}[!ht]
 	\centering
 	\includegraphics[width=1.0\linewidth]{images/write-lat.pdf}
@@ -77,6 +70,15 @@ Compared with FreeFlow, when the message is small, the latency of \sys has reach
 	\caption{The latencty of two-sided mode.}
 	\label{fig:send-lat}
 \end{figure}
+
+The results of two-sided operation are shown in Figure~\ref{fig:send-lat}, and the one of one-sided operation are shown in Figure~\ref{fig:write-lat}. \sys can achieve comparable letency compared with SR-IOV and native RDMA. The latency gradually increases as the forwarding message becomes larger because the main latency has been caused by RNIC data processing.
+
+For two-sided operation, the latency of virtual machine is 15\% higher than native RDMA and 5\% higher than SR-IOV. The latency of container is 15\% higher than native RDMA. For one-sided operation, \sys in virtual machine leads to 11\% and 6\% higher latency compared with native RDMA and SR-IOV. The container scenario offers 4\% higher latency than native RDMA. 
+
+Compared with FreeFlow, when the message is small, the latency of \sys has reached 40\% to 60\% of FreeFlow because the overhead of forwarding data path commands to the virtual layer becomes the main latency. \sys removes this problem by removing context switching and copy between virtual instances and the virtual layer.
+
+
+
 
 
 \subsection{Scalability}
