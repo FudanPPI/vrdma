@@ -2,7 +2,7 @@
 In this section, we evaluate the performance of \sys based on the RDMA test tools and real applications. We expect to answer the following questions:
 
 \begin{itemize}
-\item How about the performance of \sys compared to that of native RDMA for both VMs and containers?
+\item How about the performance of \sys compared to that of \native for both VMs and containers?
 \item Can \sys be adapted to the real-world RDMA applications in both VMs or containers?
 \item How about the scalability of \sys?
 \end{itemize}
@@ -17,19 +17,13 @@ Each host server is equipped with 4 Intel Xeon E7-4850 2.40GHz 16-core CPUs and 
 
 \subsection{Basic Evaluation}
 
-Throughput and latency are the key targets of network performance. Latency is the time taken for a packet to be transferred. Throughput is the quantity of data (some packets) to be transferred within a unit of time.\dw{explain} RDMA supports two different data transmission modes: one-sided and two-sided. Due to the difference performance between them, we evaluate them respectively.
+Throughput and latency are the key targets of network performance. Latency is the time taken for a packet to be transferred. Throughput is the quantity of data~(some packets) to be transferred within a unit of time. RDMA supports two different data transmission modes: one-sided and two-sided. Due to the difference performance between them, we evaluate them respectively.
 
-Based on the RDMA benchmark test tool perftest~\cite{perftest}, we evaluated the performance~(throughput and latency) of native RDMA, hardware virtualization SR-IOV,  software virtualization~(FreeFlow) and \sys in VMs or containers. We don't compared the performance of \sys with that of MasQ because it is not open-sourced. For one-sided write operations, we use ``ib\_write\_bw'' and ``ib\_write\_lat'' commands; for one-sided read operation, we use ``ib\_read\_bw'' and ``ib\_read\_lat'' commands. For two-sided operations~(Send and Recv), we use ``ib\_send\_bw'' and ``ib\_send\_lat'' commands. The specific process is: after the RDMA connection is established between the client and the server, the message bytes are transmitted. The message sizes are from 4B to 1MB. For each message size,  it is evaluated iteratively 1000 times and the average results are used for evaluation.  
+Based on the RDMA benchmark test tool perftest~\cite{perftest}, we evaluated the performance~(throughput and latency) of \native, hardware virtualization SR-IOV,  software virtualization~(FreeFlow) and \sys in VMs or containers. We don't compared the performance of \sys with that of MasQ because it is not open-sourced. For one-sided write operations, we use ``ib\_write\_bw'' and ``ib\_write\_lat'' commands; for one-sided read operation, we use ``ib\_read\_bw'' and ``ib\_read\_lat'' commands. For two-sided operations~(Send and Recv), we use ``ib\_send\_bw'' and ``ib\_send\_lat'' commands. The specific process is: after the RDMA connection is established between the client and the server, the message bytes are transmitted. The message sizes are from 4B to 1MB. For each message size,  it is evaluated iteratively 1000 times and the average results are used for evaluation.  
 
 \subsubsection{\textbf{Throughput}}
 \
 \noindent
-
-As the data show in Figure~\ref{fig:write-bw} and Figure~\ref{fig:send-bw}, \sys can achieve comparable throughput compared with SR-IOV and native RDMA. When the message gradually increases, such as reaching 64KB, the throughput of each framework tends to be consistent~(from 2K byte message size). The reason is that the bandwidth of RDMA netwrok is saturated after that. %, and the delay overhead of FreeFlow has been covered by waiting delay in RNIC.
-
-For one-sided mode as the data in Figure~\ref{fig:write-bw} show, the average throughput of \sys VM has only 2.9$\%$ slowdown to that of SR-IOV and 3.8$\%$ slowdown to that of native RDMA. And the average throughput of \sys container has only 2.0$\%$ slowdown to that of native RDMA. For two-sided mode as the data in Figure~\ref{fig:send-bw} show, the average throughput of \sys VM has only 1.1$\%$ slowdown to that of SR-IOV and 1.6$\%$ slowdown to that of native RDMA. And the average throughput of \sys container has only 1.4$\%$ slowdown to that of native RDMA.
-
-
 
 \begin{figure}[!ht]
 	\centering
@@ -46,7 +40,15 @@ For one-sided mode as the data in Figure~\ref{fig:write-bw} show, the average th
 	\label{fig:send-bw}
 \end{figure}
 
-Compared with FreeFlow, when the message is small, the throughput of \sys has reached 4-6 times that of FreeFlow. Because FreeFlow forwards all data commands to the software virtualization layer for processing. Therefore, the forward latency gradually accumulates and decrease the throughput significantly. However, \sys maps all RDMA resources to execute data commands in the user space of the container or virtual machine. Therefore, there is no latency for commands forwarding in data path.
+
+As the data show in Figure~\ref{fig:write-bw} and Figure~\ref{fig:send-bw}, \sys can achieve comparable throughput compared with SR-IOV and \native. When the message gradually increases, such as reaching 64KB, the throughput of each framework tends to be consistent~(from 2K byte message size). The reason is that the bandwidth of RDMA netwrok is saturated after that. %, and the delay overhead of FreeFlow has been covered by waiting delay in RNIC.
+
+For one-sided mode as the data in Figure~\ref{fig:write-bw} show, the average throughput of \sys VM has only 2.9$\%$ slowdown to that of SR-IOV and 3.8$\%$ slowdown to that of \native. And the average throughput of \sys container has only 2.0$\%$ slowdown to that of \native. For two-sided mode as the data in Figure~\ref{fig:send-bw} show, the average throughput of \sys VM has only 1.1$\%$ slowdown to that of SR-IOV and 1.6$\%$ slowdown to that of \native. And the average throughput of \sys container has only 1.4$\%$ slowdown to that of \native.
+
+
+
+
+Compared with FreeFlow, when the message is small, the throughput of \sys has reached 4-6 times that of FreeFlow. Because FreeFlow forwards all data commands to the software virtualization layer for processing and these data are copied to the RDMA hardware. Additional memory copies involve large performance overhead. In contrast, \sys maps all RDMA resources to execute data commands in the guest user space of VMs or containers. Therefore, there is no latency for data forwarding in data path.
 
 
 
@@ -55,13 +57,6 @@ Compared with FreeFlow, when the message is small, the throughput of \sys has re
 \subsubsection{\textbf{Latency}}
 \
 \noindent
-
-The latency results are shown in~\ref{fig:write-lat} and \ref{fig:send-lat}. As these data show, \sys can achieve comparable letency results compared with SR-IOV and native RDMA. The latency gradually increases as the forwarding message size becomes larger because the large message needs to be sliced into small message for network package transmission.
-
-For one-sided mode, \sys in VMs leads to 6\% and 11\% overhead compared with SR-IOV and native RDMA. \sys in containers involves 4\% overhead to native RDMA. For two-sided mode, the latency of \sys in VMs is 5\% higher than that of SR-IOV and 15\% higher than native RDMA. The latency of \sys in containers is 15\% higher than that of native RDMA.
-
-Compared with FreeFlow, when the message is small, the latency of \sys is only 40\% to 60\% of FreeFlow because the overhead of forwarding data path commands to the virtual layer becomes the main latency\zwh{more explanations}. \sys removes this problem by removing context switching and copy between virtual instances and the virtual layer.
-
 
 \begin{figure}[!ht]
 	\centering
@@ -78,32 +73,41 @@ Compared with FreeFlow, when the message is small, the latency of \sys is only 4
 	\label{fig:send-lat}
 \end{figure}
 
+The latency results are shown in~\ref{fig:write-lat} and \ref{fig:send-lat}. As these data show, \sys can achieve comparable letency results compared with SR-IOV and \native. The latency gradually increases as the forwarding message size becomes larger because the large message needs to be sliced into small message for network package transmission.
+
+For one-sided mode, \sys in VMs leads to 6\% and 11\% overhead compared with SR-IOV and \native. \sys in containers involves 4\% overhead to \native. For two-sided mode, the latency of \sys in VMs is 5\% higher than that of SR-IOV and 15\% higher than \native. The latency of \sys in containers is 15\% higher than that of \native.
+
+Compared with FreeFlow, when the message is small, the latency of \sys is only 40\% to 60\% of FreeFlow because the overhead of additional data copy on path commands for FreeFlow involves large overhead. 
+
+
+
+
 
 \subsection{Scalability}
 
-As the applications scalability and servers' hardware capabilities rise, multiple VM and container istances are deployed on a same host. VMs and containers have orders of magnitude far beyond the number of hosts, leaving a great challenge to RDMA virtualization. 
+With the scale of the applications and datacenter capacity rising, more and more VM instances and container istances are deployed. Thus, the scability has been a key design metric for RDMA virtualization.
 
-In this paper, we use aggregate throughput, which is the sum of the throughput of multiple parallel RDMA flows at the same time, to measure the scalability of \sys\zwh{citation}. Aggregate throughput is widely used in many project (e.g. FreeFlow~\cite{kim2019freeflow}, HyV~\cite{pfefferle2015hybrid} and MasQ~\cite{he2020masq}) to mesure their scalability. If the aggregate throughput of multiple parallel RDMA flows is closer to the hardware throughput, the cost of RDMA virtualization is smaller that is \sys has a good scalability.\dw{explain}. The thoughput of a individual RDMA flow is fluctating at each moment and the instant RDMA throughput is difficult to align between multiple RDMA flows. Therefore, we collect and summarize the average throughput of each RDMA flow at a certain time segment to obtain the aggregate throughput.
+To evaluate the scalability of \sys, we use aggregate throughput, which is the sum of the throughput of multiple parallel RDMA flows at the same time and has been widely used in prior works(e.g. FreeFlow~\cite{kim2019freeflow}, HyV~\cite{pfefferle2015hybrid} and MasQ~\cite{he2020masq}) ~\zwh{more citations} ~\dw{add citations}, to measure the scalability of \sys. If the aggregate throughput of multiple parallel RDMA flows is closer to the hardware throughput, the cost of RDMA virtualization is smaller, which illustrate \sys has a good scalability. The thoughput of a individual RDMA flow is fluctating at each moment and the instant RDMA throughput is difficult to align among multiple RDMA flows. Therefore, we collect and summarize the average throughput of each RDMA flow in 1 second~(\zwh{the detailed value, such as 5s, 1 min or?}) \dw{add time} to obtain the average aggregate throughput.
 
-We used one-sided operation (``ib\_write\_bw'' in ~\cite{perftest}) with 2, 4, 8, 16, 32 and 64 virtual instance pairs which send data (65536 Bytes) continuously on two hosts. As shown in Figure~\ref{fig:scabality}, in the VM-only scenario, container-only scenario and hybrid scenario \sys has a good scalability, that is, the throughput in average is reduced by less than 1.4\% when the number of virtual instance pair is up to 64.
+We used one-sided operation (``ib\_write\_bw'' in ~\cite{perftest}) with 2, 4, 8, 16, 32 and 64 virtual instance pairs which continuously send data (65536 Bytes) between two paris. Since the RNICs in our evaluation only supports upto 64 VFs, we use 64 instances as the maximal evaluation value.
 
-The reason that the number of virtual instance pairs is up to 64 is that the maximum support VF for RNIC is 63, that is only up to 63 VMs are supported for RDMA virtualization.
+As the data in Figure~\ref{fig:scabality} show, in the VM-only scenario, container-only scenario and hybrid scenario, the throughput of \sys is close to that of SR-IOV. The average overhead is only 1.4\%.
+
 
 \begin{figure}[!ht]
 	\centering
 	\includegraphics[width=1.0\linewidth]{images/scabality.pdf}
-	\caption{Aggregation throughput at different scenarios and scales}
+	\caption{\sys scalability. Aggregation throughput at different scenarios and scales are evaluated.}
 	\label{fig:scabality}
 \end{figure}
 
 \subsection{Real-world Applications}
 
-The worth of RDMA is mainly about its optimized performance in real-world applications. RDMA virtualization needs to maintain the performance close to native RDMA. Therefore, we evaluate \sys and other frameworks in a RPC benchmark in radma\_bench\cite{rbench}. In this benchmark, UD transport withe 32-bit immediate header is used between the client and server.
+The main advantage of RDMA is about its optimized network performance in real-world applications. RDMA virtualization needs to maintain such an advantage. Therefore, we evaluate \sys and other frameworks in a RPC benchmark in radma\_bench~\cite{rbench}. In this benchmark, UD transport with 32-bit immediate header is used between the client and server.
 
-In this paper, the server and client are started on two host servers. The server starts 16 threads, and the client starts 1, 2, 4, 8, 16 threads in turn. This papers separately tested the average throughput of the server in the entire RPC process.
+In the evaluation, the server and the client are started on two host servers. There are 16 threads for the server, and the thread number for the client is from 1, 2, 4, 8, 16 in turn. %This papers separately tested the average throughput of the server in the entire RPC process.
 
-As shown in Figure~\ref{fig:rpc},in the containers, the performance of \sys is approximately same as native RDMA. The
-maximum throughput on \sys and native is 11.6 Miops. And in the virtual machines, the performance of \sys is approximately same as the SR-IOV. In total, there is almost no performance loss. Because \sys bypasses the kernel and virtualization layer in the data path, and there is no software forwarding latency caused by virtualization. Even though, in the control path, \sys has a delay because of RDMA Verbs forwarding, this overhead is one-time for the RPC application and it can be ignored. Compared with FreeFlow in the containers, the preformance \sys is better than FreeFlow. Because there is forwarding latency in the data path of FreeFlow.
+As the data in Figure~\ref{fig:rpc} show, \sys achieves good performance for real applications. For contains, its performance is approximately the same with that of \native. For VMs, its performance is approximately the same with that of SR-IOV. In total, there is almost no performance loss. The major reason is that \sys bypasses the kernel and virtualization layer in the data path, and there is no software forwarding latency caused by virtualization. In the control path, \sys has a delay because of RDMA Verbs forwarding. However, this overhead is one-time for the RPC application and it has little influence on the overall performance. Compared with FreeFlow, the preformance \sys is better due to no additional memory copies. 
 
 \begin{figure}[!ht]
 	\centering

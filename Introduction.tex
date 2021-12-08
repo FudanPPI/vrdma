@@ -7,7 +7,7 @@ For a hybrid virtualization environment, RDMA should be virtualized with the fol
 
 \begin{itemize}
 	\item {\verb|Unification|}: RDMA resources should be managed by one unified RDMA virtualization framework no matter the resources are used by VMs or containers. If the RDMA resources are managed by more than one entities, they have to be partitioned. This limits the resource sharing and it's hard to establish RDMA channels between VMs and containers.
-	\item {\verb|High performance|}: Performance of virtual RDMA should be close to that of hardware virtualization or native RDMA in terms of throughput, latency, or CPU load. Meanwhile it should have scalability under large-scale clusters.
+	\item {\verb|High performance|}: Performance of virtual RDMA should be close to that of hardware virtualization or \native in terms of throughput, latency, or CPU load. Meanwhile it should have scalability under large-scale clusters.
 	\item {\verb|Compatibility|}: RDMA virtualization framework should be clean and stable for different environments, and has minimal dependence for other software on the virtualization stack, e.g., RDMA kernel drivers.
 	\item {\verb|High manageability|}: It should provide basic management capabilities in the cloud environment, such as resource sharing, performance isolation, virtual network management and portability.
 \end{itemize}
@@ -25,7 +25,7 @@ The \sys~core is designed to manage both the virtual and physical RDMA resources
 
 The management node keeps and coordinates the control policies like ACL and QoS for individual servers.
 
-We implemented the \sys system and evaluate its throughput, latency and scalability with real-word applications. The results show the performance of \sys~in hybrid virtualization environment is close to native RDMA and SR-IOV~(less than 15\% overhead to native RDMA and 5\% overhead to SR-IOV). Moreover \sys has high scalability and adapts to real-world RDMA applications in hybrid virtualization environments. The main contributions of \sys are:
+We implemented the \sys system and evaluate its throughput, latency and scalability with real-word applications. The results show the performance of \sys~in hybrid virtualization environment is close to \native and SR-IOV~(less than 15\% overhead to \native and 5\% overhead to SR-IOV). Moreover \sys has high scalability and adapts to real-world RDMA applications in hybrid virtualization environments. The main contributions of \sys are:
 
 \begin{itemize}
 	\item We proposed vRNIC, which is a para-virtualization RDMA device in host user-space for high flexibility and hardware independence. vRNIC is unified for both VMs and containers with specific driver. Meanwhile, the performance is optimized by mapping vRNIC to physical RNIC same as native RDMA.
