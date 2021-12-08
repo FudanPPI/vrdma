@@ -17,7 +17,7 @@ Each host server is equipped with 4 Intel Xeon E7-4850 2.40GHz 16-core CPUs and 
 
 \subsection{Basic Evaluation}
 
-Throughput and latency are the key targets of network performance. RDMA supports two different data transmission modes: one-sided and two-sided. Due to the difference performance between them, we evaluate them respectively.
+Throughput and latency are the key targets of network performance. Latency is the time taken for a packet to be transferred. Throughput is the quantity of data (some packets) to be transferred within a unit of time.\dw{explain} RDMA supports two different data transmission modes: one-sided and two-sided. Due to the difference performance between them, we evaluate them respectively.
 
 Based on the RDMA benchmark test tool perftest~\cite{perftest}, we evaluated the performance~(throughput and latency) of native RDMA, hardware virtualization SR-IOV,  software virtualization~(FreeFlow) and \sys in VMs or containers. We don't compared the performance of \sys with that of MasQ because it is not open-sourced. For one-sided write operations, we use ``ib\_write\_bw'' and ``ib\_write\_lat'' commands; for one-sided read operation, we use ``ib\_read\_bw'' and ``ib\_read\_lat'' commands. For two-sided operations~(Send and Recv), we use ``ib\_send\_bw'' and ``ib\_send\_lat'' commands. The specific process is: after the RDMA connection is established between the client and the server, the message bytes are transmitted. The message sizes are from 4B to 1MB. For each message size,  it is evaluated iteratively 1000 times and the average results are used for evaluation.  
 
@@ -83,7 +83,7 @@ Compared with FreeFlow, when the message is small, the latency of \sys is only 4
 
 As the applications scalability and servers' hardware capabilities rise, multiple VM and container istances are deployed on a same host. VMs and containers have orders of magnitude far beyond the number of hosts, leaving a great challenge to RDMA virtualization. 
 
-In this paper, we use aggregate throughput, which is the sum of the throughput of multiple parallel RDMA flows at the same time, to measure the scalability of \sys\zwh{citation}. The thoughput of a individual RDMA flow is fluctating at each moment and the instant RDMA throughput is difficult to align between multiple RDMA flows. Therefore, we collect and summarize the average throughput of each RDMA flow at a certain time segment to obtain the aggregate throughput.
+In this paper, we use aggregate throughput, which is the sum of the throughput of multiple parallel RDMA flows at the same time, to measure the scalability of \sys\zwh{citation}. If the aggregate throughput of multiple parallel RDMA flows is closer to the hardware throughput, the cost of RDMA virtualization is smaller that is \sys has a good scalability. \dw{explain}. The thoughput of a individual RDMA flow is fluctating at each moment and the instant RDMA throughput is difficult to align between multiple RDMA flows. Therefore, we collect and summarize the average throughput of each RDMA flow at a certain time segment to obtain the aggregate throughput.
 
 We used one-sided operation (``ib\_write\_bw'' in ~\cite{perftest}) with 2, 4, 8, 16, 32 and 64 virtual instance pairs which send data (65536 Bytes) continuously on two hosts. As shown in Figure~\ref{fig:scabality}, in the VM-only scenario, container-only scenario and hybrid scenario \sys has a good scalability, that is, the throughput in average is reduced by less than 1.4\% when the number of virtual instance pair is up to 64.
 
