@@ -18,7 +18,7 @@ There are mainly two kinds of resources for RDMA: memory resources~(e.g., QPs, M
 	\label{fig:qp-map}
 \end{figure}
 
-For memory resources, the mapping in VMs is shown in Figure~\ref{fig:qp-map}. \sys maps the whole physical memory of the VM to the memory space of the corresponding vRNIC backend. Different processes can map to the same physical memory through the shared memory file handle. As shown in Figure~\ref{fig:qp-map}, the detailed steps are as follows: (1) The application in the guest allocates the QP buffer, and the buffer is using the shared memory in the host. The physical pages in the guest is pinned in the guest kernel. (2) The vRNIC backend receives the GPA of the QP buffer. Note that the GPA may not be contiguous. If we directly map the shared memory file through dis-contiguous GPA (offsets), the obtained HVA are also discontiguous and cannot be used as the QP buffer. Thus, the vRNIC backend remap the corresponding shared memory to a new contiguous virtual memory, and use it as the virtual address of the QP buffer.
+For memory resources, the mapping in VMs is shown in Figure~\ref{fig:qp-map}. \sys maps the whole physical memory of the VM to the memory space of the corresponding vRNIC backend. Different processes can map to the same physical memory through the shared memory file handle. As shown in Figure~\ref{fig:qp-map}, the detailed steps are as follows: (1) The application in the guest allocates the QP buffer, and the buffer is using the shared memory in the host. The physical pages in the guest are pinned in the guest kernel. (2) The vRNIC backend receives the GPA of the QP buffer. Note that the GPA may not be contiguous. If we directly map the shared memory file through dis-contiguous GPA (offsets), the obtained HVA are also discontiguous and cannot be used as the QP buffer. Thus, the vRNIC backend remaps the corresponding shared memory to a new contiguous virtual memory, and uses it as the virtual address of the QP buffer.
 
 
 
@@ -39,7 +39,7 @@ For the containers, the mapping of DoorBells is similar as for the VMs. The only
 
 %\subsection{Register MR in the Host}
 
-%When vRNIC backend receives the command to register MR, it should use the GVA as the virtual address when caching the page table for physical RNIC. And the physical RNIC can directly access the physical pages through the GVA in the work request of the application, instead of translating the GVA to the HVA on the data path. 
+%When vRNIC backend receives the command to register MR, it should use the GVA as the virtual address when caching the page table for physical RNIC. The physical RNIC can directly access the physical pages through the GVA in the work request of the application, instead of translating the GVA to the HVA on the data path. 
 
 %To implement it, we modified the OFED driver and the Verbs library in the host: the OFED driver can receive the GVA parameter when register MR, and fillwith the cached page table with the GVA as the virtual memory address.
 
@@ -52,7 +52,7 @@ For the containers, the mapping of DoorBells is similar as for the VMs. The only
 
 %（1）虚拟机迁移： 容器或虚拟机迁移在云中有很多好处，例如资源利用和故障转移。迁移分为脱机迁移和动态迁移。在脱机迁移中，虚拟机或容器关机后，迁移到远端后重新启动。因为\sys Core维护了网络地址的映射关系，该关系可以直接发送给迁移后节点的\sys Core，无需修改guest 中RDMA应用内部的网络地址。对于动态迁移，一般都需要借助AccelNet方案【引用】，应用释放RDMA资源，使用TCP/IP网络完成迁移，然后显式地重新建立RDMA连接。对于这种方式，我们也可以无缝支持。
 
-%Virtual Instances Migration: The migration of the containers and VMs has many benefits in clouds, e.g. resource utilization and fail-over. With the virtual RDMA network, \sys can support offline migration without reconfiguring the physical RDMA network for applications. In specific, after rebooting the migrated virtual instance, the application can rebuild the RDMA connection using the same network address. The only work is to modify the address mapping in \sys Core. For live migration, currently it is still not solved because changes in memory of the virtual instance needs to tracked during live migration. This is usually done by tracking the dirty-bit in the page tables. RDMA operations bypass the tracking mechanism and break the live migration process.
+%Virtual Instances Migration: The migration of the containers and VMs has many benefits in clouds, e.g., resource utilization and fail-over. With the virtual RDMA network, \sys can support offline migration without reconfiguring the physical RDMA network for applications. In specific, after rebooting the migrated virtual instance, the application can rebuild the RDMA connection using the same network address. The only work is to modify the address mapping in \sys Core. For live migration, currently it is still not solved because changes in memory of the virtual instance needs to tracked during live migration. This is usually done by tracking the dirty-bit in the page tables. RDMA operations bypass the tracking mechanism and break the live migration process.
 
 % （2）RDMA软件栈对虚拟化的扩展：在RDMA虚拟化中，QP/CQ等RDMA资源需要进行映射，避免额外的数据拷贝及切换开销。现有的RDMA软件栈没有对RDMA资源映射的支持。为此，我们提出了下述建议，以加强现有RDMA软件栈对RDMA虚拟化的支持。基于这些建议，虚拟机或容器应用和虚拟层在用户空间便可以完成便捷、高效地完成MR、QP/CQ等资源的映射。具体建议如下：
 

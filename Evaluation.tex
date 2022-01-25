@@ -2,7 +2,7 @@
 In this section, we evaluate the performance of \sys based on the RDMA test tools and real applications. We expect to answer the following questions:
 
 \begin{itemize}
-\item How about the performance of \sys compared to that of \native for both VMs and containers?
+\item How does the performance of \sys compared to that of \native for both VMs and containers?
 \item Can \sys be adapted to the real-world RDMA applications in both VMs or containers?
 \item How about the scalability of \sys?
 \end{itemize}
@@ -12,14 +12,14 @@ In this section, we evaluate the performance of \sys based on the RDMA test tool
 
 All experiments are carried out on two servers. The settings mainly include three parts: host server, container and virtual machine. 
 
-Each host server is equipped with 4 Intel Xeon E7-4850 2.40GHz 16-core CPUs and 1 TB RAM. The RNIC used is Mellanox ConnectX-3 56 Gb/sec, which performs RDMA communication under Infiniband.  The operating system is CentOS 7.4.1708 (Linux 3.10.0-693.el7.x86\_64). The RDMA driver installed on the host server is Mellanox OFED 4.4-2.0.7.0~\cite{mlnx-ofed}. To keep the consistence, VMs and containers are built based on the same OS images as host. All VMs are based on QEMU(5.1.50)~\cite{qemu} enabled with KVM~\cite{kvm}. We provide 16 cores and 64 GB memory for each VM. We run containers using Docker~(18.06.1-ce)~\cite{docker} and limit the CPU and memory resources to the same settings as the VM. In addition, all the applications are compiled with GCC/G++ 4.8.5 with the O3 compilation configuration. 
+Each host server is equipped with 4 Intel Xeon E7-4850 2.40GHz 16-core CPUs and 1 TB RAM. The RNIC used is Mellanox ConnectX-3 56 Gb/sec, which performs RDMA communication under Infiniband.  The operating system is CentOS 7.4.1708 (Linux 3.10.0-693.el7.x86\_64). The RDMA driver installed on the host server is Mellanox OFED 4.4-2.0.7.0~\cite{mlnx-ofed}. To keep consistence, VMs and containers are built based on the same OS images as host. All VMs are based on QEMU(5.1.50)~\cite{qemu} enabled with KVM~\cite{kvm}. We provide 16 cores and 64 GB memory for each VM. We run containers using Docker~(18.06.1-ce)~\cite{docker} and limit the CPU and memory resources to the same settings as the VM. In addition, all the applications are compiled with GCC/G++ 4.8.5 with the O3 compilation configuration. 
 
 
 \subsection{Basic Evaluation}
 
 Throughput and latency are the key targets of network performance. Latency is the time taken for a packet to be transferred. Throughput is the quantity of data~(some packets) to be transferred within a unit of time. RDMA supports two different data transmission modes: one-sided and two-sided. Due to the difference performance between them, we evaluate them respectively.
 
-Based on the RDMA benchmark test tool perftest~\cite{perftest}, we evaluated the performance~(throughput and latency) of \native, hardware virtualization SR-IOV for VMs,  software virtualization~(FreeFlow) and \sys in VMs or containers. SR-IOV is the hardware virtualization solution for VMs. Because VMs monopolize a PCI-e device, the SR-IOV vitualizes multiple lightweight PCI-e physical devices for diffrent VMs, which cannot used by containers. Thus, we don't measure the performance of SR-IOV in containers. In addition, we don't compare the performance of \sys with that of MasQ because it is not open-sourced. For one-sided write operations, we use ``ib\_write\_bw'' and ``ib\_write\_lat'' commands; for one-sided read operation, we use ``ib\_read\_bw'' and ``ib\_read\_lat'' commands. For two-sided operations~(Send and Recv), we use ``ib\_send\_bw'' and ``ib\_send\_lat'' commands. The specific process is: after the RDMA connection is established between the client and the server, the message bytes are transmitted. The message sizes are from 4B to 1MB. For each message size,  it is evaluated iteratively 1000 times and the average results are used for evaluation.  
+Based on the RDMA benchmark test tool perftest~\cite{perftest}, we evaluated the performance~(throughput and latency) of \native, hardware virtualization SR-IOV for VMs,  software virtualization~(FreeFlow) and \sys in VMs or containers. SR-IOV is the hardware virtualization solution for VMs. Because VMs monopolize a PCI-e device, the SR-IOV vitualizes multiple lightweight PCI-e physical devices for diffrent VMs, which cannot used by containers. Thus, we didn't measure the performance of SR-IOV in containers. In addition, we didn't compare the performance of \sys with that of MasQ because it is not open-sourced. For one-sided write operations, we use ``ib\_write\_bw'' and ``ib\_write\_lat'' commands; for one-sided read operation, we use ``ib\_read\_bw'' and ``ib\_read\_lat'' commands. For two-sided operations~(Send and Recv), we use ``ib\_send\_bw'' and ``ib\_send\_lat'' commands. The specific process is: after the RDMA connection is established between the client and the server, the message bytes are transmitted. The message sizes are from 4B to 1MB. For each message size,  it is evaluated iteratively 1000 times and the average results are used for evaluation.  
 
 \subsubsection{\textbf{Throughput}}
 \
@@ -103,7 +103,7 @@ As the data in Figure~\ref{fig:scabality} show, in the VM-only scenario, contain
 
 \subsection{Real-world Applications}
 
-The main advantage of RDMA is about its optimized network performance in real-world applications. RDMA virtualization needs to maintain such an advantage. Therefore, we evaluate \sys and other frameworks in a RPC benchmark in radma\_bench~\cite{rbench}. In this benchmark, UD transport with 32-bit immediate header is used between the client and server.
+The main advantage of RDMA is about its optimized network performance in real-world applications. RDMA virtualization needs to maintain such an advantage. Therefore, we evaluate \sys and other frameworks in a RPC benchmark in rdma\_bench~\cite{rbench}. In this benchmark, UD transport with a 32-bit immediate header is used between the client and server.
 
 In the evaluation, the server and the client are started on two host servers. There are 16 threads for the server, and the thread number for the client is from 1, 2, 4, 8, 16 in turn. %This papers separately tested the average throughput of the server in the entire RPC process.
 
