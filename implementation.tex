@@ -2,7 +2,9 @@
 We implement the \sys system in Linux environment. The hypervisor of VM is QEMU/KVM and the container engine is Docker. The vRNIC frontends for VMs and containers are implemented differently. The \sys Core~(with vRNIC backends) includes about 2000 lines of code.
 And in the management node, Zookeeper~\cite{zookeeper} is used to keep the information for RDMA resources~(such as RDMA address mappings and the numbers of VFs) and the policies~(such as QP limit and QoS).
 In addition, we modified the \textit{libibverbs-41mlnx1} Verbs library, the \textit{librdma-cm} Verbs library for connection management, and the \textit{libmlx4-41mlnx1} user-space RNIC driver.
-And some minor modifications are made to the host OS kernel, such as caching GPA into RNIC and mapping DoorBells. In this section, some implementation details are introduced.
+And some minor modifications are made to the host OS kernel, such as caching GPA into RNIC and mapping DoorBells.
+
+Based on our approach, user-level applications don't need to be modified or recompiled because the RDMA APIs are not changed. In this section, some implementation details are introduced.
 
 % 资源映射：根据资源所属于的物理地址空间，RDMA通信过程中主要有两类资源：内存资源（QP等），和设备资源（门铃）.
 \subsection{Resource Mapping}
