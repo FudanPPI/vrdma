@@ -20,7 +20,7 @@ Each host server is equipped with 4 Intel Xeon E7-4850 2.40GHz 16-core CPUs and 
 
 Throughput and latency are the key targets of network performance. Latency is the time taken for a packet to be transferred. Throughput is the quantity of data~(some packets) to be transferred within a unit of time. RDMA supports two different data transmission modes: one-sided and two-sided. Due to the difference performance between them, we evaluate them respectively.
 
-Based on the RDMA benchmark test tool perftest~\cite{perftest}, we evaluated the performance~(throughput and latency) of \native, hardware virtualization SR-IOV for VMs,  software virtualization~(FreeFlow) and \sys in VMs or containers. SR-IOV is the hardware virtualization solution for VMs. Because VMs monopolize a PCI-e device, the SR-IOV vitualizes multiple lightweight PCI-e physical devices for diffrent VMs, which cannot used by containers. Thus, we didn't measure the performance of SR-IOV in containers. In addition, we didn't compare the performance of \sys with that of MasQ because it is not open-sourced. For one-sided write operations, we use ``ib\_write\_bw'' and ``ib\_write\_lat'' commands; for one-sided read operation, we use ``ib\_read\_bw'' and ``ib\_read\_lat'' commands. For two-sided operations~(Send and Recv), we use ``ib\_send\_bw'' and ``ib\_send\_lat'' commands. The specific process is: after the RDMA connection is established between the client and the server, the message bytes are transmitted. The message sizes are from 4B to 1MB. For each message size,  it is evaluated iteratively 1000 times and the average results are used for evaluation.  
+Based on the RDMA benchmark test tool perftest~\cite{perftest}, we evaluated the performance~(throughput and latency) of \native, hardware virtualization SR-IOV for VMs,  software virtualization~(FreeFlow) and \sys in VMs or containers. SR-IOV is the hardware virtualization solution for VMs. Because VMs monopolize a PCI-e device, the SR-IOV vitualizes multiple lightweight PCI-e physical devices for diffrent VMs, which cannot used by containers. Thus, we didn't measure the performance of SR-IOV in containers. In addition, we didn't compare the performance of \sys with that of MasQ because it is not open-sourced. For one-sided write operations, we use ``ib\_write\_bw'' and ``ib\_write\_lat'' commands; for one-sided read operation, we use ``ib\_read\_bw'' and ``ib\_read\_lat'' commands. For two-sided operations~(Send and Recv), we use ``ib\_send\_bw'' and ``ib\_send\_lat'' commands. The specific process is: after the RDMA connection is established between the client and the server, the message bytes are transmitted. The message sizes are from 4B to 256KB. For each message size,  it is evaluated iteratively 1000 times and the average results are used for evaluation.  Note that we also collected the data whose message sizes are larger than 256KB, such as 512KB, 1MB and 2MB. After the message sizes are larger than 256KB, the performance slowdown is very small. Even the average slowdown of FreeFlow for the message sizes larger than 256KB is smaller than 3\%. Thus, these results are not included in the paper due to the space constraint. 
 
 \subsubsection{\textbf{Throughput}}
 \
@@ -28,7 +28,7 @@ Based on the RDMA benchmark test tool perftest~\cite{perftest}, we evaluated the
 
 \begin{figure}[!ht]
 	\centering
-	\includegraphics[width=1.0\linewidth]{images/write-bw.pdf}
+	\includegraphics[width=1.00\linewidth]{images/write-bw.pdf}
 	\caption{The throughout of one-sided mode.}
 	\label{fig:write-bw}
 \end{figure}
@@ -36,7 +36,7 @@ Based on the RDMA benchmark test tool perftest~\cite{perftest}, we evaluated the
 
 \begin{figure}[!ht]
 	\centering
-	\includegraphics[width=1.0\linewidth]{images/send-bw.pdf}
+	\includegraphics[width=1.00\linewidth]{images/send-bw.pdf}
 	\caption{The throughout of two-sided mode.}
 	\label{fig:send-bw}
 \end{figure}
@@ -61,7 +61,7 @@ Compared with FreeFlow, when the message is small, the throughput of \sys has re
 
 \begin{figure}[!ht]
 	\centering
-	\includegraphics[width=1.0\linewidth]{images/write-lat.pdf}
+	\includegraphics[width=1.00\linewidth]{images/write-lat.pdf}
 	\caption{The latencty of one-sided mode.}
 	\label{fig:write-lat}
 \end{figure}
@@ -69,12 +69,12 @@ Compared with FreeFlow, when the message is small, the throughput of \sys has re
 
 \begin{figure}[!ht]
 	\centering
-	\includegraphics[width=1.0\linewidth]{images/send-lat.pdf}
+	\includegraphics[width=1.00\linewidth]{images/send-lat.pdf}
 	\caption{The latencty of two-sided mode.}
 	\label{fig:send-lat}
 \end{figure}
 
-The latency results are shown in~\ref{fig:write-lat} and \ref{fig:send-lat}. As these data show, \sys can achieve comparable letency results compared with SR-IOV and \native. The latency gradually increases as the forwarding message size becomes larger because the large message needs to be sliced into small message for network package transmission.
+The latency results are shown in Figure~\ref{fig:write-lat} and Figure~\ref{fig:send-lat}. As these data show, \sys can achieve comparable letency results compared with SR-IOV and \native. The latency gradually increases as the forwarding message size becomes larger because the large message needs to be sliced into small message for network package transmission.
 
 For one-sided mode, \sys in VMs leads to 6\% and 11\% overhead compared with SR-IOV and \native. \sys in containers involves 4\% overhead to \native. For two-sided mode, the latency of \sys in VMs is 5\% higher than that of SR-IOV and 15\% higher than \native. The latency of \sys in containers is 15\% higher than that of \native.
 
