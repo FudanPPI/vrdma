@@ -108,6 +108,10 @@ As the data in Figure~\ref{fig:scabality} show, in the VM-only scenario, contain
 
 The main advantage of RDMA is about its optimized network performance in real-world applications. RDMA virtualization needs to maintain such an advantage. Therefore, we evaluate \sys and other frameworks in a RPC benchmark in rdma\_bench~\cite{rbench}. In this benchmark, UD transport with a 32-bit immediate header is used between the client and server.
 
+\subsubsection{\textbf{RPC}}
+\
+\noindent
+
 In the evaluation, the server and the client are started on two host servers. There are 16 threads for the server, and the thread number for the client is from 1, 2, 4, 8, 16 in turn. %This papers separately tested the average throughput of the server in the entire RPC process.
 
 As the data in Figure~\ref{fig:rpc} show, \sys achieves good performance for real applications. For contains, its performance is approximately the same with that of \native. For VMs, its performance is approximately the same with that of SR-IOV. In total, there is almost no performance loss. The major reason is that \sys bypasses the kernel and virtualization layer in the data path, and there is no software forwarding latency caused by virtualization. In the control path, \sys has a delay because of RDMA Verbs forwarding. However, this overhead is one-time for the RPC application and it has little influence on the overall performance. Compared with FreeFlow, the preformance \sys is better due to no additional memory copies. 
@@ -119,4 +123,17 @@ As the data in Figure~\ref{fig:rpc} show, \sys achieves good performance for rea
 	\label{fig:rpc}
 \end{figure}
 
+\subsubsection{\textbf{Graph500}}
+\
+\noindent
 
+Graph500~\cite{Graph500} is a rating system for data intensive applications in HPC. The banchmark used in Graph500 will do the following tasks: generating graphs according to the input parameters, performing the breadth-first search (BFS) and single source shortest path (SSSP). 
+
+We run BFS and SSSP banchmark on two servers with 16 MPI processes. The banchmake generates graphs in the main memory with parameters scale \= 26 and edge\_factor \= 16. We run 16 times for each test and calculate the horizontal mean of traversed edges per second (TEPS). As the data shown in Figure~\ref{fig:graph500}, the performance of \sys is very close to SR-IOV and \native.
+
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[width=1.0\linewidth]{images/graph500.pdf}
+	\caption{The TEPS of BFS and SSSP}
+	\label{fig:graph500}
+\end{figure}
