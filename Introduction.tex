@@ -25,14 +25,14 @@ The \sys~core is designed to manage both the virtual and physical RDMA resources
 
 The management node keeps and coordinates the control policies like ACL and QoS for individual servers.
 
-We implemented the \sys system and evaluate its throughput, latency and scalability with real-word applications. The results show the performance of \sys~in hybrid virtualization environments is close to SR-IOV and \native. For basic evaluations~(throughput and latency for simple network opertions), \sys has less than 4\% slowdown compared to SR-IOV~(hardware virtualization) for VMs and it has about 10\% slowdown compared to \native for containers. Moreover \sys has high scalability and adapts to real-world RDMA applications in hybrid virtualization environments. While real applications are used for evaluation, \sys can ahcieve very close performance to those of SR-IOV and \native. The main contributions of \sys are:
+We implemented the \sys system and evaluate its throughput, latency and scalability with real-word applications. The results show the performance of \sys~in hybrid virtualization environments is close to SR-IOV and \native. For simple network operation evaluations~(throughput and latency), \sys has less than 4\% slowdown compared to SR-IOV~(hardware virtualization) for VMs and it has about 10\% slowdown compared to \native for containers. Moreover \sys has high scalability and adapts to real-world RDMA applications in hybrid virtualization environments. While real applications are used for evaluation, \sys can ahcieve very close performance to those of SR-IOV and \native. The main contributions of \sys are:
 
 \begin{itemize}
 	\item We proposed vRNIC, which is a para-virtualization RDMA device in host user-space for high flexibility and hardware independence. vRNIC is unified for both VMs and containers with specific driver. Meanwhile, the performance is optimized by mapping vRNIC to physical RNIC same as native RDMA.
 	
 	\item We proposed a virtualization layer for vRNICs, which is responsible for vRNICs' instantition and mapping to physical RNIC. Also, virtual RDMA network is configured in the virtualization layer.
 	
-	\item A system, called \sys,~is implemented and evaluated. The results show that \sys maintains high performance with less than 5\% overhead to SR-IOV for basic simple operation evalutions and similar performance for real applications compared with those of SR-IOV and \native.  .
+	\item A system, called \sys,~is implemented and evaluated. The results show that \sys maintains high performance with less than 5\% slowdown for simple network operation evalutions and similar performance for real applications compared with those of SR-IOV and \native.  .
 \end{itemize}
 
 The paper is organized as follows. Section \ref{background} describes the background of RDMA and its virtualization techniques. Section \ref{design} describes the vRNIC design. Section \ref{impl} introduces the design of virtualization layer. Section \ref{eval} shows the evalution results of \sys system. Section \ref{relatedwork} discusses the related work. Section \ref{conclusion} concludes the work.
