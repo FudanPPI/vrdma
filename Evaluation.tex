@@ -1,18 +1,23 @@
 \section{Evaluation} \label{eval}
-In this section, we evaluate the performance of \sys based on the RDMA test tools and real applications. We expect to answer the following questions:
-
-\begin{itemize}
-\item How does the performance of \sys compared to that of \native for both VMs and containers?
-\item How about the scalability of \sys?
-\item Can \sys be adapted to the real-world RDMA applications in both VMs or containers?
-
-\end{itemize}
+In this section, we evaluate the performance of \sys based on the RDMA test tools and real applications. We expect to answer the following questions: (1) How does the performance of \sys compared to that of \native for both VMs and containers? (2) How about the scalability of \sys? (3) Can \sys be adapted to the real-world RDMA applications in both VMs or containers?
+%
+%\begin{itemize}
+%\item How does the performance of \sys compared to that of \native for both VMs and containers?
+%\item How about the scalability of \sys?
+%\item Can \sys be adapted to the real-world RDMA applications in both VMs or containers?
+%
+%\end{itemize}
 
 \subsection{Experiment Methodology}
 
 
-All experiments are carried out on two servers. The settings mainly include three parts: host server, container and virtual machine. 
+We implement the \sys system in Linux environment. The hypervisor of VM is QEMU/KVM and the container engine is Docker. The vRNIC frontends for VMs and containers are implemented differently. The \sys Core~(with vRNIC backends) includes about 2000 lines of code.
+And in the management node, Zookeeper~\cite{zookeeper} is used to keep the information for RDMA resources~(such as RDMA address mappings and the numbers of VFs) and the policies~(such as QP limit and QoS).
+In addition, we modified the \textit{libibverbs-41mlnx1} Verbs library, the \textit{librdma-cm} Verbs library for connection management, and the \textit{libmlx4-41mlnx1} user-space RNIC driver.
+And some minor modifications are made to the host OS kernel, such as caching GPA into RNIC and mapping DoorBells.
+Based on our approach, user-level applications don't need to be modified or recompiled because the RDMA APIs are not changed. %In this section, some implementation details are introduced.
 
+All experiments are carried out on two servers. The settings mainly include three parts: host server, container and virtual machine. 
 Each host server is equipped with 4 Intel Xeon E7-4850 2.40GHz 16-core CPUs and 1 TB RAM. The RNIC used is Mellanox ConnectX-3 56 Gb/sec, which performs RDMA communication under Infiniband.  The operating system is CentOS 7.4.1708 (Linux 3.10.0-693.el7.x86\_64). The RDMA driver installed on the host server is Mellanox OFED 4.4-2.0.7.0~\cite{mlnx-ofed}. To keep consistence, VMs and containers are built based on the same OS images as host. All VMs are based on QEMU(5.1.50)~\cite{qemu} enabled with KVM~\cite{kvm}. We provide 16 cores and 64 GB memory for each VM. We run containers using Docker~(18.06.1-ce)~\cite{docker} and limit the CPU and memory resources to the same settings as the VM. In addition, all the applications are compiled with GCC/G++ 4.8.5 with the O3 compilation configuration. Note that the management node is on one of two evaluated nodes in our evaluation setting. Since the management node is not involved on the data-path, it has very limited influence on the performance of one-sided or two-sided communication.
 
 

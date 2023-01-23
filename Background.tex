@@ -3,13 +3,13 @@ RDMA infrastructure is built for distributed applications that require high-perf
 
 \begin{figure}[!ht]
 	\centering
-	\includegraphics[width=0.8\linewidth]{images/rdma-feat.png}
-	\caption{Native RDMA Architecture: the control path and data path are separated}
+	\includegraphics[width=0.85\linewidth]{images/rdma-feat.png}
+	\caption{Native RDMA Architecture}
 	\label{fig:rdma-feat}
 \end{figure}
 
 RDMA can be implemented in different ways, for example, InfiniBand~\cite{infiniband}, Roce~\cite{roce}, and iWARP~\cite{iwarp}.
-OpenFabrics Enterprise Distribution~(OFED~\cite{ofed}) is a widely used RDMA software stack that builds an abstraction layer to hide the differences of underneath drivers and hardware.
+OpenFabrics Enterprise Distribution~(OFED~\cite{ofed-manual}) is a widely used RDMA software stack that builds an abstraction layer to hide the differences of underneath drivers and hardware.
 OFED stack consists of the user-space part and the kernel-space part.
 As shown in Figure~\ref{fig:rdma-feat}, in user-space, RDMA applications use Verbs APIs~(also known as IB Verbs~\cite{verbs}) to send and receive data. It is similar to socket layer for traditional network applications. On the control path, Verbs provides APIs like \texttt{ibv\_create\_qp} and \texttt{ibv\_reg\_mr}. On the data path, Verbs provides APIs like \texttt{ibv\_post\_send} and \texttt{ibv\_post\_recv}. On the control path, the Verbs library forwards requests to OFED core in OS kernel. Device specific drivers that control the RDMA hardware are registered in OFED core. On the data path, the OS kernel is bypassed. So the Verbs library calls device specific user level library to send and receive data.
 

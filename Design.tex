@@ -28,14 +28,14 @@ On the data path, the key RDMA resources (e.g., QPs and MRs) are directly mapped
 \noindent
 
 %\newline
-The vRNIC backend is implemented as a user-space module in the host system, similar to vhost-user-net~\cite{vhost-user-net}. Compared to kernel-space, there are three advantages for a user-space backend: first, the attack surface is limited to user-space with lower risk; second, user mode programming is easier than that of kernel mode; third, user mode backend can utilize the Verbs API, which is a stable abstraction layer.
+The vRNIC backend is implemented as a user-space module in the host system, similar to vhost-user-net~\cite{vhost-user-net}. Compared to kernel-space, there are three advantages for a user-space backend: first, user mode backend can utilize the Verbs API, which is a stable abstraction layer; second, user mode programming is easier than that of kernel mode; third, the attack surface is limited to user-space with lower risk.
 
 % vRNIC作为一个虚拟RDMA设备，vRNIC后端需要维护关于RDMA网卡的硬件属性，与物理RDMA网卡对应，例如RDMA地址vGID，RDMA设备类型等。此外，在vRNIC的运行过程中，vRNIC后端中需要维护三方面的上下文：
 % 1，来自guest的虚拟RDMA上下文信息，主要记录了虚拟RDMA资源的信息；
 % 2，由物理网卡创建的RDMA上下文，包含各RDMA资源，由vRNIC后端通过调用verbs库创建和维护；
 % 3，虚拟RDMA上下文到物理RDMA上下文之间的对应关系。对应关系是一对一的，因为一对一是RDMA性能隔离的基础。
 
-As a virtual RNIC device emulator, the vRNIC backend needs to maintain the same set of hardware properties that the physical RNIC have, such as the RDMA address GID and the RDMA device vendor. In addition, three kinds of contexts need to be maintained in the vRNIC backend at runtime:
+As a virtual RNIC device emulator, the vRNIC backend needs to maintain the same set of hardware properties that the physical RNIC has, such as the RDMA address GID. In addition, three kinds of contexts need to be maintained in the vRNIC backend at runtime:
 (1) Information of the runtime RDMA resources created and used on the emulated RDMA device, such as the memory address of the virtual MR/QP;
 (2) Information of the runtime RDMA resources actually created and used on the physical RNIC, such as the memory address of the real MR/QP;
 (3) The mapping between virtual RDMA context and physical RDMA context.
@@ -132,7 +132,7 @@ Unlike traditional TCP/IP network, RDMA networks also support one-sided operatio
 
 \begin{figure}[!ht]
 	\centering
-	\includegraphics[width=1.0\linewidth]{images/route-config}
+	\includegraphics[width=0.85\linewidth]{images/route-config}
 	\caption{RDMA group configuration and routing. The vRNICs of container 1 and container 2 are configured in the same group. Thus, the two containers are allowed to create RDMA connections. VM 1 is not in the same group of the containers. So it is not allowed to create RDMA connections to the containers.}
 	\label{fig:route-config}
 \end{figure}
@@ -156,7 +156,7 @@ Note that this design requires \sys to trust the Verbs library in the guest envi
 
 \begin{figure}[!ht]
 	\centering
-	\includegraphics[width=1\linewidth]{images/mgmt-center.png}
+	\includegraphics[width=0.85\linewidth]{images/mgmt-center.png}
 	\caption{The architecture of \sys management plane}
 	\label{fig:mgmt-center}
 \end{figure}
@@ -220,7 +220,7 @@ In the data phase, the RDMA application performs the data sending and receiving 
 \begin{figure}[!ht]
 	\centering
 	\includegraphics[width=1\linewidth]{images/RDMA-path.png}
-	\caption{The Workflow of RDMA SEND operation in \sys}
+	\caption{The Workflow of \sys SEND operation}
 	\label{fig:rdma-path}
 \end{figure}
 
