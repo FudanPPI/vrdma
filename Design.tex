@@ -23,6 +23,7 @@ The vRNIC is a virtual RDMA device that consists of a frontend and a backend. Th
 On the control path, commands are forwarded from the vRNIC frontend to the vRNIC backend to be actually executed or emulated.
 On the data path, the key RDMA resources (e.g., QPs and MRs) are directly mapped by the RDMA applications in the guest environment to the physical RDMA device. During actual data transmission both vRNIC frontend and backend are bypassed.
 
+%--------------------------------------------------------------------------------------------------------------------------
 \subsubsection{\textbf{vRNIC Backend}}
 \
 \noindent
@@ -50,6 +51,7 @@ When RDMA requests are forwarded from a vRNIC frontend to its backend, it causes
 
 The design of the vRNIC backend is the same for VMs and containers.
 
+%-----------------------------------------------------------------------------------------------------------------------------
 \subsubsection{\textbf{vRNIC Frontend}}
 
 \
@@ -62,13 +64,15 @@ The vRNIC frontend is located in the guest environment acting as the NIC interfa
 % 在容器场景中，应用和vRNIC后端共享主机内核，仅位于不同的命名空间。为了在容器中使用vRNIC，容器的verbs库中与内核RDMA驱动交互的接口，被替换为vRNIC前端接口。Verbs操作被劫持到vRNIC前端,并被转发到vRNIC后端。
 
 For both VMs and containers, the vRNIC frontend in the guest connects to the vRNIC backend in the host, but in different ways.
-
-For VMs, the native RDMA software stack is kept including the Verbs and device-specific library in the user space, and the OFED and hardware-specific driver in the kernel space. But this time, the hardware-specific device driver is connected to the vRNIC frontend instead of a physical RNIC. As shown in Figure~\ref{fig:framework-overview}, the hardware-specific device driver is replaced by a \sys version of thin device driver that is registered to OFED core. In this way, RDMA requests in the VM are re-routed to the vRNIC.
-
+For VMs, the native RDMA software stack is kept including the Verbs and device-specific library in the user space, and the OFED and hardware-specific driver in the kernel space. However, the hardware-specific device driver is connected to the vRNIC frontend instead of a physical RNIC. As shown in Figure~\ref{fig:framework-overview}, the hardware-specific device driver is replaced by a \sys version of thin device driver that is registered to OFED core. In this way, RDMA requests in the VM are re-routed to the vRNIC.
 For containers, as shown in Figure~\ref{fig:framework-overview} the Verbs library is hijacked to interact with the vRNIC instead of the orignal kernel RDMA driver by replacing the file descriptor of physical RNIC with one of vRNICs~\cite{kim2019freeflow}.
 
 In both VMs and containers, the changes in RDMA software stack are totally transparent to RDMA applications.
 
+
+%--------------------------------------------------------------------------------------------------------------------------
+%--------------------------------------------------------------------------------------------------------------------------
+%--------------------------------------------------------------------------------------------------------------------------
 \subsection{\sys Core}
 
 Each machine is designed to have one \sys Core instance in its host user space. The \sys Core is designed to manage both the virtual and physical RDMA resources for the host. It instantiates vRNIC backends, manages virtual RDMA network configurations and policies, and interact with physical RNIC through the Verbs library.
@@ -77,9 +81,10 @@ Each machine is designed to have one \sys Core instance in its host user space. 
 
 %【 讨论：管理服务器的所有RDMA资源，对于来自虚拟机和容器的网卡资源申请，\sys Core会进行。1，发现和记录所有RDMA资源, 2，监控RDMA资源消耗，决策RDMA设备和资源分配（调度方式：动态轮询等等，调度目的：负载均衡、控制资源QoS），3,RDMA虚拟机容器的迁移信息】
 
-\subsubsection{\textbf{\sys Core Service}}
-\
-\noindent
+%--------------------------------------------------------------------------------------------------------------------------
+%\subsubsection{\textbf{\sys Core Service}}
+%\
+%\noindent
 
 % \sys Core 作为一个服务会在每台服务器上运行，统一监听虚拟机、容器和主机的获取RDMA设备的请求（如果原生的请求不进行统一处理，将会导致原生和虚拟化对RDMA设备接口的冲突，因此修改了主机获取设备Verbs ibv_get_device_list的实现，将对应请求转发到\sys Core，由\sys Core统一分配RDMA设备接口）。
 
@@ -87,6 +92,7 @@ The \sys Core is deployed on each server listening to the request of RDMA device
 
 %The \sys Core as a service which runs on each server and monitors the request of obtain RDMA devices from VMs, containers and host. (If the host requests are not processed uniformly, it will cause the RDMA devices interfaces conflict between host RDMA and virtualized. So the implementation of the verbs ibv\_get\_device\_list is modified, the corresponding request is forwarded to the \sys Core, and the \sys Core uniformly allocates the RDMA device interface) .
 
+%--------------------------------------------------------------------------------------------------------------------------
 \subsubsection{\textbf{Instantiating vRNICs}}
 \
 \noindent
@@ -97,7 +103,7 @@ Instantiating vRNIC mainly includes 3 steps: 1) initializing vRNIC attributes; 2
 
 % 初始化vRNIC属性：为了模拟与硬件一致的功能接口，\sys Core需要对vRNIC的不变属性进行初始化，包括RDMA地址vGID，设备号等等。对于RDMA地址vGID，\sys Core会随机生成IPv6格式的虚拟值，同时登记到mgmt center的数据库中。
 
-1) Initializing vRNIC attributes: To emulate a physical RNIC, \sys Core needs to initialize the static properties of vRNIC, such as RDMA address vGID and device number. For RDMA addresses vGID, \sys Core randomly generates the values in the IPv6 format and registers them into the database in the management node.
+1) Initializing vRNIC attributes: To emulate a physical RNIC, \sys Core needs to initialize the static properties of vRNIC, such as RDMA address vGID and device number. For RDMA address~(vGID), \sys Core randomly generates the values in the IPv6 format and registers them into the database in the management node.
 
 % 绑定vRNIC到物理网卡：vRNIC实例需要依靠物理网卡实现RDMA功能，因此，实例化vRNIC时需要将vRNIC实例与对应的物理RDMA网卡绑定。如果是多网卡设备或者多个网卡接口（如使用SR-IOV），还需确定从vRNIC到对应物理网卡接口的映射关系。
 
@@ -109,6 +115,7 @@ Instantiating vRNIC mainly includes 3 steps: 1) initializing vRNIC attributes; 2
 For containers, the container can share an IPC namespace with the vRNIC backend as the message channel.
 For VMs, to avoid the two-hops memory copy from the vRNIC frontend in the guest to the hypervisor and then to the vRNIC backend, we use the shared memory as the message channel. Specifically, the physical memory in the VM is shared with the vRNIC backend. RDMA messages in the guest can be directly accessed from the vRNIC backend.
 
+%--------------------------------------------------------------------------------------------------------------------------
 \subsubsection{\textbf{Configuring the Virtual RDMA Network}}
 \
 \noindent
@@ -120,7 +127,7 @@ For virtual RDMA address configurations, the vGID assigned to the vRNIC by \sys 
 
 % 对于虚拟RDMA路由配置，每台主机的\sys Core中配置了虚拟RDMA网络路由规则。具体来说，\sys Core在实例化vRNIC时，还给每个vRNIC都配置了组ID，路由规则的定义形式为:{group ID1, group ID2, Policy}。例如，如图4所示，容器1和容器2的vrnic被配置到同一组中，因此允许创建RDMA连接。作为对比，容器1和虚拟机1属于不同的用户组，按路由规则无法建立RDMA连接。各虚拟实例之间建立RDMA连接的具体细节可以参考4.3.1。
 
-For virtual RDMA routing configurations, virtual RDMA network routing rules are configured in the \sys Core at each host. In specific, \sys Core also configures the group ID for each vRNIC when it instantiates the vRNIC. Routing rules are defined as {group ID1, group ID2, Policy}. For example, as shown in Figure \ref{fig:route-config}, the vRNIC of container 1 and container 2 are configured into the same group, thus allowing RDMA connections to be created. In contrast, container 1 and VM 1 belong to different user groups and cannot establish an RDMA connection according to routing rules.
+For virtual RDMA routing configurations, virtual RDMA network routing rules are configured in the \sys Core at each host. In specific, \sys Core also configures the group ID for each vRNIC when it instantiates the vRNIC. Routing rules are defined as \{group ID1, group ID2, Policy\}. For example, as shown in Figure \ref{fig:route-config}, the vRNIC of container 1 and container 2 are configured into the same group, thus allowing RDMA connections to be created. In contrast, container 1 and VM 1 belong to different user groups and cannot establish an RDMA connection according to routing rules.
 
 % RDMA与传统TCP/IP不同，RDMA还支持单边操作。在guest应用的RDMA单边操作中，RDMA的工作请求中包含了远端的GVA及key，远端MR内存地址同样需要在RDMA用户态驱动中转换为远端vRNIC后端的HVA。为了便于远端地址的转换，我们在\sys Core中建立了一个分布式的Key-Value数据库，存储各节点注册MR的映射关系{key，gva, hva}。在guest应用执行单边操作时，将向\sys Core 中的分布式KV数据库查询，以获取远端MR的HVA，缓存到本地并在写入工作请求以前。
 
@@ -137,9 +144,13 @@ Unlike traditional TCP/IP network, RDMA networks also support one-sided operatio
 	\label{fig:route-config}
 \end{figure}
 
+
+%------------------------------------------------------------------------------------------------------------------------------------------
+%-----------------------------------------------------------------------------------------------------------------------------------------
+%-----------------------------------------------------------------------------------------------------------------------------------------
 \subsection{Management Node}
 
-In \sys, there is one centralized management node in the cluster that manages the control policies of the entire RDMA network, e.g., QoS and ACL.
+In \sys, there is one centralized management node in the cluster that manages the control policies of the entire RDMA network, e.g., ACL and QoS.
 
 % 在\sys框架里，整个集群配备一个mgmt center，作为配置管理，存储各节点RDMA资源信息的中心。
 %In \sys, the cluster is equipped with one management node, which serves as configuration management and stores the information of RDMA resources for each node.
@@ -161,6 +172,10 @@ Note that this design requires \sys to trust the Verbs library in the guest envi
 	\label{fig:mgmt-center}
 \end{figure}
 
+
+%------------------------------------------------------------------------------------------------------------------------------------------
+%-----------------------------------------------------------------------------------------------------------------------------------------
+%-----------------------------------------------------------------------------------------------------------------------------------------
 \subsection{Verbs and User-space Device Library}
 
 %% 两小节： 控制路径和数据路径
@@ -169,7 +184,7 @@ Note that this design requires \sys to trust the Verbs library in the guest envi
 
 \begin{figure*}[!ht]
 	\centering
-	\includegraphics[width=0.8\linewidth]{images/verbs-driver}
+	\includegraphics[width=0.78\linewidth]{images/verbs-driver}
 	\caption{Modifications in the Verbs library and user-space device library for containers and VMs}
 	\label{fig:verbs-driver}
 \end{figure*}
@@ -208,11 +223,15 @@ The RDMA applications in the VM allocate the memory for MR, QP and CQ. Then, thr
 
 Based on these modifications, for both VMs and containers on the data path, the direct data delivery channel is established between the RDMA application in the guest user-space and the physical RNIC. It avoids the overhead of data copy or context switches.
 
+
+%------------------------------------------------------------------------------------------------------------------------------------------
+%-----------------------------------------------------------------------------------------------------------------------------------------
+%-----------------------------------------------------------------------------------------------------------------------------------------
 \subsection{Virtual RDMA Workflow}
 
 % 图4说明了虚拟RDMA的详细工作过程。虚拟RDMA的工作流程涉及guest中的应用、verbs库以及主机的vRNIC后端交互。整个工作流程依次分为初始化阶段、连接阶段和数据阶段。其中，初始化阶段分别包括设备打开和RDMA资源创建，连接阶段中RDMA应用通过QP与远端建立连接。数据阶段中RDMA应用执行数据路径的操作。
 
-Figure~\ref{fig:rdma-path} illustrates the detailed workflow of virtual RDMA. The workflow of the virtual RDMA involves the application, the Verbs library~(including the user-space device library and the vRNIC frontend) in the guest environment, and the vRNIC backend in the host environment.
+Figure~\ref{fig:rdma-path} illustrates the detailed workflow of \sys. The workflow involves the application, the Verbs library~(including the user-space device library and the vRNIC frontend) in the guest environment, and the vRNIC backend in the host environment.
 The whole workflow can be divided into the initialization phase, the connection phase and the data phase. The initialization phase includes device opening and RDMA resource initialization.
 In the connection phase, the RDMA application establishes a connection with the remote entity through QP.
 In the data phase, the RDMA application performs the data sending and receiving operations.
@@ -226,6 +245,8 @@ In the data phase, the RDMA application performs the data sending and receiving 
 
 % 4.4.1 初始化阶段
 %  初始化阶段主要完成资源的初始化，分别包括设备打开（I1）、注册内存buffer（I2）和创建QP/CQ等RDMA资源（I3）。具体细节如下： 
+
+%------------------------------------------------------------------------------------------------------------------------------------------
 \subsubsection{\textbf{Initialization Phase}}
 \
 \noindent
@@ -238,13 +259,15 @@ I1 (vRNIC Device Opening): The application gets and opens the vRNIC device by ca
 
 % I2（Guest应用注册MR）：在容器中，Verbs库中将MR buffer重新映射到某一共享内存，虚拟机无需此步骤， 因为当虚拟机启动时，整个虚拟机的内存已经被设置为共享的。vRNIC后端会获取对应的共享内存，并使用它来注册MR，并返回MR keys等信息。
 
-I2 (MR Registration): For the containers, the Verbs library remaps the MR buffer to a shared memory region. This step is not required for the VMs, because the whole physical memory of the VM is shared with the vRNIC backend in \sys. The vRNIC backend register the MR to the RNIC and get the MR keys returned by the \texttt{ibv\_reg\_mr}.
+I2 (MR Registration): For the containers, the Verbs library remaps the MR buffer to a shared memory region. This step is not required for the VMs, because the whole physical memory of the VM is shared with the vRNIC backend in \sys. The vRNIC backend registers the MR to the RNIC and gets the MR keys returned by the \texttt{ibv\_reg\_mr}.
 
 % I3（Guest应用创建QP/CQ）：在容器中，Verbs库使用共享内存分配QP/CQ buffer，虚拟机无需此步骤。vRNIC后端将获取对应的共享内存，并分配它为QP/CQ的buffer，并会返回QPN, CQN等元数据。 
 
 I3 (QP/CQ Creation): For the containers, the Verbs library allocates QP/CQ buffers in the shared memory region. Similar to I2, for the VMs, the Verbs library allocates QP/CQ buffers in its original way. In \sys, the whole physical memory of the VM is shared with the vRNIC backend, including the QP/CQ buffers. The vRNIC backend creates QP/CQ for the physical RNIC using the same QP/CQ memory allocated by the Verbs library in the guest.
 
 %4.4.2 连接阶段
+
+%------------------------------------------------------------------------------------------------------------------------------------------
 \subsubsection{\textbf{Connection Phase}}
 \
 \noindent
@@ -256,13 +279,15 @@ In the connection phase, the RDMA connection is established based on QP. It incl
 C1 (Querying GID): The application calls Verbs API \texttt{ibv\_query\_gid} to get the vGID of the vRNIC. The vRNIC backend will query the GID of the corresponding physical RNIC, record the mapping tuple \textit{\{vGID, GID\}} and return the vGID to the frontend.
 
 % C2（交换连接信息）：应用与远端交换建立连接所需的信息vGID，QPN和MR key等。 该步骤完全由应用独立完成。例如，应用中可以使用TCP/IP 或RDMA-CM来交换信息。
-C2 (Exchanging Connection Information): The applications exchanges the connection information, such as vGID, QPN and MR-key, with the remote entity. This step is done by the applications without the participation of \sys. For example, the application can use TCP/IP or RDMA-CM to exchange the information.
+C2 (Exchanging Connection Information): The applications exchange the connection information, such as vGID, QPN and MR-key, with the remote entity. This step is done by the applications without the participation of \sys. For example, the application can use TCP/IP or RDMA-CM to exchange the information.
 
 % C3（连接建立）：应用调用verbs ibv_modify_qp 并将本地/远端的vGID、QPN等作为参数。该命令转发到vRNIC后端后，vRNIC后端会先根据\sys Core的路由表规则进行判断，如果允许，就会将本地/远端 vGID转换为对应的GID，再根据QPN，在两个vRNIC后端的QP间建立RDMA连接。
 C3 (Connection Establish): The application calls the Verb API \texttt{ibv\_modify\_qp} with the parameters, including local/remote vGID and local/remote QPN. The vRNIC backend will check the routing table from \sys Core. If allowed, the local/remote vGID will be converted to GID, and RDMA connection is established based on local/remote QP in two vRNIC backends through the QPN.
 
 % 4.4.3 数据阶段
 % 数据路径发生在连接建立后，主要是对本地/远端 MR中的内容执行收发操作，包括图中的D1（收发数据）和D2 (轮询CQ）。具体如下：
+
+%------------------------------------------------------------------------------------------------------------------------------------------
 \subsubsection{\textbf{Data Phase}}
 \
 \noindent
