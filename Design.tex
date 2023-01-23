@@ -37,9 +37,9 @@ The vRNIC backend is implemented as a user-space module in the host system, simi
 % 3，虚拟RDMA上下文到物理RDMA上下文之间的对应关系。对应关系是一对一的，因为一对一是RDMA性能隔离的基础。
 
 As a virtual RNIC device emulator, the vRNIC backend needs to maintain the same set of hardware properties that the physical RNIC has, such as the RDMA address GID. In addition, three kinds of contexts need to be maintained in the vRNIC backend at runtime:
-(1) Information of the runtime RDMA resources created and used on the emulated RDMA device, such as the memory address of the virtual MR/QP;
-(2) Information of the runtime RDMA resources actually created and used on the physical RNIC, such as the memory address of the real MR/QP;
-(3) The mapping between virtual RDMA context and physical RDMA context.
+1) Information of the runtime RDMA resources created and used on the emulated RDMA device, such as the memory address of the virtual MR/QP;
+2) Information of the runtime RDMA resources actually created and used on the physical RNIC, such as the memory address of the real MR/QP;
+3) The mapping between virtual RDMA context and physical RDMA context.
 
 vRNIC backends are instantiated by the \sys Core.
 The vRNIC backend acts like an RDMA application in the host environment and interact with physical RNIC through the Verbs library.
@@ -211,7 +211,7 @@ In \sys, the container's user-space Verbs library allocates QP/CQ buffer in the 
 %（3）针对DoorBell：在原生RDMA中，verbs库打开RDMA设备接口，经RDMA内核驱动映射门铃到应用程序。在\sys中，Verbs库打开虚拟的设备接口，并通过vRNIC后端和内核辅助模块来映射门铃。具体细节在第5节介绍。
 
 (3) DoorBell: In native RDMA, the RDMA device is opened in the Verbs library and DoorBell is mapped to the applications through the RDMA kernel driver.
-In \sys, the container's Verbs library opens the virtual device interface and maps the DoorBell through the vRNIC backend. The details will be introduced in Section \ref{impl}.
+In \sys, the container's Verbs library opens the virtual device interface and maps the DoorBell through the vRNIC backend. %The details will be introduced in Section \ref{impl}.
 
 % 在虚拟机中，vRNIC在实例化时已经共享了虚拟机的整块物理内存空间。即使虚拟机应用使用默认的方式分配MR、QP或CQ等RDMA资源的内存，无需修改，vRNIC后端可以获取对应的共享内存块。具体地，通过虚拟机内核的vRNIC前端驱动中，将这些buffer的GPA（虚拟机物理内存信息）随RDMA命令和参数转发给vRNIC后端，vRNIC后端可以将GPA翻译为HVA，并使用这些共享内存块作为RDMA资源MR，QP或CQ的buffer，如图4-b-4所示。
 
