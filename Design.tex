@@ -8,7 +8,7 @@ The design goals of \sys are:
 
 \begin{figure}[!ht]
 	\centering
-	\includegraphics[width=1\linewidth]{images/framework-overview.png}
+	\includegraphics[width=0.8\linewidth]{images/framework-overview.png}
 	\caption{Architecture overview of \sys. The light grey boxes are modules in \sys framework. The dark grey boxes are the memory shared by both the application and the \sys Core. The shared memory can also be directly accessed by the RNIC.}
 	\label{fig:framework-overview}
 \end{figure}
@@ -139,7 +139,7 @@ Unlike traditional TCP/IP network, RDMA networks also support one-sided operatio
 
 \begin{figure}[!ht]
 	\centering
-	\includegraphics[width=0.85\linewidth]{images/route-config}
+	\includegraphics[width=0.75\linewidth]{images/route-config}
 	\caption{RDMA group configuration and routing. The vRNICs of container 1 and container 2 are configured in the same group. Thus, the two containers are allowed to create RDMA connections. VM 1 is not in the same group of the containers. So it is not allowed to create RDMA connections to the containers.}
 	\label{fig:route-config}
 \end{figure}
@@ -167,7 +167,7 @@ Note that this design requires \sys to trust the Verbs library in the guest envi
 
 \begin{figure}[!ht]
 	\centering
-	\includegraphics[width=0.85\linewidth]{images/mgmt-center.png}
+	\includegraphics[width=0.75\linewidth]{images/mgmt-center.png}
 	\caption{The architecture of \sys management plane}
 	\label{fig:mgmt-center}
 \end{figure}
@@ -184,7 +184,7 @@ Note that this design requires \sys to trust the Verbs library in the guest envi
 
 \begin{figure*}[!ht]
 	\centering
-	\includegraphics[width=0.78\linewidth]{images/verbs-driver}
+	\includegraphics[width=0.7\linewidth]{images/verbs-driver}
 	\caption{Modifications in the Verbs library and user-space device library for containers and VMs}
 	\label{fig:verbs-driver}
 \end{figure*}
@@ -238,7 +238,7 @@ In the data phase, the RDMA application performs the data sending and receiving 
 
 \begin{figure}[!ht]
 	\centering
-	\includegraphics[width=1\linewidth]{images/RDMA-path.png}
+	\includegraphics[width=0.85\linewidth]{images/RDMA-path.png}
 	\caption{The Workflow of \sys SEND operation}
 	\label{fig:rdma-path}
 \end{figure}
