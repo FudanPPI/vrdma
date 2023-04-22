@@ -34,6 +34,12 @@ Based on the RDMA benchmark test tool perftest~\cite{perftest}, we evaluated the
 \
 \noindent
 
+
+
+
+As the data show in Figure~\ref{fig:write-bw} and Figure~\ref{fig:send-bw}, \sys can achieve comparable throughput compared with SR-IOV and \native. When the message gradually increases, such as reaching 256KB, the throughput of each framework tends to be consistent. The reason is that the bandwidth of RDMA netwrok is saturated after that. %, and the delay overhead of FreeFlow has been covered by waiting delay in RNIC.
+
+
 \begin{figure}[!ht]
 	\centering
 	\includegraphics[width=0.8\linewidth]{images/write-bw.pdf}
@@ -48,9 +54,6 @@ Based on the RDMA benchmark test tool perftest~\cite{perftest}, we evaluated the
 	\caption{The throughout of two-sided mode.}
 	\label{fig:send-bw}
 \end{figure}
-
-
-As the data show in Figure~\ref{fig:write-bw} and Figure~\ref{fig:send-bw}, \sys can achieve comparable throughput compared with SR-IOV and \native. When the message gradually increases, such as reaching 256KB, the throughput of each framework tends to be consistent. The reason is that the bandwidth of RDMA netwrok is saturated after that. %, and the delay overhead of FreeFlow has been covered by waiting delay in RNIC.
 
 For one-sided mode as the data in Figure~\ref{fig:write-bw} show, the average throughput of \sys in VMs has only 4$\%$ slowdown to that of SR-IOV in VMs. And the average throughput of \sys in containers has only 0.4$\%$ slowdown to that of \native. For two-sided mode as the data in Figure~\ref{fig:send-bw} show, the average throughput of \sys in VMs has only 3$\%$ slowdown to that of SR-IOV in VMs. The average throughput of \sys in containers has only 5$\%$ slowdown to that of \native.
 
@@ -67,6 +70,11 @@ Compared with FreeFlow, when the message is small, the throughput of \sys has re
 \
 \noindent
 
+
+
+The latency results are shown in Figure~\ref{fig:write-lat} and Figure~\ref{fig:send-lat}. As these data show, \sys can achieve comparable letency results compared with SR-IOV and \native. The latency gradually increases as the forwarding message size becomes larger because the large message needs to be sliced into small message for network package transmission.
+For one-sided mode, the latency of \sys in VMs is 4\% higher compared to that of SR-IOV in VMs. The latency of \sys in containers is about 10\% higher compared to that of \native. For two-sided mode, the latency of \sys in VMs is 0.4\% higher compared to that of SR-IOV in VMs. The latency of \sys in containers is about 10\% higher than that of \native.
+
 \begin{figure}[!ht]
 	\centering
 	\includegraphics[width=0.8\linewidth]{images/write-lat.pdf}
@@ -82,9 +90,6 @@ Compared with FreeFlow, when the message is small, the throughput of \sys has re
 	\label{fig:send-lat}
 \end{figure}
 
-
-The latency results are shown in Figure~\ref{fig:write-lat} and Figure~\ref{fig:send-lat}. As these data show, \sys can achieve comparable letency results compared with SR-IOV and \native. The latency gradually increases as the forwarding message size becomes larger because the large message needs to be sliced into small message for network package transmission.
-For one-sided mode, the latency of \sys in VMs is 4\% higher compared to that of SR-IOV in VMs. The latency of \sys in containers is about 10\% higher compared to that of \native. For two-sided mode, the latency of \sys in VMs is 0.4\% higher compared to that of SR-IOV in VMs. The latency of \sys in containers is about 10\% higher than that of \native.
 
 Compared with FreeFlow, when the message is small, the latency of \sys is only 40\% to 60\% of FreeFlow because the overhead of additional data copy on path commands for FreeFlow involves large overhead. 
 
