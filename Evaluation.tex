@@ -18,12 +18,8 @@ And some minor modifications are made to the host OS kernel, such as caching GPA
 Based on our approach, user-level applications don't need to be modified or recompiled because the RDMA APIs are not changed. %In this section, some implementation details are introduced.
 
 All experiments are carried out on two servers. The settings mainly include three parts: host server, VMs and containers. 
-<<<<<<< HEAD
 Each host server is equipped with 4 Intel Xeon E7-4850 2.40GHz 16-core CPUs and 1 TB RAM. The RNIC used is Mellanox ConnectX-3 56 Gb/sec, which performs RDMA communication under Infiniband.  The operating system is CentOS 7.4.1708 (Linux 3.10.0-693.el7.x86\_64). The RDMA driver installed on the host server is Mellanox OFED 4.4-2.0.7.0%~\cite{mlnx-ofed}. 
 To keep consistence, VMs and containers are built based on the same OS images as host. All VMs are based on QEMU~(5.1.50)~\cite{qemu} enabled with KVM~\cite{kvm}. We provide 16 cores and 64 GB memory for each VM. We run containers using Docker~(18.06.1-ce)~\cite{docker} and limit the CPU and memory resources to the same settings as the VM. In addition, all the applications are compiled with GCC/G++ 4.8.5 with the O3 compilation configuration. Note that the management node is on one of two evaluated nodes in our evaluation setting. Since the management node is not involved on the data-path, it has very limited influence on the performance of one-sided or two-sided communication.
-=======
-Each host server is equipped with 4 Intel Xeon E7-4850 2.40GHz 16-core CPUs and 1 TB RAM. The RNIC used is Mellanox ConnectX-3 56 Gb/sec, which performs RDMA communication under Infiniband.  The operating system is CentOS 7.4.1708 (Linux 3.10.0-693.el7.x86\_64). The RDMA driver installed on the host server is Mellanox OFED 4.4-2.0.7.0~\cite{mlnx-ofed}. To keep consistence, VMs and containers are built based on the same OS images as host. All VMs are based on QEMU~(5.1.50)~\cite{qemu} enabled with KVM~\cite{kvm}. We provide 16 cores and 64 GB memory for each VM. We run containers using Docker~(18.06.1-ce)~\cite{docker} and limit the CPU and memory resources to the same settings as the VM. In addition, all the applications are compiled with GCC/G++ 4.8.5 with the O3 compilation configuration. Note that the management node is on one of two evaluated nodes in our evaluation setting. Since the management node is not involved on the data-path, it has very limited influence on the performance of one-sided or two-sided communication.
->>>>>>> 167d26822d094a8fba38ccdeb1a4377e7703e6f9
 
 
 \subsection{Basic Evaluation}
@@ -38,7 +34,6 @@ Based on the RDMA benchmark test tool perftest~\cite{perftest}, we evaluated the
 \
 \noindent
 
-<<<<<<< HEAD
 
 
 
@@ -48,11 +43,6 @@ As the data show in Figure~\ref{fig:write-bw} and Figure~\ref{fig:send-bw}, \sys
 \begin{figure}[!ht]
 	\centering
 	\includegraphics[width=0.8\linewidth]{images/write-bw.pdf}
-=======
-\begin{figure}[!ht]
-	\centering
-	\includegraphics[width=1.00\linewidth]{images/write-bw.pdf}
->>>>>>> 167d26822d094a8fba38ccdeb1a4377e7703e6f9
 	\caption{The throughout of one-sided mode.}
 	\label{fig:write-bw}
 \end{figure}
@@ -60,21 +50,11 @@ As the data show in Figure~\ref{fig:write-bw} and Figure~\ref{fig:send-bw}, \sys
 
 \begin{figure}[!ht]
 	\centering
-<<<<<<< HEAD
 	\includegraphics[width=0.8\linewidth]{images/send-bw.pdf}
-=======
-	\includegraphics[width=1.00\linewidth]{images/send-bw.pdf}
->>>>>>> 167d26822d094a8fba38ccdeb1a4377e7703e6f9
 	\caption{The throughout of two-sided mode.}
 	\label{fig:send-bw}
 \end{figure}
 
-<<<<<<< HEAD
-=======
-
-As the data show in Figure~\ref{fig:write-bw} and Figure~\ref{fig:send-bw}, \sys can achieve comparable throughput compared with SR-IOV and \native. When the message gradually increases, such as reaching 256KB, the throughput of each framework tends to be consistent. The reason is that the bandwidth of RDMA netwrok is saturated after that. %, and the delay overhead of FreeFlow has been covered by waiting delay in RNIC.
-
->>>>>>> 167d26822d094a8fba38ccdeb1a4377e7703e6f9
 For one-sided mode as the data in Figure~\ref{fig:write-bw} show, the average throughput of \sys in VMs has only 4$\%$ slowdown to that of SR-IOV in VMs. And the average throughput of \sys in containers has only 0.4$\%$ slowdown to that of \native. For two-sided mode as the data in Figure~\ref{fig:send-bw} show, the average throughput of \sys in VMs has only 3$\%$ slowdown to that of SR-IOV in VMs. The average throughput of \sys in containers has only 5$\%$ slowdown to that of \native.
 
 
@@ -90,7 +70,6 @@ Compared with FreeFlow, when the message is small, the throughput of \sys has re
 \
 \noindent
 
-<<<<<<< HEAD
 
 
 The latency results are shown in Figure~\ref{fig:write-lat} and Figure~\ref{fig:send-lat}. As these data show, \sys can achieve comparable letency results compared with SR-IOV and \native. The latency gradually increases as the forwarding message size becomes larger because the large message needs to be sliced into small message for network package transmission.
@@ -99,11 +78,6 @@ For one-sided mode, the latency of \sys in VMs is 4\% higher compared to that of
 \begin{figure}[!ht]
 	\centering
 	\includegraphics[width=0.8\linewidth]{images/write-lat.pdf}
-=======
-\begin{figure}[!ht]
-	\centering
-	\includegraphics[width=1.00\linewidth]{images/write-lat.pdf}
->>>>>>> 167d26822d094a8fba38ccdeb1a4377e7703e6f9
 	\caption{The latencty of one-sided mode.}
 	\label{fig:write-lat}
 \end{figure}
@@ -111,22 +85,12 @@ For one-sided mode, the latency of \sys in VMs is 4\% higher compared to that of
 
 \begin{figure}[!ht]
 	\centering
-<<<<<<< HEAD
 	\includegraphics[width=0.8\linewidth]{images/send-lat.pdf}
-=======
-	\includegraphics[width=1.00\linewidth]{images/send-lat.pdf}
->>>>>>> 167d26822d094a8fba38ccdeb1a4377e7703e6f9
 	\caption{The latencty of two-sided mode.}
 	\label{fig:send-lat}
 \end{figure}
 
 
-<<<<<<< HEAD
-=======
-The latency results are shown in Figure~\ref{fig:write-lat} and Figure~\ref{fig:send-lat}. As these data show, \sys can achieve comparable letency results compared with SR-IOV and \native. The latency gradually increases as the forwarding message size becomes larger because the large message needs to be sliced into small message for network package transmission.
-For one-sided mode, the latency of \sys in VMs is 4\% higher compared to that of SR-IOV in VMs. The latency of \sys in containers is about 10\% higher compared to that of \native. For two-sided mode, the latency of \sys in VMs is 0.4\% higher compared to that of SR-IOV in VMs. The latency of \sys in containers is about 10\% higher than that of \native.
-
->>>>>>> 167d26822d094a8fba38ccdeb1a4377e7703e6f9
 Compared with FreeFlow, when the message is small, the latency of \sys is only 40\% to 60\% of FreeFlow because the overhead of additional data copy on path commands for FreeFlow involves large overhead. 
 
 
@@ -137,39 +101,23 @@ Compared with FreeFlow, when the message is small, the latency of \sys is only 4
 
 With the scale of the applications and datacenter capacity rising, more and more VM instances and container instances are deployed. Thus, the scability has been a key design metric for RDMA virtualization.
 
-<<<<<<< HEAD
 To evaluate the scalability of \sys, we use aggregate throughput as the metric. It is the sum of the throughput of multiple parallel RDMA flows at the same time and has been widely used in prior works~\cite{kim2019freeflow, pfefferle2015hybrid, he2020masq}. If the aggregate throughput of multiple parallel RDMA flows is closer to the hardware throughput, the cost of RDMA virtualization is smaller, which illustrate \sys has a good scalability. The thoughput of a individual RDMA flow is fluctating at each moment and the instant RDMA throughput is difficult to align among multiple RDMA flows. Therefore, we collect and summarize the average throughput of each RDMA flow in 1 second to obtain the average aggregate throughput.
 
 We used one-sided operation (``ib\_write\_bw'' in ~\cite{perftest}) with 2, 4, 8, 16, 32 and 64 virtual instance pairs which continuously send data (65536 Bytes) between two paris. Since the RNICs in our evaluation only supports upto 64 VFs, we use 64 instances as the maximal evaluation value.
 
 As the data in Figure~\ref{fig:scabality} show, in the VM-only scenario, container-only scenario and hybrid scenario, the throughput of \sys is close to that of SR-IOV~(only 1.4\% overhead). %The average overhead is only 1.4\%.
-=======
-To evaluate the scalability of \sys, we use aggregate throughput as the metric of scalability evaluation. It is the sum of the throughput of multiple parallel RDMA flows at the same time and has been widely used in prior works~\cite{kim2019freeflow, pfefferle2015hybrid, he2020masq}. If the aggregate throughput of multiple parallel RDMA flows is closer to the hardware throughput, the cost of RDMA virtualization is smaller, which illustrate \sys has a good scalability. The thoughput of a individual RDMA flow is fluctating at each moment and the instant RDMA throughput is difficult to align among multiple RDMA flows. Therefore, we collect and summarize the average throughput of each RDMA flow in 1 second to obtain the average aggregate throughput.
-
-We used one-sided operation (``ib\_write\_bw'' in ~\cite{perftest}) with 2, 4, 8, 16, 32 and 64 virtual instance pairs which continuously send data (65536 Bytes) between two paris. Since the RNICs in our evaluation only supports upto 64 VFs, we use 64 instances as the maximal evaluation value.
-
-As the data in Figure~\ref{fig:scabality} show, in the VM-only scenario, container-only scenario and hybrid scenario, the throughput of \sys is close to that of SR-IOV. The average overhead is only 1.4\%.
->>>>>>> 167d26822d094a8fba38ccdeb1a4377e7703e6f9
 
 
 \begin{figure}[!ht]
 	\centering
-<<<<<<< HEAD
 	\includegraphics[width=0.8\linewidth]{images/scabality.pdf}
-=======
-	\includegraphics[width=1.0\linewidth]{images/scabality.pdf}
->>>>>>> 167d26822d094a8fba38ccdeb1a4377e7703e6f9
 	\caption{\sys scalability. Aggregation throughput at different scenarios and scales are evaluated.}
 	\label{fig:scabality}
 \end{figure}
 
 \subsection{Real-world Applications}
 
-<<<<<<< HEAD
 The main advantage of RDMA is its optimized network performance in real-world applications. RDMA virtualization needs to maintain such an advantage. Thus, we evaluate \sys and other frameworks in a RPC benchmark in rdma\_bench~\cite{rbench}. In this benchmark, UD transport with a 32-bit immediate header is used between the client and server.
-=======
-The main advantage of RDMA is about its optimized network performance in real-world applications. RDMA virtualization needs to maintain such an advantage. Therefore, we evaluate \sys and other frameworks in a RPC benchmark in rdma\_bench~\cite{rbench}. In this benchmark, UD transport with a 32-bit immediate header is used between the client and server.
->>>>>>> 167d26822d094a8fba38ccdeb1a4377e7703e6f9
 
 \subsubsection{\textbf{RPC}}
 \
@@ -181,11 +129,7 @@ In the evaluation, the server and the client are started on two host servers. Th
 
 \begin{figure}[!ht]
 	\centering
-<<<<<<< HEAD
 	\includegraphics[width=0.8\linewidth]{images/rpc.pdf}
-=======
-	\includegraphics[width=1.0\linewidth]{images/rpc.pdf}
->>>>>>> 167d26822d094a8fba38ccdeb1a4377e7703e6f9
 	\caption{The Throughput of RPC}
 	\label{fig:rpc}
 \end{figure}
@@ -204,11 +148,7 @@ We executed two tasks in Graph500 on two servers with 16 MPI processes. The banc
 
 \begin{figure}[!ht]
 	\centering
-<<<<<<< HEAD
 	\includegraphics[width=0.8\linewidth]{images/graph500.pdf}
-=======
-	\includegraphics[width=1.0\linewidth]{images/graph500.pdf}
->>>>>>> 167d26822d094a8fba38ccdeb1a4377e7703e6f9
 	\caption{The TEPS of BFS and SSSP}
 	\label{fig:graph500}
 \end{figure}
