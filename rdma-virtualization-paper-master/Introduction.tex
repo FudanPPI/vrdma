@@ -1,29 +1,9 @@
 \section{Introduction}
-<<<<<<< HEAD
-RDMA~(Remote Direct Memory Access) is a technique that allows zero-copy data transmission directly from the application memory of one machine to the application memory of another machine over network. With commercial hardware support~\cite{roce, iwarp, infiniband}, the transmission operation does not require the participation of the CPU or the operating system~(OS). This technique enables low latency and high performance data exchange between machines and is widely adopted in various high-performance distributed systems, deep learning frameworks, and big data systems.
-
-%in various high-performance distributed systems~\cite{dragojevic2014farm}~\cite{wei2015fast}~\cite{lu2017octopus}, deep learning frameworks~\cite{abadi2016tensorflow}~\cite{chen2015mxnet}, and big data systems~\cite{spark-rdma}~\cite{hadoop-rdma}.
-=======
 RDMA~(Remote Direct Memory Access) is a technique that allows zero-copy data transmission directly from the application memory of one machine to the application memory of another machine over network. With commercial hardware support~\cite{roce, iwarp, infiniband}, the transmission operation does not require the participation of the CPU or the operating system~(OS). This technique enables low latency and high performance data exchange between machines and is widely adopted in various high-performance distributed systems~\cite{dragojevic2014farm}~\cite{wei2015fast}~\cite{lu2017octopus}, deep learning frameworks~\cite{abadi2016tensorflow}~\cite{chen2015mxnet}, and big data systems~\cite{spark-rdma}~\cite{hadoop-rdma}.
->>>>>>> 167d26822d094a8fba38ccdeb1a4377e7703e6f9
 
 Nowadays, distributed environments, such as data centers, are usually virtualized in the form of virtual machines~(VMs) or containers. As either form has its merits, there is a trend to run VMs side-by-side with containers~\cite{rethinkingvirtualization}. RDMA is either virtualized for VMs like HyV~\cite{pfefferle2015hybrid} and MasQ~\cite{he2020masq} and for containers like FreeFlow \cite{kim2019freeflow}, or dedicatedly assigned to VMs or containers using direct-passthrough method by hardware virtualization~\cite{sr-iov}.
 
 For a hybrid virtualization environment, RDMA should be virtualized with the following four considerations: 
-<<<<<<< HEAD
-1) {\verb|Unification|}: RDMA resources should be managed by one unified RDMA virtualization framework no matter the resources are used by VMs or containers. If the RDMA resources are managed by more than one entity, they have to be partitioned. This limits the resource sharing and it's hard to establish RDMA channels between VMs and containers.
-2) {\verb|High performance|}: Performance of virtual RDMA should be close to that of hardware virtualization or \native in terms of throughput, latency, or CPU load. Meanwhile it should have scalability with the number of VMs and containers increasing.
-3) {\verb|Compatibility|}: RDMA virtualization framework should be clean and stable for different environments, and has minimal dependence for other software on the virtualization stack, e.g., RDMA kernel drivers.
-4)  {\verb|High manageability|}: It should provide basic management capabilities in the cloud environment, such as resource sharing, performance isolation, virtual network management and portability.
-
-
-%\begin{itemize}
-%	\item {\verb|Unification|}: RDMA resources should be managed by one unified RDMA virtualization framework no matter the resources are used by VMs or containers. If the RDMA resources are managed by more than one entity, they have to be partitioned. This limits the resource sharing and it's hard to establish RDMA channels between VMs and containers.
-%	\item {\verb|High performance|}: Performance of virtual RDMA should be close to that of hardware virtualization or \native in terms of throughput, latency, or CPU load. Meanwhile it should have scalability with the number of VMs and containers increasing.
-%	\item {\verb|Compatibility|}: RDMA virtualization framework should be clean and stable for different environments, and has minimal dependence for other software on the virtualization stack, e.g., RDMA kernel drivers.
-%	\item {\verb|High manageability|}: It should provide basic management capabilities in the cloud environment, such as resource sharing, performance isolation, virtual network management and portability.
-%\end{itemize}
-=======
 %1) {\verb|Unification|}: RDMA resources should be managed by one unified RDMA virtualization framework no matter the resources are used by VMs or containers. If the RDMA resources are managed by more than one entity, they have to be partitioned. This limits the resource sharing and it's hard to establish RDMA channels between VMs and containers.
 %2) {\verb|High performance|}: Performance of virtual RDMA should be close to that of hardware virtualization or \native in terms of throughput, latency, or CPU load. Meanwhile it should have scalability under large-scale clusters.
 %3) {\verb|Compatibility|}: RDMA virtualization framework should be clean and stable for different environments, and has minimal dependence for other software on the virtualization stack, e.g., RDMA kernel drivers.
@@ -35,7 +15,6 @@ For a hybrid virtualization environment, RDMA should be virtualized with the fol
 	\item {\verb|Compatibility|}: RDMA virtualization framework should be clean and stable for different environments, and has minimal dependence for other software on the virtualization stack, e.g., RDMA kernel drivers.
 	\item {\verb|High manageability|}: It should provide basic management capabilities in the cloud environment, such as resource sharing, performance isolation, virtual network management and portability.
 \end{itemize}
->>>>>>> 167d26822d094a8fba38ccdeb1a4377e7703e6f9
 
 However, existing RDMA virtualization techniques do not address the hybrid virtualization stack where VMs, containers and other form of virtualizations~(e.g., container inside VMs~\cite{containeronvm}) co-exist in the same data center or even on the same machine.
 FreeFlow \cite{kim2019freeflow} is designed for contains and does not archive the maximum performance as the RDMA operations do not bypass the router and the OS kernel.
@@ -56,11 +35,6 @@ We implemented the \sys system and evaluate its throughput, latency and scalabil
 	
 	\item A system, called \sys,~is implemented and evaluated. The results show that \sys achieves similar performance for real applications compared with those of SR-IOV and \native.  .
 \end{itemize}
-<<<<<<< HEAD
-
-%The paper is organized as follows. Section \ref{background} describes the background of RDMA and its virtualization techniques. Section \ref{design} describes the vRNIC design. %Section \ref{impl} introduces the design of virtualization layer. Section \ref{eval} shows the evalution results of \sys system. Section \ref{relatedwork} discusses the related work. Section \ref{conclusion} concludes the work.
-=======
 %
 The paper is organized as follows. Section \ref{background} describes the background of RDMA and its virtualization techniques. Section \ref{design} describes the vRNIC design. %Section \ref{impl} introduces the design of virtualization layer. 
 Section \ref{eval} shows the evalution results of \sys system. Section \ref{relatedwork} discusses the related work. Section \ref{conclusion} concludes the work.
->>>>>>> 167d26822d094a8fba38ccdeb1a4377e7703e6f9
